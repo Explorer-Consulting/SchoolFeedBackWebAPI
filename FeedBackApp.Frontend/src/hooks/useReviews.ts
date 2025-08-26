@@ -8,7 +8,7 @@ export const useReviews = (email?) => {
     const { questionnaireId, evaluationId } = useParams();
 
     const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation({
-        mutationFn: (payload: { startDate: string; endDate: string }) => CreateQuestionnaires(payload),
+        mutationFn: (payload: { startDate: string; endDate: string; title: string; file: File; }) => CreateQuestionnaires(payload),
         onSuccess: () => {
             client.invalidateQueries({
                 queryKey: ['questionnaires']

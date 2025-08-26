@@ -11,11 +11,11 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEndPointReaction.Functions.Questionnaires
 {
-    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService service, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger, IEmailService emailService)
+    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService service, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger/*, IEmailService emailService*/)
     {
         private readonly IQuestionnaireService _service = service;
         private readonly ILogger<QuestionnaireCompilerWorkerEncapsulator> _logger = logger;
-        private readonly IEmailService _emailService = emailService;
+        //private readonly IEmailService _emailService = emailService;
 
         [RequireAdmin]
         [Function("PerformQuestionnaireCompilation")]

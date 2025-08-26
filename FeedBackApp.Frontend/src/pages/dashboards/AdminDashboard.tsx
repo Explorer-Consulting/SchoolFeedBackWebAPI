@@ -3,13 +3,12 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
-import { useQueryClient } from "@tanstack/react-query";
-import { GetEvaluation } from "@/api/ReviewApi";
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
+  const [title, setTitle] = useState<string>("");
 
   const {
     createQuestionnaires,
@@ -33,30 +32,52 @@ export default function AdminDashboard() {
     { id: "q3", title: "Chemistry Final Feedback" }
   ];
 
-  const displayedQuestionnaires = questionnairesSummary || mockQuestionnaires;
+  const [localQuestionnaires, setLocalQuestionnaires] = useState(mockQuestionnaires);
 
-  const sendQuestionnaires = () => {
+  const displayedQuestionnaires = questionnairesSummary || localQuestionnaires;
+
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const sendQuestionnaires = async () => {
     if (!startDate || !endDate) {
       toast.error("Please set both start and end date.");
       return;
     }
-    if(startDate>=endDate){
+
+    if (startDate >= endDate) {
       toast.error("Start date must be sooner than end date.");
-      console.log("ejnye bejnye");
       return;
     }
-    console.log(startDate);
-    console.log(endDate);
-    createQuestionnaires(
-      {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+
+    if (!title) {
+      toast.error("Please enter a title.");
+      return;
+    }
+    if (!file) {
+      toast.error("Please upload an Excel file.");
+      return;
+    }
+    const payload = {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      title,
+      file
+    };
+
+    console.log("Payload to send:", payload);
+    createQuestionnaires(payload, {
+      onSuccess: () => {
+        toast.success("Questionnaires created!");
+        setLocalQuestionnaires(prev => [...prev, { id:Date.now().toString(), title }]);
       },
-      {
-        onSuccess: () => toast.success("Questionnaires created and sent!"),
-        onError: () => toast.error("Failed to create questionnaires.")
-      }
-    );
+      onError: () => toast.error("Failed to create questionnaires."),
+    });
   };
 
   const handleStartQuestionnaire = () => {
@@ -64,7 +85,7 @@ export default function AdminDashboard() {
       toast.error("Select a questionnaire first!");
       return;
     }
-    console.log("start: ",selectedQuestionnaireId);
+    console.log("start: ", selectedQuestionnaireId);
     startQuestionnaire(selectedQuestionnaireId, {
       onSuccess: () => toast.success("Questionnaire started!"),
       onError: () => toast.error("Failed to start questionnaire.")
@@ -76,7 +97,7 @@ export default function AdminDashboard() {
       toast.error("Select a questionnaire first!");
       return;
     }
-    console.log("delete: ",selectedQuestionnaireId);
+    console.log("delete: ", selectedQuestionnaireId);
     deleteQuestionnaire(selectedQuestionnaireId, {
       onSuccess: () => {
         toast.success("Deleted questionnaire!");
@@ -92,7 +113,7 @@ export default function AdminDashboard() {
       toast.error("Select a questionnaire first!");
       return;
     }
-    console.log("export teacher: ",selectedQuestionnaireId);
+    console.log("export teacher: ", selectedQuestionnaireId);
     exportTeacherEvaluations(selectedQuestionnaireId, {
       onSuccess: () => toast.success("Teacher evaluations exported!"),
       onError: () => toast.error("Failed to export teacher evaluations.")
@@ -104,7 +125,7 @@ export default function AdminDashboard() {
       toast.error("Select a questionnaire first!");
       return;
     }
-    console.log("export summary: ",selectedQuestionnaireId);
+    console.log("export summary: ", selectedQuestionnaireId);
     exportGlobalSummary(selectedQuestionnaireId, {
       onSuccess: () => toast.success("Global summary exported!"),
       onError: () => toast.error("Failed to export global summary.")
@@ -126,13 +147,32 @@ export default function AdminDashboard() {
           value={startDate ? startDate.toISOString().split("T")[0] : ""}
           onChange={(e) => setStartDate(new Date(e.target.value))}
         />
+
         <label>End Date:</label>
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
           value={endDate ? endDate.toISOString().split("T")[0] : ""}
           onChange={(e) => setEndDate(new Date(e.target.value))}
-        /></CardContent>
+        />
+
+        <label>Title:</label>
+        <input
+          type="text"
+          className="border rounded p-2 w-full mb-4"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter questionnaire title"
+        />
+
+        <label>Upload Excel:</label>
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          className="border rounded p-2 w-full mb-4"
+          onChange={handleFileChange}
+        />
+      </CardContent>
       <div className="mt-6 flex flex-row gap-4">
         <Button onClick={sendQuestionnaires} disabled={isCreatingQuestionnaire || !endDate}>Create Questionnaires</Button>
       </div>
