@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEndPointReaction.Functions.Questionnaires
 {
-    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService service, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger, IEmailService emailService)
+    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService questionnaireService, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger, IEmailService emailService)
     {
-        private readonly IQuestionnaireService _service = service;
+        private readonly IQuestionnaireService _questionnaireService = questionnaireService;
         private readonly ILogger<QuestionnaireCompilerWorkerEncapsulator> _logger = logger;
         private readonly IEmailService _emailService = emailService;
 
@@ -25,15 +25,15 @@ namespace AzureEndPointReaction.Functions.Questionnaires
             )]
         [OpenApiRequestBody(
             contentType: "application/json", 
-            bodyType: typeof(object), // replace with dto
+            bodyType: typeof(CreateSurveyMetadataDto),
             Required = true
             )]
         [OpenApiResponseWithBody(
             statusCode: HttpStatusCode.OK, 
             contentType: "application/json", 
-            bodyType: typeof(CreationResponseDTO) // replace dto
+            bodyType: typeof(CreationResponseDTO)
             )]
-        public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "questionnaires")] HttpRequestData request)
+        public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "surveys")] HttpRequestData request)
         {
             try
             {
@@ -47,7 +47,10 @@ namespace AzureEndPointReaction.Functions.Questionnaires
                     return badResponse;
                 }
 
-                var result = await _service.CompileAndSaveAsync(dto);
+                var result = await _questionnaireService.CompileAndSaveAsync(dto);
+                var studentsEnv = Environment.GetEnvironmentVariable("StudentEmails") ?? "";
+                var students = studentsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                await _emailService.SendBulkEmailAsync(students, "Student-teacher feedback", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
 
                 var response = request.CreateResponse(HttpStatusCode.OK);
                 await response.WriteAsJsonAsync(result);
