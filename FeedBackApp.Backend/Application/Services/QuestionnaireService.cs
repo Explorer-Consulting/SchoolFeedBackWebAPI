@@ -1,6 +1,8 @@
 ﻿using Application.DTOs.Questionnaire;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
+using Application.Validation.UpdateValidation;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
 
@@ -9,17 +11,17 @@ namespace Application.Services
     public class QuestionnaireService : IQuestionnaireService
     {
         private readonly IQuestionnaireRepository _repository;
-        private readonly IValidator<CreateSurveyMetadataDTO> _validator;
-        public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDTO> validator)
+        private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
+        public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDTO> createValidator)
         {
             _repository = repository;
-            _validator = validator;
+            _createValidator = createValidator;
         }
 
         public async Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDTO dto)
         {
 
-            var validationResult = await _validator.ValidateAsync(dto);
+            var validationResult = await _createValidator.ValidateAsync(dto);
             if(!validationResult.IsValid)
             {
                 var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
@@ -76,36 +78,28 @@ namespace Application.Services
 
         public async Task<UpdateResponseDTO> UpdateQuestionnaire(string id, UpdateQuestionnaireDTO dto)
         {
-            try
-            {
-                var questionnaire = dto.ToModel();
-                bool questionnaireUpdated = await _repository.UpdateQuestionnaire(id, questionnaire);
+            var oldQuestionnaire = await _repository.GetQuestionnaireByIdAsync(id);
+            if (oldQuestionnaire == null)
+                return new UpdateResponseDTO(false, $"Questionnaire {id} not found.");
 
-                if (questionnaireUpdated)
-                {
-                    return new UpdateResponseDTO
-                    (
-                        true,
-                       $"Questionnaire {id} was updated successfully."
-                    );
-                }
-                else
-                {
-                    return new UpdateResponseDTO
-                    (
-                        false,
-                        $"Update questionnaire {id} failed"
-                    );
-                }
-            }
-            catch (Exception ex)
+            var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
+
+            var validator = new UpdateQuestionnaireValidator(questionTemplate.QuestionTemplates);
+            var validationResult = await validator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
             {
-                return new UpdateResponseDTO
-                (
-                    false,
-                    $"Error updateing questionnaire {id}: {ex.Message}"
-                );
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                return new UpdateResponseDTO(false, $"Validation failed: {errors}");
             }
+
+            var newQuestionnaire = dto.ToModel();
+            bool questionnaireUpdated = await _repository.UpdateQuestionnaire(newQuestionnaire, oldQuestionnaire);
+
+            return questionnaireUpdated
+                ? new UpdateResponseDTO(true, $"Questionnaire {id} was updated successfully.")
+                : new UpdateResponseDTO(false, $"Update questionnaire {id} failed");
         }
+
     }
 }

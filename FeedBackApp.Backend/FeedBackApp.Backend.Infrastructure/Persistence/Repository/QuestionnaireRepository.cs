@@ -79,7 +79,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task<bool> DeleteQuestionTemplateBySurveyIdAsync(Guid surveyId)
         {
-            var questionTemplate = await _context.QuestionnnareTemplates
+            var questionTemplate = await _context.QuestionnaireTemplates
                 .FirstAsync(q => q.Id == $"questiontemplates_{surveyId}");
 
             if(questionTemplate == null)
@@ -104,22 +104,15 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
-        public async Task<bool> UpdateQuestionnaire(string id, Questionnaire questionnaire)
+        public async Task<bool> UpdateQuestionnaire(Questionnaire newQuestionnaire, Questionnaire oldQuestionnaire)
         {
-            var q = await _context.Questionnaires.FindAsync(id);
-
-            if(q == null)
+            foreach(var oldAnswer in oldQuestionnaire.QuestionnaireResults)
             {
-                return false;
-            }
-
-            foreach(var answer in questionnaire.QuestionnaireResults)
-            {
-                var exAnswer = q.QuestionnaireResults.FirstOrDefault(x => x.QuestionId == answer.QuestionId);
+                var newAnswer = newQuestionnaire.QuestionnaireResults.FirstOrDefault(x => x.QuestionId == oldAnswer.QuestionId);
                 
-                if(exAnswer != null)
+                if(newAnswer != null)
                 {
-                    exAnswer.Answer = answer.Answer;
+                    oldAnswer.Answer = newAnswer.Answer;
                 }
                 else
                 {
@@ -129,6 +122,17 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<Questionnaire> GetQuestionnaireByIdAsync(string id)
+        {
+            return await _context.Questionnaires.FindAsync(id);
+        }
+
+        public async Task<QuestionnaireTemplate> GetQuestionTemplateBySurveyIdAsync(string surveyId)
+        {
+            string id = $"questiontemplates_{surveyId}";
+            return await _context.QuestionnaireTemplates.FindAsync(id);
         }
     }
 }

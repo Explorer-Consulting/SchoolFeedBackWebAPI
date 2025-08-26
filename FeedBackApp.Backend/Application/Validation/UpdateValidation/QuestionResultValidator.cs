@@ -2,7 +2,6 @@
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FluentValidation;
-using System.Text.RegularExpressions;
 
 namespace Application.Validation.UpdateValidation
 {
@@ -10,7 +9,6 @@ namespace Application.Validation.UpdateValidation
     {
         public QuestionResultValidator(IList<QuestionTemplate> templates)
         {
-
             RuleFor(dto => dto.QuestionId)
                 .NotEmpty().WithMessage("QuestionId cannot be null/empty")
                 .Must(id => templates.Any(t => t.Id == id))
@@ -20,8 +18,8 @@ namespace Application.Validation.UpdateValidation
                 .Custom((answer, context) =>
                 {
                     var dtoInstance = (QuestionResultDTO)context.InstanceToValidate;
-
                     var template = templates.FirstOrDefault(t => t.Id == dtoInstance.QuestionId);
+
                     if (template == null)
                         return;
 
@@ -29,33 +27,47 @@ namespace Application.Validation.UpdateValidation
                     {
                         case QuestionType.OpenEnded:
                             if (string.IsNullOrWhiteSpace(answer))
-                                context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}'.");
+                                context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
                             break;
 
                         case QuestionType.MultinomialSingleChoice:
-                            if (!Regex.IsMatch(answer, @"^\d+$"))
-                            {
-                                context.AddFailure("Answer", $"Answer must be a number for '{template.Question}'.");
-                            }
+                            if (!int.TryParse(answer, out int singleChoice) || singleChoice < 0 || singleChoice >= template.AnswerOptions.Count)
+                                context.AddFailure("Answer", $"Answer must be a number between 0 and {template.AnswerOptions.Count - 1} for '{template.Question}-{template.Id}'.");
                             break;
 
                         case QuestionType.MultipleChoice:
-                            if (!Regex.IsMatch(answer, @"^\d+(?:-\d+)*$"))
+                            var parts = answer.Split('-', StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var part in parts)
                             {
-                                context.AddFailure("Answer", $"Answer must be numbers separated by '-' for '{template.Question}'.");
+                                if (!int.TryParse(part, out int choice) || choice < 0 || choice >= template.AnswerOptions.Count)
+                                {
+                                    context.AddFailure("Answer", $"Answer index {part} is invalid for '{template.Question}-{template.Id}'.");
+                                }
                             }
-
                             break;
 
                         case QuestionType.LikertScaleOneToFive:
-                            if (!Regex.IsMatch(answer, @"^[0-5]$"))
+                            if (!int.TryParse(answer, out int scale) || scale < 0 || scale > 5)
+                                context.AddFailure("Answer", $"Answer must be a number between 0 and 5 for '{template.Question}-{template.Id}'.");
+                            break;
+
+                        case QuestionType.MultiNomialSingleChoiceOther:
+                            if (int.TryParse(answer, out int choice2))
                             {
-                                context.AddFailure("Answer", $"Answer must be a number between 0 and 5 for '{template.Question}'.");
+                                if (choice2 < 0 || choice2 >= template.AnswerOptions.Count)
+                                {
+                                    context.AddFailure("Answer", $"Answer must be a number between 0 and {template.AnswerOptions.Count - 1} for '{template.Question}-{template.Id}'.");
+                                }
+                            }
+                            else
+                            {
+                                if (string.IsNullOrWhiteSpace(answer))
+                                {
+                                    context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
+                                }
                             }
                             break;
 
-                        default:
-                            break;
                     }
                 });
         }

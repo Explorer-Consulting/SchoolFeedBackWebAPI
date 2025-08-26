@@ -1,15 +1,16 @@
 ﻿using Application.DTOs.Questionnaire;
 using FeedBackApp.Core.Model;
 using FluentValidation;
+using System.Collections.Generic;
 
 namespace Application.Validation.UpdateValidation
 {
     public class UpdateQuestionnaireValidator : AbstractValidator<UpdateQuestionnaireDTO>
     {
-        public UpdateQuestionnaireValidator(QuestionnaireTemplate template)
+        public UpdateQuestionnaireValidator(IList<QuestionTemplate> templates)
         {
             RuleForEach(dto => dto.QuestionnaireResult)
-                .SetValidator(new QuestionResultValidator(template.QuestionTemplates));
+                .SetValidator(new QuestionResultValidator(templates));
         }
     }
 }
