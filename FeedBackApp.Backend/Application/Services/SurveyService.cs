@@ -13,6 +13,14 @@ namespace Application.Services
         {
             _questionnaireRepository = questionnaireRepository;
         }
+
+        public async Task<List<GetSurveyMetadataDto>> GetAllSurveyMetadata()
+        {
+            var metadatas = await _questionnaireRepository.GetAllSurveyMetadata();
+            var dtos = metadatas.Select(m => m.toDto()).ToList();
+            return dtos;
+        }
+
         public async Task<List<GetSurveyMetadataDto>> GetSurveyMetadataForStudent(string studentEmail)
         {
             var metadatas = await _questionnaireRepository.GetSurveyMetadataForStudentAsync(studentEmail);
