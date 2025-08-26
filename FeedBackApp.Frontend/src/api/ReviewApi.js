@@ -15,8 +15,13 @@ export const LoginWithGoogle = async (idToken) => {
     return data;
 };
 
-export const GetFormByEmail = async (email) => {
-    const {data} =await apiClient.get('/students/context' ,{params: {email}});
+export const GetMyQuestionnaireId =async () => {
+    const {data} =await apiClient.get('/');
+    return data;
+}
+
+export const GetQuestionnaires = async (id) => {
+    const {data} =await apiClient.get(`/questionnaires/${id}`);
     return data;
 }
 

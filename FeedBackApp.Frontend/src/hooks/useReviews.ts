@@ -1,16 +1,16 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle , GetFormByEmail} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary,ExportQuestionnaire, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle,GetQuestionnaires } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { StudentContext } from "@/models/StudentContext"
+import { BackendPayload } from "@/utils/toBackendPayload";
 
-export const useReviews = (email?) => {
+export const useReviews = () => {
     const client = useQueryClient();
     const { questionnaireId, evaluationId } = useParams();
 
     const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation({
         mutationFn: (payload: { startDate: string; endDate: string }) => CreateQuestionnaires(payload),
         onSuccess: () => {
-            console.log("elert idaig");
             client.invalidateQueries({
                 queryKey: ['questionnaires']
             });
@@ -38,30 +38,30 @@ export const useReviews = (email?) => {
         enabled: !!evaluationId
     })
 
-    const { mutate: exportQuestionnaire, isPending: isExporting } = useMutation({
-        mutationFn: (questionnaireId: string) => ExportQuestionnaire(questionnaireId),
-    });
-
     const {
         data: form,
         isLoading: isLoadingForm,
         isError: isErrorForm,
         error: errorForm
     } = useQuery<StudentContext>({
-        queryKey: ['form', email],
-        queryFn: () => GetFormByEmail(email!),
-        enabled: !!email,
+        queryKey: ['form', id],
+        queryFn: () => GetQuestionnaires(id),
     })
 
 
     const { mutate: performQuestionnaireUpdate, isPending: isPerformQuestionnaireUpdating } = useMutation({
-        mutationFn: PerformQuestionnaireUpdate,
-        onSuccess: (id) => {
+        mutationFn: ({ id, payload }: { id: string; payload: BackendPayload }) =>
+            PerformQuestionnaireUpdate(id, payload),
+        onSuccess: (_data, variables) => {
             client.invalidateQueries({
-                queryKey: ['questionnaireUpdate', id]
+                queryKey: ['questionnaireUpdate', variables.id]
             });
         }
     })
+
+    const { mutate: exportQuestionnaire, isPending: isExporting } = useMutation({
+        mutationFn: (questionnaireId: string) => ExportQuestionnaire(questionnaireId),
+    });
 
     const { mutate: deleteQuestionnaire, isPending: isDeletingQuestionnaire } = useMutation({
         mutationFn: (questionnaireId: string) => DeleteQuestionnaire(questionnaireId),
@@ -80,10 +80,10 @@ export const useReviews = (email?) => {
         createQuestionnaires, isCreatingQuestionnaire,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
-        performQuestionnaireUpdate,isPerformQuestionnaireUpdating,
-        deleteQuestionnaire,isDeletingQuestionnaire,
+        performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
+        deleteQuestionnaire, isDeletingQuestionnaire,
         loginWithGoogle, isLoggingIn,
         form, isLoadingForm, isErrorForm, errorForm,
-        exportQuestionnaire,isExporting
+        isExporting,exportQuestionnaire
     }
 }

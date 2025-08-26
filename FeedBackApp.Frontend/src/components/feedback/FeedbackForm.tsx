@@ -197,7 +197,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     if (err !== null) return;
 
     const data = collectResponses();
-    const payload = toBackendPayload(id, data, "Submitted");
+    const payload = toBackendPayload(data, "Submitted");
 
    /* performQuestionnaireUpdate(
       {id,payload},
