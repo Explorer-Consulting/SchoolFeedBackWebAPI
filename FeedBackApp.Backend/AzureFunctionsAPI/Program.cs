@@ -68,7 +68,6 @@ var host = new HostBuilder()
 
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
         services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
-        services.AddScoped<IValidator<QuestionAnswerDTO>, QuestionAnswerValidator>();
         services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
         services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
         services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();

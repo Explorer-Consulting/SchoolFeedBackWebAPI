@@ -24,9 +24,6 @@ namespace Application.Validation.CreateValidation
 
             RuleFor(q => q.QuestionnaireResults)
                 .NotEmpty().WithMessage("Questionnaire must contain at least one answer");
-
-            RuleForEach(q => q.QuestionnaireResults)
-                .SetValidator(new QuestionAnswerValidator());
         }
     }
 }
