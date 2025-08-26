@@ -71,31 +71,31 @@ export default function AdminDashboard() {
     };*/
 
     const payload = {
-    startDate: startDate.toISOString().split("T")[0],
-    endDate: endDate.toISOString().split("T")[0],
-    title,
-    studentSets: [
-      { setId: "XI. A", studentEmails: ["a1@example.com","a2@example.com"] },
-      { setId: "XI. B", studentEmails: ["b1@example.com","b2@example.com"] }
-    ],
-    questionnaireTemplate: [
-      { question: "How satisfied are you with the course?", type: "LikertScaleOneToFive" },
-      { question: "Do you like the course?", type: "MultinomialSingleChoice", answerOptions: ["igen", "nem"] },
-      { question: "Any comments?", type: "OpenEnded" }
-    ],
-    teachers: [
-      { email: "kovacs.maria@gimi.ro", name: "Kovács Mária" }
-    ],
-    questionnaireCreationParams: [
-      { teacherEmail: "kovacs.maria@gimi.ro", subjectName: "Matematika", studentSetIds: ["XI. A", "XI. B"] }
-    ]
-  };
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      title,
+      studentSets: [
+        { setId: "XI. A", studentEmails: ["a1@example.com", "a2@example.com"] },
+        { setId: "XI. B", studentEmails: ["b1@example.com", "b2@example.com"] }
+      ],
+      questionnaireTemplate: [
+        { question: "How satisfied are you with the course?", type: "LikertScaleOneToFive" },
+        { question: "Do you like the course?", type: "MultinomialSingleChoice", answerOptions: ["igen", "nem"] },
+        { question: "Any comments?", type: "OpenEnded" }
+      ],
+      teachers: [
+        { email: "kovacs.maria@gimi.ro", name: "Kovács Mária" }
+      ],
+      questionnaireCreationParams: [
+        { teacherEmail: "kovacs.maria@gimi.ro", subjectName: "Matematika", studentSetIds: ["XI. A", "XI. B"] }
+      ]
+    };
 
     console.log("Payload to send:", payload);
     createQuestionnaires(payload, {
       onSuccess: () => {
         toast.success("Questionnaires created!");
-        setLocalQuestionnaires(prev => [...prev, { id:Date.now().toString(), title }]);
+        setLocalQuestionnaires(prev => [...prev, { id: Date.now().toString(), title }]);
       },
       onError: () => toast.error("Failed to create questionnaires."),
     });
