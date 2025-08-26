@@ -11,7 +11,7 @@ namespace Application.Services
     public class QuestionnaireService : IQuestionnaireService
     {
         private readonly IQuestionnaireRepository _repository;
-        private readonly IValidator<CreateSurveyMetadataDto> _validator;
+        private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
         public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDTO> createValidator)
         {
             _repository = repository;
