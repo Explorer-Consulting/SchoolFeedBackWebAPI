@@ -19,7 +19,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var setById = metadata.StudentSets.ToDictionary(s => s.SetId);
             var template = metadata.QuestionTemplates;
 
-            QuestionnaireTemplate tempForSave = new QuestionnaireTemplate(metadata.Id, template);
+            QuestionnaireTemplate tempForSave = new QuestionnaireTemplate(metadata.Id.ToString(), template);
 
             _context.Add(metadata);
             _context.Add(tempForSave);
@@ -38,7 +38,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                         var q = new Questionnaire
                         {
                             Id = $"{studentEmail}_{param.TeacherEmail}_{param.SubjectName}_{metadata.Id}",
-                            SurveyId = metadata.Id,
+                            SurveyId = metadata.Id.ToString(),
                             TeacherEmail = param.TeacherEmail,
                             StudentEmail = studentEmail,
                             SubjectName = param.SubjectName,
@@ -95,7 +95,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task<bool> DeleteSurveyMetadataAsync(Guid id)
         {
-            var metadata = await _context.Surveys.FirstOrDefaultAsync(m => m.Id == id.ToString());
+            var metadata = await _context.Surveys.FirstOrDefaultAsync(m => m.Id == id);
             if (metadata == null)
                 return false;
 
@@ -104,5 +104,23 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
+        public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
+        {
+            var questionnair = await _context.Questionnaires.FirstOrDefaultAsync(questionnair => questionnair.Id == id);
+            return questionnair;
+        }
+
+        public async Task<SurveyMetadata?> GetSurveyMetadataAsync(Guid surveyId)
+        {
+            var metadata = await _context.Surveys.FirstOrDefaultAsync(survey => survey.Id == surveyId);
+            return metadata;
+        }
+        public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
+        {
+            return await _context.Surveys
+                .Where(s => s.StudentSets
+                    .Any(set => set.StudentEmails.Contains(studentEmail)))
+                .ToListAsync();
+        }
     }
 }
