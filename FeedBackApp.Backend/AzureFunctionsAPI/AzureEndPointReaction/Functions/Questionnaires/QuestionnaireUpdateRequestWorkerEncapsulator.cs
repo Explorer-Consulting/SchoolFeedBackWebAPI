@@ -54,6 +54,13 @@ namespace AzureEndPointReaction.Functions.Questionnaires
 
                 var result = await _service.UpdateQuestionnaire(id, dto);
 
+                if (!result.Success)
+                {
+                    var error = request.CreateResponse(HttpStatusCode.BadRequest);
+                    await error.WriteAsJsonAsync(result);
+                    return error;
+                }
+
                 var response = request.CreateResponse(HttpStatusCode.OK);
                 await response.WriteAsJsonAsync(result);
                 return response;
