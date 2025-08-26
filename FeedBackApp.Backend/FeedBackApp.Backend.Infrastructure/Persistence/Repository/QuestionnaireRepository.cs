@@ -112,10 +112,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task<SurveyMetadata?> GetSurveyMetadataAsync(Guid surveyId)
         {
-            var metadata = await _context.Surveys.FirstOrDefaultAsync(survey => survey.Id == surveyId.ToString());
+            var metadata = await _context.Surveys.FirstOrDefaultAsync(survey => survey.Id == surveyId);
             return metadata;
         }
-                public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
+        public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
         {
             return await _context.Surveys
                 .Where(s => s.StudentSets

@@ -44,7 +44,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
 
             _logger.LogInformation("Student email: {Email}", email);
 
-            var surveyDtoList = _service.GetSurveyMetadataForStudent(email);
+            var surveyDtoList = await _service.GetSurveyMetadataForStudent(email);
             var ok = request.CreateResponse(HttpStatusCode.OK);
             await ok.WriteAsJsonAsync(surveyDtoList);
             return ok;
