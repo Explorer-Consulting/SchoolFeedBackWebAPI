@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -13,8 +13,6 @@ export default function AdminDashboard() {
   const {
     createQuestionnaires,
     isCreatingQuestionnaire,
-    questionnairesSummary,
-    isLoadingQuestionnairesSummary,
     deleteQuestionnaire,
     isDeletingQuestionnaire,
     startQuestionnaire,
@@ -23,18 +21,19 @@ export default function AdminDashboard() {
     exportTeacherEvaluations,
     isExportingTeacher,
     exportGlobalSummary,
-    isExportingSummary
+    isExportingSummary,
+
+    adminSurveys,
+    isLoadingAdminSurveys,
+    isErrorAdminSurveys,
+    refetchAdminSurveys,
   } = useReviews();
 
-  const mockQuestionnaires = [
-    { id: "q1", title: "Math Evaluation Spring 2025" },
-    { id: "q2", title: "Physics Midterm Survey" },
-    { id: "q3", title: "Chemistry Final Feedback" }
-  ];
+  useEffect(() => {
+    refetchAdminSurveys(); // lekérdezzük az adatokat
+  }, []);
 
-  const [localQuestionnaires, setLocalQuestionnaires] = useState(mockQuestionnaires);
-
-  const displayedQuestionnaires = questionnairesSummary || localQuestionnaires;
+  const displayedQuestionnaires = adminSurveys;
 
   const [file, setFile] = useState<File | null>(null);
 
@@ -95,7 +94,7 @@ export default function AdminDashboard() {
     createQuestionnaires(payload, {
       onSuccess: () => {
         toast.success("Questionnaires created!");
-        setLocalQuestionnaires(prev => [...prev, { id: Date.now().toString(), title }]);
+        refetchAdminSurveys();
       },
       onError: () => toast.error("Failed to create questionnaires."),
     });
@@ -108,7 +107,10 @@ export default function AdminDashboard() {
     }
     console.log("start: ", selectedQuestionnaireId);
     startQuestionnaire(selectedQuestionnaireId, {
-      onSuccess: () => toast.success("Questionnaire started!"),
+      onSuccess: () => {
+        toast.success("Questionnaire started!");
+        setSelectedQuestionnaireId("");
+      },
       onError: () => toast.error("Failed to start questionnaire.")
     });
   };
@@ -122,6 +124,8 @@ export default function AdminDashboard() {
     deleteQuestionnaire(selectedQuestionnaireId, {
       onSuccess: () => {
         toast.success("Deleted questionnaire!");
+        refetchAdminSurveys();
+        setSelectedQuestionnaireId("");
       },
       onError: () => {
         toast.error("Failed to delete questionnaire.");
@@ -136,7 +140,10 @@ export default function AdminDashboard() {
     }
     console.log("export teacher: ", selectedQuestionnaireId);
     exportTeacherEvaluations(selectedQuestionnaireId, {
-      onSuccess: () => toast.success("Teacher evaluations exported!"),
+      onSuccess: () => {
+        toast.success("Teacher evaluations exported!");
+        setSelectedQuestionnaireId("");
+      },
       onError: () => toast.error("Failed to export teacher evaluations.")
     });
   };
@@ -148,7 +155,10 @@ export default function AdminDashboard() {
     }
     console.log("export summary: ", selectedQuestionnaireId);
     exportGlobalSummary(selectedQuestionnaireId, {
-      onSuccess: () => toast.success("Global summary exported!"),
+      onSuccess: () => {
+        toast.success("Global summary exported!");
+        setSelectedQuestionnaireId("");
+      },
       onError: () => toast.error("Failed to export global summary.")
     });
   };
@@ -199,6 +209,8 @@ export default function AdminDashboard() {
       </div>
       <br />
       <CardContent>
+        {isLoadingAdminSurveys && <p>Loading surveys...</p>}
+        {isErrorAdminSurveys && <p>Error loading surveys.</p>}
         <select
           className="border rounded p-2 w-full"
           value={selectedQuestionnaireId}
@@ -214,10 +226,14 @@ export default function AdminDashboard() {
       </CardContent>
 
       <div className="mt-6 flex flex-row gap-4">
-        <Button onClick={handleStartQuestionnaire} disabled={!selectedQuestionnaireId || isStartingQuestionnaire}>Start Questionnaire</Button>
-        <Button onClick={handleExportTeacher} disabled={!selectedQuestionnaireId || isExportingTeacher}>Export Teacher Evaluations</Button>
-        <Button onClick={handleExportSummary} disabled={!selectedQuestionnaireId || isExportingSummary}>Export Global Summary</Button>
-        <Button onClick={deleteSelectedQuestionnaire} disabled={!selectedQuestionnaireId || isDeletingQuestionnaire}>Delete Selected Questionnaire</Button>
+        <Button onClick={handleStartQuestionnaire} disabled={!selectedQuestionnaireId || isStartingQuestionnaire || isLoadingAdminSurveys}>Start Questionnaire</Button>
+        <Button onClick={handleExportTeacher} disabled={!selectedQuestionnaireId || isExportingTeacher || isLoadingAdminSurveys}>Export Teacher Evaluations</Button>
+        <Button onClick={handleExportSummary} disabled={!selectedQuestionnaireId || isExportingSummary || isLoadingAdminSurveys}>Export Global Summary</Button>
+        <Button onClick={deleteSelectedQuestionnaire} disabled={!selectedQuestionnaireId || isStartingQuestionnaire ||
+          isExportingTeacher ||
+          isExportingSummary ||
+          isDeletingQuestionnaire ||
+          isCreatingQuestionnaire}>Delete Selected Questionnaire</Button>
       </div>
     </main>
   );

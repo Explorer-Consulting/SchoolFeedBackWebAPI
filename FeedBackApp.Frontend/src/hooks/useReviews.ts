@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail, StartQuestionnaire } from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail, StartQuestionnaire ,GetSurveysAdmin} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { StudentContext } from "@/models/StudentContext"
 
@@ -75,7 +75,7 @@ export const useReviews = (email?) => {
         }
     })
 
-     const { mutate: exportTeacherEvaluations, isPending: isExportingTeacher } = useMutation({
+    const { mutate: exportTeacherEvaluations, isPending: isExportingTeacher } = useMutation({
         mutationFn: (evaluationId: string) => GetEvaluation(evaluationId)
     });
 
@@ -86,6 +86,17 @@ export const useReviews = (email?) => {
 
     const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
         mutationFn: (idToken: string) => LoginWithGoogle(idToken)
+    });
+
+    const {
+        data: adminSurveys,
+        isLoading: isLoadingAdminSurveys,
+        isError: isErrorAdminSurveys,
+        error: errorAdminSurveys,
+        refetch: refetchAdminSurveys
+    } = useQuery({
+        queryKey: ['adminSurveys'],
+        queryFn: () => GetSurveysAdmin(),
     });
 
     return {
@@ -106,5 +117,7 @@ export const useReviews = (email?) => {
         loginWithGoogle, isLoggingIn,
         // Forms
         form, isLoadingForm, isErrorForm, errorForm,
+        //getsurveyadmin
+        adminSurveys,isLoadingAdminSurveys,isErrorAdminSurveys,errorAdminSurveys,refetchAdminSurveys,
     }
 }

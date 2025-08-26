@@ -49,3 +49,8 @@ export const UpdateEvaluation = async (evaluationId) => {
     const response = await apiClient.patch(`/evaluations/${evaluationId}`) //minden questionnal
     return response.data;
 }
+
+export const GetSurveysAdmin = async () => {
+  const response = await apiClient.get(`/surveys/admin`);
+  return response.data;
+};
