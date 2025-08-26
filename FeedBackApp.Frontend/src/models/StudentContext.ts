@@ -6,13 +6,12 @@ export type Evaluation = {
     id: string;
     subject: string;
     teacher: string;
-    status: string;
     responses: EvaluationResponses;
 }
 
 export type StudentContext = {
-    grade: string;
+    class: string;
     subjects: string[];
-    teachers: string[];
+    teachersBySubject:Record<string,string[]>;
     evaluations: Evaluation[];
 }

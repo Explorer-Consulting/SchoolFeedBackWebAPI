@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-interface OutsideEducationSectionProps {
+type OutsideEducationSectionProps = {
     q18: string;
     setQ18: (val: string) => void;
     q19: string;

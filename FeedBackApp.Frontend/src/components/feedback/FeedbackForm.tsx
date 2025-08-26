@@ -8,17 +8,17 @@ import { Evaluation, EvaluationResponses } from "@/models/StudentContext"
 import ClassroomSection from "@/components/feedback/sections/ClassroomSection"
 import OutsideEducationSection from "@/components/feedback/sections/OutsideEducationSection"
 import AttendanceSection from "./sections/AttendanceSection";
+import { toBackendPayload } from "@/utils/toBackendPayload";
 
-type EvaluationStatus = "Draft" | "Submitted";
 
-interface FeedbackFormProps {
-  studentEmail: string;
+type FeedbackFormProps = {
   subjects: string[];
-  teachers: string[];
+  teachersBySubject: Record<string, string[]>;
   evaluations: Evaluation[];
+  onAfterChange?: () => void;
 }
 
-export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: FeedbackFormProps) {
+export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
 
   const [subject, setSubject] = useState<string>("");
   const [teacher, setTeacher] = useState<string>("");
@@ -50,6 +50,17 @@ export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: 
   const [q25, setQ25] = useState("");
   const [q26, setQ26] = useState("");
 
+  const teachersForSubject = useMemo(
+    () => (subject ? (teachersBySubject[subject] ?? []) : []),
+    [subject, teachersBySubject]
+  );
+
+  useEffect(() => {
+    if (teacher && !teachersForSubject.includes(teacher)) {
+      setTeacher("");
+    }
+  }, [teachersForSubject, teacher]);
+
   const currentEvaluation = useMemo(
     () =>
       evaluations?.find(
@@ -77,7 +88,7 @@ export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: 
     applyResponses(currentEvaluation?.responses);
   }, [subject, teacher, currentEvaluation]);
 
-  const evaluationId = currentEvaluation?.id;
+  const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
 
   const qValues = useMemo(
@@ -94,30 +105,15 @@ export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: 
     [q19]
   );
 
-  const getFormData = (status: EvaluationStatus) => ({
-    evaluationId,
-    status,
-    studentEmail,
-    subject,
-    teacher,
-    responses: { q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17, q18, q19, q20, q21, q22, q23, q24, q25, q26 },
-  });
-
-  const onSaveDraft = () => {
-    if (!subject || !teacher) {
-      toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
-      return;
-    }
-
-    if (!(q19 === "1" || q19 === "2")) {
-      setQ20([]);
-    }
-
-    const data = getFormData("Draft");
-    console.log("Draft saved:", JSON.stringify(data, null, 2));
+  const collectResponses = (): EvaluationResponses => {
+    const normalizedQ20 = (q19 === "1" || q19 === "2") ? q20 : [];
+    return {
+      q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17,
+      q18, q19, q20: normalizedQ20, q21, q22, q23, q24, q25, q26
+    };
   };
 
-  const onSubmit = () => {
+  const validate = () => {
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
@@ -164,10 +160,33 @@ export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: 
       toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
       return;
     }
+    return null;
+  };
 
+  const onSaveDraft = () => {
+    if (!subject || !teacher) {
+      toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
+      return;
+    }
+
+    if (!(q19 === "1" || q19 === "2")) {
+      setQ20([]);
+    }
+
+    const data = collectResponses();
+    const payload = toBackendPayload(id, data, "Unsubmitted");
+    console.log("Draft saved:", JSON.stringify(payload, null, 2));
+    onAfterChange?.();
+  };
+
+  const onSubmit = () => {
+    const err = validate();
+    if (err !== null) return;
     toast("Küldésre kész. Supabase engedélyezésével anonim módon tudjuk tárolni.");
-    const data = getFormData("Submitted");
-    console.log("submit saved:", JSON.stringify(data, null, 2));
+    const data = collectResponses();
+    const payload = toBackendPayload(id, data, "Submitted");
+    console.log("submit saved:", JSON.stringify(payload, null, 2));
+    onAfterChange?.();
   };
 
   const toggleMulti = (value: string, setFn: (updater: (prev: string[]) => string[]) => void) => {
@@ -201,7 +220,7 @@ export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: 
                 <SelectValue placeholder="Válassz tanárt" />
               </SelectTrigger>
               <SelectContent>
-                {teachers.map((t) => (
+                {teachersForSubject.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
@@ -227,9 +246,9 @@ export function FeedbackForm({ studentEmail, subjects, teachers, evaluations }: 
         />
 
         <AttendanceSection
-        q24={q24} setQ24={setQ24}
-        q25={q25} setQ25={setQ25}
-        q26={q26} setQ26={setQ26}
+          q24={q24} setQ24={setQ24}
+          q25={q25} setQ25={setQ25}
+          q26={q26} setQ26={setQ26}
         />
 
         <div className="flex gap-3">

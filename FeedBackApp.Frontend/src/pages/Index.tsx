@@ -22,7 +22,7 @@ export default function GoogleAuthApp() {
     loginWithGoogle(idToken, {
       onSuccess: (user:User) => {
         setUser(user)
-        console.log(user.role,user.email)
+        
         if (user.role === 'Admin') {
           navigate("/dashboard/admin")
         } else if (user.role === 'Student') {

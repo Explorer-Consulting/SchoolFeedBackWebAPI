@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-interface AttendanceSectionProps {
+type AttendanceSectionProps = {
     q24: string;
     setQ24: (val: string) => void;
     q25: string;

@@ -1,0 +1,155 @@
+
+{
+  "class": "11C",
+
+  "subjects": [
+    {
+        "name" : "magyar",
+        "teachers": [
+            {
+                "name":"MArian",
+                "id": "combination",
+                "answers": [
+                    {
+                        "questionId":"q1",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q2",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q3",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q4",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q5",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q6",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q7",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q8",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q9",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q10",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q11",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q12",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q13",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q14",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q15",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q16",
+                        "answer":"5"
+                    },
+                    {
+                        "questionId":"q17",
+                        "answer":"4"
+                    },
+                    {
+                        "questionId":"q18",
+                        "answer":"Nem szeretem"
+                    },
+                    {
+                        "questionId":"q19",
+                        "answer":"1"
+                    },
+                    {
+                        "questionId":"q20",
+                        "answer":"5,1,2"
+                    },
+                    {
+                        "questionId":"q21",
+                        "answer":"1,2,3"
+                    },
+                    {
+                        "questionId":"q22",
+                        "answer":"Elet szep"
+                    },
+                    {
+                        "questionId":"q23",
+                        "answer":"Elet nagyon szep"
+                    },
+                    {
+                        "questionId":"q24",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q25",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q26",
+                        "answer":"2"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name" : "matek",
+        "teachers": [
+            {
+                "name":"Tanar2",
+                "id":"id",
+                "answers": [
+                    {
+                        "questionId":"q1",
+                        "answer":"5"
+                    },
+                    {
+                        "questionId":"q6",
+                        "answer":"4"
+                    }
+                ]
+            },
+            {
+                "name":"Mihaly",
+                "id":"jlo",
+                "answers": [
+                    {
+                        "questionId":"q9",
+                        "answer":"2"
+                    },
+                    {
+                        "questionId":"q26",
+                        "answer":"3"
+                    }
+                ]
+            }
+        ]
+    }
+  ]
+}
