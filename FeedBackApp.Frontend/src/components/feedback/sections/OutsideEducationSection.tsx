@@ -10,9 +10,9 @@ type OutsideEducationSectionProps = {
     q19: string;
     setQ19: (val: string) => void;
     q20: string[];
-    setQ20: (val: string[]) => void;
+    setQ20: React.Dispatch<React.SetStateAction<string[]>>;
     q21: string[];
-    setQ21: (val: string[]) => void;
+    setQ21: React.Dispatch<React.SetStateAction<string[]>>;
     q22: string;
     setQ22: (val: string) => void;
     q23: string;

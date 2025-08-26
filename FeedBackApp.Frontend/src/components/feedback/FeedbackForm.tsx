@@ -174,7 +174,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     }
 
     const data = collectResponses();
-    const payload = toBackendPayload(id, data, "Unsubmitted");
+    const payload = toBackendPayload(data, "Unsubmitted");
     console.log("Draft saved:", JSON.stringify(payload, null, 2));
    /* performQuestionnaireUpdate(
       { id, payload },

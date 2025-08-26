@@ -15,15 +15,15 @@ export const LoginWithGoogle = async (idToken) => {
     return data;
 };
 
-export const GetMyQuestionnaireId =async () => {
-    const {data} =await apiClient.get('/');
+/*export const PerformGetSurveys =async () => {
+    const {data} =await apiClient.get('/surveys');
     return data;
 }
 
 export const GetQuestionnaires = async (id) => {
     const {data} =await apiClient.get(`/questionnaires/${id}`);
     return data;
-}
+}*/
 
 export const CreateQuestionnaires = async (payload) => {
     const response = await apiClient.post(`/questionnaires`,payload); 
