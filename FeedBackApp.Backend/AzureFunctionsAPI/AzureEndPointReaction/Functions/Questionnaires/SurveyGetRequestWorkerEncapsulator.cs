@@ -4,8 +4,8 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using System.Net;
+using System.Security.Claims;
 
 
 namespace AzureEndPointReaction.Functions.Questionnaires
@@ -24,9 +24,31 @@ namespace AzureEndPointReaction.Functions.Questionnaires
         )]
         public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys")] HttpRequestData request)
         {
-            var response = request.CreateResponse(HttpStatusCode.OK);
-            await response.WriteAsJsonAsync(new { message = "Get successful" });
-            return response;
+
+            var principal = request.FunctionContext.Items["User"] as ClaimsPrincipal;
+
+            if (principal == null)
+            {
+                var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                return unauthorizedResponse;
+            }
+
+            var email = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(email))
+            {
+                var badResponse = request.CreateResponse(HttpStatusCode.BadRequest);
+                await badResponse.WriteStringAsync("Email not found in token.");
+                return badResponse;
+            }
+
+            _logger.LogInformation("Student email: {Email}", email);
+
+            var surveyDtoList = _service.GetSurveyMetadataForStudent(email);
+            var ok = request.CreateResponse(HttpStatusCode.OK);
+            await ok.WriteAsJsonAsync(surveyDtoList);
+            return ok;
+
         }
     }
 }

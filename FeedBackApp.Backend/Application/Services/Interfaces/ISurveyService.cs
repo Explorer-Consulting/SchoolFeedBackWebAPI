@@ -4,6 +4,6 @@ namespace Application.Services.Interfaces
 {
     public interface ISurveyService
     {
-        public List<GetSurveyMetadataDto> GetSurveyMetadataForStudent(string studentEmail);
+        public Task<List<GetSurveyMetadataDto>> GetSurveyMetadataForStudent(string studentEmail);
     }
 }

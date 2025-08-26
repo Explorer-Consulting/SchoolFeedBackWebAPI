@@ -55,6 +55,7 @@ var host = new HostBuilder()
         // DI regisztrációid
         // services.AddScoped<IMyService, MyService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
