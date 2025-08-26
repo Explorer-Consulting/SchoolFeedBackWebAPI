@@ -48,9 +48,15 @@ namespace AzureEndPointReaction.Functions.Questionnaires
                 }
 
                 var result = await _questionnaireService.CompileAndSaveAsync(dto);
-                var studentsEnv = Environment.GetEnvironmentVariable("StudentEmails") ?? "";
-                var students = studentsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                await _emailService.SendBulkEmailAsync(students, "Student-teacher feedback", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+                var studentEmails = new List<string>();
+                foreach (var set in dto.StudentSets)
+                {
+                    foreach (var email in set.StudentEmails)
+                    {
+                        studentEmails.Add(email);
+                    }
+                }
+                await _emailService.SendBulkEmailAsync(studentEmails, "Student-teacher feedback", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
 
                 var response = request.CreateResponse(HttpStatusCode.OK);
                 await response.WriteAsJsonAsync(result);
