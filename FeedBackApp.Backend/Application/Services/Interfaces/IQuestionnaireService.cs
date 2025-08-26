@@ -1,4 +1,6 @@
-﻿using Application.DTOs.Questionnaire;
+
+using Application.DTOs.GetQuestionnaires;
+using Application.DTOs.Questionnaire;
 
 namespace Application.Services.Interfaces
 {
@@ -6,5 +8,6 @@ namespace Application.Services.Interfaces
     {
         public Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDto dto);
         public Task<DeletionResponseDTO> DeleteSurveyAsync(Guid id);
+        public Task<GetQuestionnairesResponseDTO?> GetQuestionnairesAsync(Guid surveyId, string studentEmail);
     }
 }

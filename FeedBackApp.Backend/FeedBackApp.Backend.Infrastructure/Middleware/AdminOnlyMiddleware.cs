@@ -1,8 +1,6 @@
 ﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
-using System.Linq;
-
 namespace FeedBackApp.Backend.Infrastructure.Middleware
 {
     public class AdminOnlyMiddleware : IFunctionsWorkerMiddleware
@@ -30,7 +28,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
             var token = tokenCookie.Value;
 
             // Validate the token
-            if (!JwtRoleValidator.IsAdmin(token))
+            if (!JwtRoleValidator.IsAdmin(token,context))
             {
                 await ReturnForbidden.ExecuteAsync(context, httpRequestData,"Admin privileges required!");
                 return;
