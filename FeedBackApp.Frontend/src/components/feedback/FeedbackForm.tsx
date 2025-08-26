@@ -174,7 +174,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     }
 
     const data = collectResponses();
-    const payload = toBackendPayload(data, "Unsubmitted");
+    const payload = toBackendPayload(data);
     console.log("Draft saved:", JSON.stringify(payload, null, 2));
    /* performQuestionnaireUpdate(
       { id, payload },
@@ -197,7 +197,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     if (err !== null) return;
 
     const data = collectResponses();
-    const payload = toBackendPayload(data, "Submitted");
+    const payload = toBackendPayload(data);
 
    /* performQuestionnaireUpdate(
       {id,payload},

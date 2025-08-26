@@ -1,12 +1,11 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary,ExportQuestionnaire, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle,GetQuestionnaires,PerformGetSurveys } from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary,ExportQuestionnaire, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle,PerformGetSurveys,GetQuestionnaires } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
-import { StudentContext } from "@/models/StudentContext"
 import { BackendPayload } from "@/utils/toBackendPayload";
-import {SurveySummary} from "@/models/Survey"
+import {Survey} from "@/models/Survey"
 import { useAuthStore } from "@/stores/useAuthStore";
 
-export const useReviews = () => {
+export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
     const { questionnaireId, evaluationId } = useParams();
     const user=useAuthStore((s)=>s.user);
@@ -21,6 +20,27 @@ export const useReviews = () => {
     })
 
     const {
+        data: surveys,
+        isLoading: isLoadingSurveys,
+        isError: isErrorSurveys,
+        error: errorSurveys
+    } = useQuery<Survey[]>({
+        queryKey: [`surveys`],
+        queryFn: PerformGetSurveys,
+    })
+
+   const{
+        data: questionnaires,
+        isLoading: isLoadingQuestionnaire,
+        isError: isErrorQuestionnaire,
+        error: errorQuestionnaire
+    } = useQuery ({
+        queryKey: ['questionnaires',selectedSurveyId],
+        queryFn: () => GetQuestionnaires(selectedSurveyId!),
+        enabled: !!selectedSurveyId
+    }) 
+
+    const {
         data: questionnairesSummary,
         isLoading: isLoadingQuestionnairesSummary,
         isError: isErrorQuestionnairesSummary,
@@ -28,6 +48,7 @@ export const useReviews = () => {
     } = useQuery({
         queryKey: [`questionnairesSummary`, questionnaireId],
         queryFn: () => GetQuestionnaireSummary(questionnaireId),
+        enabled: !!questionnaireId
     })
 
     const {
@@ -40,27 +61,6 @@ export const useReviews = () => {
         queryFn: () => GetEvaluation(evaluationId),
         enabled: !!evaluationId
     })
-
-    /*const {
-        data: surveys,
-        isLoading: isLoadingSurveys,
-        isError: isErrorSurveys,
-        error: errorSurveys,
-    }= useQuery<SurveySummary[]>({
-        queryKey: ['surveys'],
-        queryFn: PerformGetSurveys,
-    });
-
-    const {
-        data: form,
-        isLoading: isLoadingForm,
-        isError: isErrorForm,
-        error: errorForm
-    } = useQuery<StudentContext>({
-        queryKey: ['form', surveyId],
-        queryFn: () => GetQuestionnaires(surveyId),
-    })*/
-
 
     const { mutate: performQuestionnaireUpdate, isPending: isPerformQuestionnaireUpdating } = useMutation({
         mutationFn: ({ id, payload }: { id: string; payload: BackendPayload }) =>
@@ -91,13 +91,13 @@ export const useReviews = () => {
 
     return {
         createQuestionnaires, isCreatingQuestionnaire,
+        surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,
+        questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
         performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
         deleteQuestionnaire, isDeletingQuestionnaire,
         loginWithGoogle, isLoggingIn,
-        //form, isLoadingForm, isErrorForm, errorForm,
-        //surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,
         isExporting,exportQuestionnaire
     }
 }
