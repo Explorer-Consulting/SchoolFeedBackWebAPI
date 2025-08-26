@@ -122,18 +122,17 @@ namespace Application.Services
                     string questionnaireId = $"{studentEmail}_{teacherEmail}_{subject}_{surveyId}";
                     teacherDto.Id = questionnaireId;
                     var questionnaire = await _repository.GetQuestionnaireByIdAsync(questionnaireId);
-                    if (questionnaire == null)
+                    if (questionnaire != null && questionnaire.Status == false)
                     {
-                        return null;
+                        List<AnswerDTO> answersDto = new List<AnswerDTO>();
+                        var answers = questionnaire.QuestionnaireResults;
+                        foreach (var item in answers)
+                        {
+                            answersDto.Add(new AnswerDTO { QuestionID = item.QuestionId, Answer = item.Answer });
+                        }
+                        teacherDto.Answers = answersDto;
+                        subjectDto.Teachers.Add(teacherDto);
                     }
-                    List<AnswerDTO> answersDto = new List<AnswerDTO>();
-                    var answers = questionnaire.QuestionnaireResults;
-                    foreach (var item in answers)
-                    {
-                        answersDto.Add(new AnswerDTO { QuestionID = item.QuestionId, Answer = item.Answer });
-                    }
-                    teacherDto.Answers = answersDto;
-                    subjectDto.Teachers.Add(teacherDto);
                 }
                 response.Subjects.Add(subjectDto);
 

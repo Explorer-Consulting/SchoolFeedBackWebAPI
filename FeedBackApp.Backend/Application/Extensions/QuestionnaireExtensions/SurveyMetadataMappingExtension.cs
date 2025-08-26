@@ -91,6 +91,7 @@ namespace Application.Extensions.QuestionnaireExtensions
             new()
             {
                 SurveyId = dto.SurveyId,
+                Status = false,
                 TeacherEmail = dto.TeacherEmail,
                 StudentEmail = dto.StudentEmail,
                 SubjectName = dto.SubjectName,
@@ -102,6 +103,7 @@ namespace Application.Extensions.QuestionnaireExtensions
             new()
             {
                 SurveyId = model.SurveyId,
+
                 TeacherEmail = model.TeacherEmail,
                 StudentEmail = model.StudentEmail,
                 SubjectName = model.SubjectName,
