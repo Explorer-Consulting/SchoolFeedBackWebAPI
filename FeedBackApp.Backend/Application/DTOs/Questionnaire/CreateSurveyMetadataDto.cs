@@ -4,6 +4,9 @@ namespace Application.DTOs.Questionnaire
 {
     public class CreateSurveyMetadataDto
     {
+        [JsonProperty("title")]
+        public string Title { get; set; } = string.Empty;
+
         [JsonProperty("startDate")]
         public DateTime StartDate { get; set; }
 

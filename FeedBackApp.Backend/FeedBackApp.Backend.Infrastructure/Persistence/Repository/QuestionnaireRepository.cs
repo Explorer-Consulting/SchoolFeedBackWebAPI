@@ -104,5 +104,12 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
+        public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
+        {
+            return await _context.Surveys
+                .Where(s => s.StudentSets
+                    .Any(set => set.StudentEmails.Contains(studentEmail)))
+                .ToListAsync();
+        }
     }
 }

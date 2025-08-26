@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.Questionnaire;
+using Application.DTOs.Survey;
 using FeedBackApp.Core.Model;
 
 namespace Application.Extensions.QuestionnaireExtensions
@@ -8,7 +9,8 @@ namespace Application.Extensions.QuestionnaireExtensions
         public static SurveyMetadata ToModel(this CreateSurveyMetadataDto dto) =>
             new()
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid(),
+                Title = dto.Title,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 StudentSets = dto.StudentSets
@@ -28,6 +30,7 @@ namespace Application.Extensions.QuestionnaireExtensions
         public static CreateSurveyMetadataDto ToDto(this SurveyMetadata model) =>
             new()
             {
+                Title = model.Title,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
                 StudentSets = model.StudentSets
@@ -131,6 +134,13 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Question = model.Question,
                 Type = model.Type,
                 AnswerOptions = model.AnswerOptions
+            };
+        public static GetSurveyMetadataDto toDto(this SurveyMetadata model) =>
+            new()
+            {
+                Id = model.Id,
+                Title = model.Title,
+                endDate = model.EndDate,
             };
     };
 
