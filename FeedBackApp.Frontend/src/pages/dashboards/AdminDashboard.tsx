@@ -29,7 +29,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     refetchAdminSurveys(); // lekérdezzük az adatokat
-  }, []);
+  }, [refetchAdminSurveys]);
 
   const displayedQuestionnaires = adminSurveys;
 
@@ -146,15 +146,17 @@ export default function AdminDashboard() {
     });
   };
 
-  return (
-    <main className="container mx-auto px-6 py-10">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Manage feedback windows, access, and exports.</p>
+ return (
+    <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <header className="mb-6 sm:mb-8 text-center sm:text-left">
+        <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Manage feedback windows, access, and exports.
+        </p>
       </header>
 
       <CardContent>
-        <label>Start Date:</label>
+        <label className="block mb-1">Start Date:</label>
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
@@ -162,7 +164,7 @@ export default function AdminDashboard() {
           onChange={(e) => setStartDate(new Date(e.target.value))}
         />
 
-        <label>End Date:</label>
+        <label className="block mb-1">End Date:</label>
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
@@ -170,7 +172,7 @@ export default function AdminDashboard() {
           onChange={(e) => setEndDate(new Date(e.target.value))}
         />
 
-        <label>Title:</label>
+        <label className="block mb-1">Title:</label>
         <input
           type="text"
           className="border rounded p-2 w-full mb-4"
@@ -179,7 +181,7 @@ export default function AdminDashboard() {
           placeholder="Enter questionnaire title"
         />
 
-        <label>Upload Excel:</label>
+        <label className="block mb-1">Upload Excel:</label>
         <input
           type="file"
           accept=".xlsx, .xls"
@@ -187,10 +189,19 @@ export default function AdminDashboard() {
           onChange={handleFileChange}
         />
       </CardContent>
-      <div className="mt-6 flex flex-row gap-4">
-        <Button onClick={sendQuestionnaires} disabled={isCreatingQuestionnaire || !endDate || !startDate || !file || !title}>Create Questionnaires</Button>
+
+      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <Button
+          className="w-full sm:w-auto"
+          onClick={sendQuestionnaires}
+          disabled={isCreatingQuestionnaire || !endDate || !startDate || !file || !title}
+        >
+          Create Questionnaires
+        </Button>
       </div>
+
       <br />
+
       <CardContent>
         {isLoadingAdminSurveys && <p>Loading surveys...</p>}
         {isErrorAdminSurveys && <p>Error loading surveys.</p>}
@@ -208,10 +219,30 @@ export default function AdminDashboard() {
         </select>
       </CardContent>
 
-      <div className="mt-6 flex flex-row gap-4">
-        <Button onClick={handleExportTeacher} disabled={!selectedQuestionnaireId || isExportingTeacher || isLoadingAdminSurveys}>Export Teacher Evaluations</Button>
-        <Button onClick={handleExportSummary} disabled={!selectedQuestionnaireId || isExportingSummary || isLoadingAdminSurveys}>Export Global Summary</Button>
-        <Button onClick={deleteSelectedQuestionnaire} disabled={!selectedQuestionnaireId || isDeletingQuestionnaire || isLoadingAdminSurveys}>Delete Selected Questionnaire</Button>
+      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <Button
+          className="w-full sm:w-auto"
+          onClick={handleExportTeacher}
+          disabled={!selectedQuestionnaireId || isExportingTeacher || isLoadingAdminSurveys}
+        >
+          Export Teacher Evaluations
+        </Button>
+
+        <Button
+          className="w-full sm:w-auto"
+          onClick={handleExportSummary}
+          disabled={!selectedQuestionnaireId || isExportingSummary || isLoadingAdminSurveys}
+        >
+          Export Global Summary
+        </Button>
+
+        <Button
+          className="w-full sm:w-auto"
+          onClick={deleteSelectedQuestionnaire}
+          disabled={!selectedQuestionnaireId || isDeletingQuestionnaire || isLoadingAdminSurveys}
+        >
+          Delete Selected Questionnaire
+        </Button>
       </div>
     </main>
   );

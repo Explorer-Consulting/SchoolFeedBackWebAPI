@@ -251,9 +251,9 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           q26={q26} setQ26={setQ26}
         />
 
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={onSaveDraft}>Piszkozat mentése</Button>
-          <Button variant="default" onClick={onSubmit}>Beküldés</Button>
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft}>Piszkozat mentése</Button>
+          <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit}>Beküldés</Button>
         </div>
       </CardContent>
     </Card>
