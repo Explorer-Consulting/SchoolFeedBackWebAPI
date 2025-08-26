@@ -24,6 +24,7 @@ export const useReviews = (email?) => {
     } = useQuery({
         queryKey: [`questionnairesSummary`, questionnaireId],
         queryFn: () => GetQuestionnaireSummary(questionnaireId),
+        enabled: !!questionnaireId,
     })
 
     const {
