@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail, StartQuestionnaire ,GetSurveysAdmin} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail ,GetSurveysAdmin} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { StudentContext } from "@/models/StudentContext"
 
@@ -68,13 +68,6 @@ export const useReviews = (email?) => {
         }
     })
 
-    const { mutate: startQuestionnaire, isPending: isStartingQuestionnaire } = useMutation({
-        mutationFn: (questionnaireId: string) => StartQuestionnaire(questionnaireId),
-        onSuccess: (questionnaireId) => {
-            client.invalidateQueries({ queryKey: ['startedQuestionnaire', questionnaireId] });
-        }
-    })
-
     const { mutate: exportTeacherEvaluations, isPending: isExportingTeacher } = useMutation({
         mutationFn: (evaluationId: string) => GetEvaluation(evaluationId)
     });
@@ -109,7 +102,6 @@ export const useReviews = (email?) => {
         updateEvaluation, isUpdatingEvaluation,
         // Questionnaire actions
         deleteQuestionnaire, isDeletingQuestionnaire,
-        startQuestionnaire, isStartingQuestionnaire,
         // Export
         exportTeacherEvaluations, isExportingTeacher,
         exportGlobalSummary, isExportingSummary,

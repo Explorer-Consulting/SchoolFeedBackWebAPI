@@ -15,8 +15,6 @@ export default function AdminDashboard() {
     isCreatingQuestionnaire,
     deleteQuestionnaire,
     isDeletingQuestionnaire,
-    startQuestionnaire,
-    isStartingQuestionnaire,
 
     exportTeacherEvaluations,
     isExportingTeacher,
@@ -97,21 +95,6 @@ export default function AdminDashboard() {
         refetchAdminSurveys();
       },
       onError: () => toast.error("Failed to create questionnaires."),
-    });
-  };
-
-  const handleStartQuestionnaire = () => {
-    if (!selectedQuestionnaireId) {
-      toast.error("Select a questionnaire first!");
-      return;
-    }
-    console.log("start: ", selectedQuestionnaireId);
-    startQuestionnaire(selectedQuestionnaireId, {
-      onSuccess: () => {
-        toast.success("Questionnaire started!");
-        setSelectedQuestionnaireId("");
-      },
-      onError: () => toast.error("Failed to start questionnaire.")
     });
   };
 
@@ -226,14 +209,9 @@ export default function AdminDashboard() {
       </CardContent>
 
       <div className="mt-6 flex flex-row gap-4">
-        <Button onClick={handleStartQuestionnaire} disabled={!selectedQuestionnaireId || isStartingQuestionnaire || isLoadingAdminSurveys}>Start Questionnaire</Button>
         <Button onClick={handleExportTeacher} disabled={!selectedQuestionnaireId || isExportingTeacher || isLoadingAdminSurveys}>Export Teacher Evaluations</Button>
         <Button onClick={handleExportSummary} disabled={!selectedQuestionnaireId || isExportingSummary || isLoadingAdminSurveys}>Export Global Summary</Button>
-        <Button onClick={deleteSelectedQuestionnaire} disabled={!selectedQuestionnaireId || isStartingQuestionnaire ||
-          isExportingTeacher ||
-          isExportingSummary ||
-          isDeletingQuestionnaire ||
-          isCreatingQuestionnaire}>Delete Selected Questionnaire</Button>
+        <Button onClick={deleteSelectedQuestionnaire} disabled={!selectedQuestionnaireId || isDeletingQuestionnaire || isLoadingAdminSurveys}>Delete Selected Questionnaire</Button>
       </div>
     </main>
   );

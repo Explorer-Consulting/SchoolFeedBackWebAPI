@@ -26,7 +26,7 @@ export const CreateQuestionnaires = async (payload) => {
 };
 
 export const GetQuestionnaireSummary = async (questionnaireId) => {
-    const response = await apiClient.get(`/questionnaires/${questionnaireId}`);
+    const response = await apiClient.get(`/summaries/${questionnaireId}`);
     return response.data;
 };
 
@@ -37,11 +37,6 @@ export const GetEvaluation = async (evaluationId) => {
 
 export const DeleteQuestionnaire = async (questionnaireId) => {
     const response = await apiClient.delete(`/questionnaires/${questionnaireId}`);
-    return response.data;
-};
-
-export const StartQuestionnaire = async (questionnaireId) => {
-    const response = await apiClient.post(`/questionnaires/${questionnaireId}/start`);
     return response.data;
 };
 
