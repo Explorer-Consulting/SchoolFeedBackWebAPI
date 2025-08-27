@@ -3,6 +3,7 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
+import { parseExcel } from "@/hooks/useExcel";
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -36,11 +37,16 @@ export default function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
-  };
+    const file = e.target.files?.[0];
+    if (!file) return;
 
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+      toast.error("Please upload a valid Excel file (.xlsx or .xls).");
+      return;
+    }
+    setFile(file);
+  };
+  
   const sendQuestionnaires = async () => {
     if (!startDate || !endDate) {
       toast.error("Please set both start and end date.");
@@ -67,7 +73,7 @@ export default function AdminDashboard() {
       file
     };*/
 
-    const payload = {
+    /*const payload = {
       startDate: startDate.toISOString().split("T")[0],
       endDate: endDate.toISOString().split("T")[0],
       title,
@@ -86,7 +92,14 @@ export default function AdminDashboard() {
       questionnaireCreationParams: [
         { teacherEmail: "kovacs.maria@gimi.ro", subjectName: "Matematika", studentSetIds: ["XI. A", "XI. B"] }
       ]
-    };
+    };*/
+    let payload;
+    try {
+      payload = await parseExcel(file, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0], title);
+      console.log("Final payload:", payload);
+    } catch (err) {
+      console.error("Failed to parse Excel:", err);
+    }
 
     console.log("Payload to send:", payload);
     createQuestionnaires(payload, {
@@ -146,7 +159,7 @@ export default function AdminDashboard() {
     });
   };
 
- return (
+  return (
     <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10">
       <header className="mb-6 sm:mb-8 text-center sm:text-left">
         <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
