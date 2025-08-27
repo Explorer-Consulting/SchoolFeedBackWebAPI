@@ -277,9 +277,9 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           q25={q25} setQ25={setQ25}
         />
 
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>Piszkozat mentése</Button>
-          <Button variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireUpdating}>Beküldés</Button>
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>Piszkozat mentése</Button>
+          <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireUpdating}>Beküldés</Button>
         </div>
       </CardContent>
     </Card>

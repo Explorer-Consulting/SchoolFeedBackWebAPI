@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary,ExportQuestionnaire, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle,PerformGetSurveys,GetQuestionnaires } from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail ,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import {Survey} from "@/models/Survey"
@@ -10,8 +10,8 @@ export const useReviews = (selectedSurveyId?: string) => {
     const { questionnaireId, evaluationId } = useParams();
     const user=useAuthStore((s)=>s.user);
 
-    const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation({
-        mutationFn: (payload: { startDate: string; endDate: string }) => CreateQuestionnaires(payload),
+    const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation<any, any, any>({
+        mutationFn: (payload) => CreateQuestionnaires(payload),
         onSuccess: () => {
             client.invalidateQueries({
                 queryKey: ['questionnaires']
@@ -48,7 +48,7 @@ export const useReviews = (selectedSurveyId?: string) => {
     } = useQuery({
         queryKey: [`questionnairesSummary`, questionnaireId],
         queryFn: () => GetQuestionnaireSummary(questionnaireId),
-        enabled: !!questionnaireId
+        enabled: !!questionnaireId,
     })
 
     const {
@@ -85,19 +85,48 @@ export const useReviews = (selectedSurveyId?: string) => {
         }
     })
 
+    const { mutate: exportTeacherEvaluations, isPending: isExportingTeacher } = useMutation({
+        mutationFn: (evaluationId: string) => GetEvaluation(evaluationId)
+    });
+
+    const { mutate: exportGlobalSummary, isPending: isExportingSummary } = useMutation({
+        mutationFn: (questionnaireId: string) => GetQuestionnaireSummary(questionnaireId)
+    });
+
+
     const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
         mutationFn: (idToken: string) => LoginWithGoogle(idToken)
     });
 
+    const {
+        data: adminSurveys,
+        isLoading: isLoadingAdminSurveys,
+        isError: isErrorAdminSurveys,
+        error: errorAdminSurveys,
+        refetch: refetchAdminSurveys
+    } = useQuery({
+        queryKey: ['adminSurveys'],
+        queryFn: () => GetSurveysAdmin(),
+    });
+
     return {
+        // Create
         createQuestionnaires, isCreatingQuestionnaire,
+        // Summary
         surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,
         questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
+        // Evaluation
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
         performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
         deleteQuestionnaire, isDeletingQuestionnaire,
+        // Export
+        exportTeacherEvaluations, isExportingTeacher,
+        exportGlobalSummary, isExportingSummary,
+        // Auth
         loginWithGoogle, isLoggingIn,
-        isExporting,exportQuestionnaire
+        // Forms
+        //getsurveyadmin
+        adminSurveys,isLoadingAdminSurveys,isErrorAdminSurveys,errorAdminSurveys,refetchAdminSurveys,
     }
 }

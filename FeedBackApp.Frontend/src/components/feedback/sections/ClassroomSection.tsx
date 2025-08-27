@@ -55,7 +55,7 @@ export default function ClassroomSection({qValues,setQValues,likertValues}:Props
             </RadioGroup>
             {i === 12 && ( 
               <p className="text-xs text-muted-foreground">
-                1 = nagyon lassú, 3 = megfelelő, 5 = nagyon gyors
+                1 = nagyon lassú, 2 = lassú, 3 = megfelelő, 4 = gyors, 5 = nagyon gyors
               </p>
             )}
           </div>
