@@ -15,7 +15,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
     {
         private readonly IQuestionnaireService _questionnaireService = questionnaireService;
         private readonly ILogger<QuestionnaireCompilerWorkerEncapsulator> _logger = logger;
-        //private readonly IEmailService _emailService = emailService;
+        private readonly IEmailService _emailService = emailService;
 
         [RequireAdmin]
         [Function("PerformQuestionnaireCompilation")]

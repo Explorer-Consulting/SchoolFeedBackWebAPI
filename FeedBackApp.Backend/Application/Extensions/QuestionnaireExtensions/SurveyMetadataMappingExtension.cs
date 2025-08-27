@@ -96,7 +96,6 @@ namespace Application.Extensions.QuestionnaireExtensions
                 TeacherEmail = dto.TeacherEmail,
                 StudentEmail = dto.StudentEmail,
                 SubjectName = dto.SubjectName,
-                Status = false,
                 QuestionnaireResults = dto.QuestionnaireResults
                     .Select(q => q.ToModel())
                     .ToList() ?? new List<QuestionAnswer>(),
