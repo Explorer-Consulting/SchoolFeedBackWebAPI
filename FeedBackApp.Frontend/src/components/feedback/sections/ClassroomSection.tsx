@@ -1,15 +1,13 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-export default function ClassroomSection({
-    qValues,
-    setQValues,
-    likertValues
-}:{
-    qValues: string[];
-    setQValues: ((v: string) => void)[];
-    likertValues: string[];
-}) {
+type Props = {
+  qValues: string[];
+  setQValues: ((v: string) => void)[];
+  likertValues: string[];
+};
+
+export default function ClassroomSection({qValues,setQValues,likertValues}:Props) {
     const questions = [
     "1) A Tanár érthetően magyarázza a tananyagot.",
     "2) A Tanár olyan magyarázatokat ad, amelyek segítenek a hatékony tanulásban.",

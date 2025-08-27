@@ -5,18 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 type OutsideEducationSectionProps = {
+    q17: string;
+    setQ17: (val: string) => void;
     q18: string;
     setQ18: (val: string) => void;
-    q19: string;
-    setQ19: (val: string) => void;
+    q19: string[];
+    setQ19: React.Dispatch<React.SetStateAction<string[]>>;
     q20: string[];
     setQ20: React.Dispatch<React.SetStateAction<string[]>>;
-    q21: string[];
-    setQ21: React.Dispatch<React.SetStateAction<string[]>>;
+    q21: string;
+    setQ21: (val: string) => void;
     q22: string;
     setQ22: (val: string) => void;
-    q23: string;
-    setQ23: (val: string) => void;
     isAttendingOutside: boolean;
     toggleMulti: (
         value: string,
@@ -25,12 +25,12 @@ type OutsideEducationSectionProps = {
 }
 
 export default function OutsideEducationSection({
+    q17, setQ17,
     q18, setQ18,
     q19, setQ19,
     q20, setQ20,
     q21, setQ21,
     q22, setQ22,
-    q23, setQ23,
     isAttendingOutside,
     toggleMulti
 }: OutsideEducationSectionProps) {
@@ -42,7 +42,7 @@ export default function OutsideEducationSection({
 
             <div className="space-y-2">
                 <Label>18) A Tanár részesít külön foglalkozásban, hogy felkészítsen vizsgára/versenyre/szereplésre:</Label>
-                <RadioGroup value={["1", "2", "3"].includes(q18) ? q18 : ""} onValueChange={setQ18}>
+                <RadioGroup value={["1", "2", "3"].includes(q17) ? q17 : ""} onValueChange={setQ17}>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem id="q18-1" value="1" />
                         <Label htmlFor="q18-1">igen, elkéreztetve más Tanárok óráiról</Label>
@@ -59,8 +59,8 @@ export default function OutsideEducationSection({
                 <Input
                     type="text"
                     placeholder="Egyéb, éspedig:"
-                    value={!["1", "2", "3"].includes(q18) ? q18 : ""}
-                    onChange={(e) => setQ18(e.target.value)}
+                    value={!["1", "2", "3"].includes(q17) ? q17 : ""}
+                    onChange={(e) => setQ17(e.target.value)}
                     className="placeholder:text-[13px]"
                 />
             </div>
@@ -68,7 +68,7 @@ export default function OutsideEducationSection({
 
             <div className="space-y-2">
                 <Label>19) Ebből a tantárgyból iskolán kívül:</Label>
-                <RadioGroup value={q19} onValueChange={setQ19}>
+                <RadioGroup value={q18} onValueChange={setQ18}>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem id="q19-1" value="1" />
                         <Label htmlFor="q19-1">magánórára, egyéni felkészítőre járok</Label>
@@ -97,8 +97,8 @@ export default function OutsideEducationSection({
                         <div key={opt.id} className="flex items-center space-x-2">
                             <Checkbox
                                 id={`q20-${opt.id}`}
-                                checked={q20.includes(opt.id)}
-                                onCheckedChange={() => toggleMulti(opt.id, setQ20)}
+                                checked={q19.includes(opt.id)}
+                                onCheckedChange={() => toggleMulti(opt.id, setQ19)}
                             />
                             <Label htmlFor={`q20-${opt.id}`}>{opt.label}</Label>
                         </div>
@@ -118,8 +118,8 @@ export default function OutsideEducationSection({
                     <div key={opt.id} className="flex items-center space-x-2">
                         <Checkbox
                             id={`q21-${opt.id}`}
-                            checked={q21.includes(opt.id)}
-                            onCheckedChange={() => toggleMulti(opt.id, setQ21)}
+                            checked={q20.includes(opt.id)}
+                            onCheckedChange={() => toggleMulti(opt.id, setQ20)}
                         />
                         <Label htmlFor={`q21-${opt.id}`}>{opt.label}</Label>
                     </div>
@@ -129,6 +129,18 @@ export default function OutsideEducationSection({
             <div className="space-y-2">
                 <Label htmlFor="q22"> 22) Kérünk, fogalmazd meg röviden, mi volt a legjobb ezen az órán? </Label>
                 <Textarea id="q22"
+                    value={q21}
+                    onChange={(e) => setQ21(e.target.value)}
+                    placeholder="Rövid válasz..."
+                    maxLength={300}
+                />
+                <p className="text-sm text-gray-500">
+                    {q21.length}/300 karakter (min. 50) </p>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="q23"> 23) Kérünk, fogalmazd meg röviden, mi nem tetszett ezen az órán? </Label>
+                <Textarea id="q23"
                     value={q22}
                     onChange={(e) => setQ22(e.target.value)}
                     placeholder="Rövid válasz..."
@@ -136,18 +148,6 @@ export default function OutsideEducationSection({
                 />
                 <p className="text-sm text-gray-500">
                     {q22.length}/300 karakter (min. 50) </p>
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="q23"> 23) Kérünk, fogalmazd meg röviden, mi nem tetszett ezen az órán? </Label>
-                <Textarea id="q23"
-                    value={q23}
-                    onChange={(e) => setQ23(e.target.value)}
-                    placeholder="Rövid válasz..."
-                    maxLength={300}
-                />
-                <p className="text-sm text-gray-500">
-                    {q23.length}/300 karakter (min. 50) </p>
             </div>
         </section>
     )

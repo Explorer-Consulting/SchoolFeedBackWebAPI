@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
 import { toast } from "sonner";
 import { useAuthStore } from '@/stores/useAuthStore'
-import {  useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useStudentContextStore } from "@/stores/useStudentContextStore";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
@@ -19,7 +19,10 @@ export default function StudentDashboard() {
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
 
-  console.log("questionnaires",questionnaires);
+  useEffect(() => {
+    console.log("questionnaires", questionnaires);
+  }, [questionnaires]);
+
 
   const { context, setContext } = useStudentContextStore();
 
@@ -33,6 +36,7 @@ export default function StudentDashboard() {
     }
   }, [questionnaires, setContext]);
 
+  console.log(context.evaluations)
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
