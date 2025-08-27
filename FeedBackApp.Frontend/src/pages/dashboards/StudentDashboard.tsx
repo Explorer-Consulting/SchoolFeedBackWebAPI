@@ -142,15 +142,6 @@ export default function StudentDashboard() {
                   )}
               </ul>
             )}
-
-            {selectedSurveyId && isLoadingQuestionnaire && (
-              <p className="mt-3 text-sm">Űrlap betöltése…</p>
-            )}
-            {selectedSurveyId && isErrorQuestionnaire && (
-              <p className="mt-3 text-sm text-red-600">
-                Hiba az űrlap betöltésekor: {String((errorQuestionnaire as any)?.message || "")}
-              </p>
-            )}
           </CardContent>
         </Card>
       </section>
