@@ -10,7 +10,7 @@ namespace Application.Validation.UpdateValidation
         public UpdateQuestionnaireValidator(IList<QuestionTemplate> templates)
         {
             RuleForEach(dto => dto.QuestionnaireResult)
-                .SetValidator(new QuestionResultValidator(templates));
+                .SetValidator(new QuestionUpdateValidator(templates));
         }
     }
 }

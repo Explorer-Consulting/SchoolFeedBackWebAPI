@@ -1,5 +1,6 @@
 ﻿using Application.DTOs.Evaluation;
 using Application.Services.Interfaces;
+using Application.Validation.SubmitValidation;
 using Application.Validation.UpdateValidation;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
@@ -46,7 +47,7 @@ namespace Application.Services
             string id,
             TDto dto,
             Func<IList<QuestionTemplate>, IValidator<TDto>> validatorFactory,
-            Func<Questionnaire, FeedBackApp.Core.Model.Questionnaire, Task<bool>> repoAction,
+            Func<Questionnaire, Questionnaire, Task<bool>> repoAction,
             Func<bool, string, string?, TResponse> responseFactory
         )
             where TDto : class

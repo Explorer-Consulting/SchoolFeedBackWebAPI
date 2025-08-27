@@ -5,9 +5,9 @@ using FluentValidation;
 
 namespace Application.Validation.UpdateValidation
 {
-    public class QuestionResultValidator : AbstractValidator<QuestionResultDTO>
+    public class QuestionUpdateValidator : AbstractValidator<QuestionResultDTO>
     {
-        public QuestionResultValidator(IList<QuestionTemplate> templates)
+        public QuestionUpdateValidator(IList<QuestionTemplate> templates)
         {
             RuleFor(dto => dto.QuestionId)
                 .NotEmpty().WithMessage("QuestionId cannot be null/empty")
