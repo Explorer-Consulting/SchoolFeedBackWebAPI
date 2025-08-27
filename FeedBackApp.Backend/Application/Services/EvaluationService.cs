@@ -5,6 +5,7 @@ using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
 using Application.Validation.UpdateValidation;
 using FeedBackApp.Core.Repositories;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -40,6 +41,32 @@ namespace Application.Services
             return questionnaireUpdated
                 ? new UpdateResponseDTO(true, $"Questionnaire {id} was updated successfully.")
                 : new UpdateResponseDTO(false, $"Update questionnaire {id} failed");
+        }
+
+        public async Task<SubmitResponseDTO> SubmitQuestionnaire(string id, SubmitQuestionnaireDTO dto)
+        {
+            var oldQuestionnaire = await _repository.GetQuestionnaireByIdAsync(id);
+            if (oldQuestionnaire == null)
+                return new SubmitResponseDTO(false, $"Questionnaire {id} not found.");
+
+            var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
+
+            var validator = new SubmitQuestionnaireValidator(questionTemplate.QuestionTemplates);
+            var validationResult = await validator.ValidateAsync(dto);
+
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                return new SubmitResponseDTO(false, $"Validation failed: {errors}");
+            }
+
+            var newQuestionnaire = dto.ToModel();
+            bool questionnaireSubmitted = await _repository.SubmitQuestionnaire(newQuestionnaire, oldQuestionnaire);
+
+            return questionnaireSubmitted
+               ? new SubmitResponseDTO(true, $"Questionnaire {id} was submitted successfully.")
+               : new SubmitResponseDTO(false, $"Submit questionnaire {id} failed");
+
         }
     }
 }
