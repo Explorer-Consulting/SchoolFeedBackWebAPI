@@ -1,4 +1,5 @@
-﻿using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Evaluation;
+using Application.DTOs.Questionnaire;
 using FeedBackApp.Core.Model;
 
 namespace Application.Extensions.QuestionnaireExtensions
@@ -132,21 +133,6 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Question = model.Question,
                 Type = model.Type,
                 AnswerOptions = [..model.AnswerOptions]
-            };
-         public static Questionnaire ToModel(this UpdateQuestionnaireDTO dto) =>
-            new()
-            {
-                QuestionnaireResults = dto.QuestionnaireResult
-                    .Select(q => q.ToModel())
-                    .ToList()
-            };
-        public static QuestionAnswer ToModel(this QuestionResultDTO dto) =>
-            new()
-            {
-                Answer = dto.Answer,
-                QuestionId = dto.QuestionId
-            };
-            
+            }; 
     };
-
-    }
+}

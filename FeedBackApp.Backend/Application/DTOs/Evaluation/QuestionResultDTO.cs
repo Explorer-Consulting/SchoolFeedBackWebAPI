@@ -1,7 +1,6 @@
-﻿
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace Application.DTOs.Questionnaire
+namespace Application.DTOs.Evaluation
 {
     public class QuestionResultDTO
     {

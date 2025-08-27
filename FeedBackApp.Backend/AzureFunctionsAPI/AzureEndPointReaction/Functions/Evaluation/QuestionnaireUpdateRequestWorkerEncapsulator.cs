@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire;
+using Application.DTOs.Evaluation;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions.Utils;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
@@ -9,11 +9,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System.Net;
 
-namespace AzureEndPointReaction.Functions.Questionnaires
+namespace AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation
 {
-    public sealed class QuestionnaireUpdateRequestWorkerEncapsulator(IQuestionnaireService service, ILogger<QuestionnaireUpdateRequestWorkerEncapsulator> logger)
+    public sealed class QuestionnaireUpdateRequestWorkerEncapsulator(IEvaluationService service, ILogger<QuestionnaireUpdateRequestWorkerEncapsulator> logger)
     {
-        private readonly IQuestionnaireService _service = service;
+        private readonly IEvaluationService _service = service;
         private readonly ILogger<QuestionnaireUpdateRequestWorkerEncapsulator> _logger = logger;
 
         [RequireStudent]

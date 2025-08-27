@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Evaluation;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FluentValidation;

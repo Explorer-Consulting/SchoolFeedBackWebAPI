@@ -6,6 +6,5 @@ namespace Application.Services.Interfaces
     {
         public Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDTO dto);
         public Task<DeletionResponseDTO> DeleteSurveyAsync(Guid id);
-        public Task<UpdateResponseDTO> UpdateQuestionnaire(string id, UpdateQuestionnaireDTO dto);
     }
 }

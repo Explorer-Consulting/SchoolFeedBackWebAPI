@@ -7,19 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="text.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="metadata.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="text.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
