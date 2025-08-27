@@ -58,6 +58,13 @@ namespace AzureEndPointReaction.Functions.Questionnaires
                 }
                 await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
 
+                if (!result.Success)
+                {
+                    var error = request.CreateResponse(HttpStatusCode.BadRequest);
+                    await error.WriteAsJsonAsync(result);
+                    return error;
+                }
+
                 var response = request.CreateResponse(HttpStatusCode.OK);
                 await response.WriteAsJsonAsync(result);
                 return response;
