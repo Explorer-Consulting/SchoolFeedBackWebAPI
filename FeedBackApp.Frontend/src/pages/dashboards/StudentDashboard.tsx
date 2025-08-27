@@ -11,8 +11,7 @@ import { Navigate } from "react-router-dom";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
-  if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+
 
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
 
@@ -36,7 +35,10 @@ export default function StudentDashboard() {
     }
   }, [questionnaires, setContext]);
 
-  console.log(context.evaluations)
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+
+  //console.log(context.evaluations)
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">

@@ -10,13 +10,11 @@ import { Navigate } from "react-router-dom";
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const user = useAuthStore((s) => s.user);
-  console.log(user);
-  if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Admin") return <Navigate to="/no-access" replace />
-
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
   const [title, setTitle] = useState<string>("");
+
+  console.log(user);
 
   const {
     createQuestionnaires,
@@ -40,8 +38,11 @@ export default function AdminDashboard() {
   }, [refetchAdminSurveys]);
 
   const displayedQuestionnaires = adminSurveys;
-
   const [file, setFile] = useState<File | null>(null);
+
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "Admin") return <Navigate to="/no-access" replace />
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,12 +54,12 @@ export default function AdminDashboard() {
     }
     setFile(file);
   };
-  
+
   const sendQuestionnaires = async () => {
     if (!startDate || !endDate) {
       toast.error("Please set both start and end date.");
       return;
-      }
+    }
 
     if (startDate >= endDate) {
       toast.error("Start date must be sooner than end date.");
