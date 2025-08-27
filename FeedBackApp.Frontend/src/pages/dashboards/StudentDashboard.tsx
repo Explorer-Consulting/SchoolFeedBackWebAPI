@@ -14,7 +14,7 @@ export default function StudentDashboard() {
 
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
-    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
+    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire,refetchQuestionnaires } = useReviews(selectedSurveyId);
     
 
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
@@ -38,9 +38,6 @@ export default function StudentDashboard() {
     refetchSurveys()
   }, [questionnaires, setContext,refetchSurveys]);
 
-  if (user.role !== "Student") {return <Navigate to="/no-access" replace />}
-  else{refetchSurveys()}
-  //console.log(context.evaluations)
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
@@ -164,7 +161,9 @@ export default function StudentDashboard() {
             subjects={context.subjects}
             teachersBySubject={context.teachersBySubject}
             evaluations={context.evaluations}
-            onAfterChange={() => { }} />
+            onAfterChange={() => {
+              refetchQuestionnaires();
+            }} />
         )}
       </section>
     </main>
