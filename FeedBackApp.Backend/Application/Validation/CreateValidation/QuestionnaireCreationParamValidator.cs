@@ -1,9 +1,9 @@
 ﻿using Application.DTOs.Questionnaire;
 using FluentValidation;
 
-namespace Application.Validation
+namespace Application.Validation.CreateValidation
 {
-    public class QuestionnaireCreationParamValidator : AbstractValidator<QuestionnaireCreationParamDto>
+    public class QuestionnaireCreationParamValidator : AbstractValidator<QuestionnaireCreationParamDTO>
     {
         public QuestionnaireCreationParamValidator()
         {

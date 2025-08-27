@@ -25,7 +25,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
             )]
         [OpenApiRequestBody(
             contentType: "application/json", 
-            bodyType: typeof(CreateSurveyMetadataDto),
+            bodyType: typeof(CreateSurveyMetadataDTO),
             Required = true
             )]
         [OpenApiResponseWithBody(
@@ -37,7 +37,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
         {
             try
             {
-                var dto = await JsonUtil.ReadFromJsonAsync<CreateSurveyMetadataDto>(request);
+                var dto = await JsonUtil.ReadFromJsonAsync<CreateSurveyMetadataDTO>(request);
 
                 if (dto == null)
                 {
