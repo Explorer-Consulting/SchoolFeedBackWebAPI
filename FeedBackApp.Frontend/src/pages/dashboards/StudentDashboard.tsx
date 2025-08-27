@@ -12,12 +12,14 @@ import { Navigate } from "react-router-dom";
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
 
-
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
-
-  const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys,
+  const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
-
+    
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  else (refetchSurveys())
+  
   useEffect(() => {
     console.log("questionnaires", questionnaires);
   }, [questionnaires]);
@@ -34,9 +36,6 @@ export default function StudentDashboard() {
       console.error("Konvertalasi hiba: ", e);
     }
   }, [questionnaires, setContext]);
-
-  if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
   //console.log(context.evaluations)
   return (

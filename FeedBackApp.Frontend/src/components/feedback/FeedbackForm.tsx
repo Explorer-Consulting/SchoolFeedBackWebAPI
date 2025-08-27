@@ -92,11 +92,11 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   const likertValues = ["1", "2", "3", "4", "5"];
 
   const qValues = useMemo(
-    () => [q0,q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16],
-    [q0,q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16]
+    () => [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16],
+    [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16]
   );
   const setQValues = useMemo(
-    () => [setQ0,setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16],
+    () => [setQ0, setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16],
     []
   );
 
@@ -108,8 +108,8 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   const collectResponses = (): EvaluationResponses => {
     const normalizedQ19 = (q18 === "1" || q18 === "2") ? q19 : [];
     return {
-      q0,q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17,
-      q18,q19: normalizedQ19, q20, q21, q22, q23, q24, q25
+      q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17,
+      q18, q19: normalizedQ19, q20, q21, q22, q23, q24, q25
     };
   };
 
@@ -120,7 +120,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     }
 
     const likerts = [
-      q0,q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16,
+      q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16,
     ];
     if (likerts.some((v) => !v)) {
       toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17).");
@@ -176,7 +176,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     const data = collectResponses();
     const payload = toBackendPayload(data);
     console.log("Draft saved:", JSON.stringify(payload, null, 2));
-   /* performQuestionnaireUpdate(
+    performQuestionnaireUpdate(
       { id, payload },
       {
         onSuccess: () => {
@@ -187,20 +187,20 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           toast("Hiba történt a piszkozat mentése közben!");
         }
       }
-    )*/
+    )
     onAfterChange?.();
   };
 
   const onSubmit = () => {
     const err = validate();
-   
+
     if (err !== null) return;
 
     const data = collectResponses();
     const payload = toBackendPayload(data);
 
-   /* performQuestionnaireUpdate(
-      {id,payload},
+    performQuestionnaireUpdate(
+      { id, payload },
       {
         onSuccess: () => {
           toast("Kérdőív beküldve!");
@@ -210,7 +210,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           toast("Hiba történt a beküldés közben!");
         }
       }
-    )*/
+    )
     console.log("submit saved:", JSON.stringify(payload, null, 2));
     onAfterChange?.();
   };
