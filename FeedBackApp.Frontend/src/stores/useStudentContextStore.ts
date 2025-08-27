@@ -17,7 +17,7 @@ export const useStudentContextStore = create<StudentContextStore>()(
         }),
         {
             name: 'student_context',
-            storage: createJSONStorage(() => localStorage)
+            storage: createJSONStorage(() => sessionStorage)
         }
     )
 )

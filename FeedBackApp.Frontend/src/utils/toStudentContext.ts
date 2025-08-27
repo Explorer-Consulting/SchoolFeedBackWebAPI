@@ -34,7 +34,7 @@ export function toStudentContext(raw: any): StudentContext {
             const answers = Array.isArray(teacher?.answers) ? teacher.answers : [];
 
             for (const answer of answers) {
-                const qid = typeof answer?.questionId === "string" ? answer.questionId : "";
+                const qid = typeof answer?.questionID=== "string" ? answer.questionID : "";
                 if (!qid) continue;
                 const ans = typeof answer?.answer === "string" ? answer.answer : "";
 
@@ -56,5 +56,5 @@ export function toStudentContext(raw: any): StudentContext {
         subjects,
         teachersBySubject,
         evaluations,
-    }
+    };
 }

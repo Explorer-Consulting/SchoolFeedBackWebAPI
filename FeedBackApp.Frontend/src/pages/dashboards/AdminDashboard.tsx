@@ -4,9 +4,16 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
 import { parseExcel } from "@/hooks/useExcel";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { Navigate } from "react-router-dom";
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
+  const user = useAuthStore((s) => s.user);
+  console.log(user);
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "Admin") return <Navigate to="/no-access" replace />
+
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
   const [title, setTitle] = useState<string>("");
@@ -51,7 +58,7 @@ export default function AdminDashboard() {
     if (!startDate || !endDate) {
       toast.error("Please set both start and end date.");
       return;
-    }
+      }
 
     if (startDate >= endDate) {
       toast.error("Start date must be sooner than end date.");

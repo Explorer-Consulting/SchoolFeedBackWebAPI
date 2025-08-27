@@ -2,18 +2,18 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type AttendanceSectionProps = {
+    q23: string;
+    setQ23: (val: string) => void;
     q24: string;
     setQ24: (val: string) => void;
     q25: string;
     setQ25: (val: string) => void;
-    q26: string;
-    setQ26: (val: string) => void;
 }
 
 export default function AttendanceSection({
+    q23, setQ23,
     q24, setQ24,
-    q25, setQ25,
-    q26, setQ26
+    q25, setQ25
 }: AttendanceSectionProps) {
     return (
         <section className="space-y-6">
@@ -23,7 +23,7 @@ export default function AttendanceSection({
 
             <div className="space-y-2">
                 <Label>24) Ebben a tanévben jelen voltam a tantárgyban megtartott:</Label>
-                <RadioGroup value={q24} onValueChange={setQ24} className="grid gap-2 md:grid-cols-2">
+                <RadioGroup value={q23} onValueChange={setQ23} className="grid gap-2 md:grid-cols-2">
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem id="q24-25" value="1" />
                         <Label htmlFor="q24-25">órák 25%-án</Label>
@@ -45,7 +45,7 @@ export default function AttendanceSection({
 
             <div className="space-y-2">
                 <Label>25) Válaszd ki a tantárgyra vonatkozó helyes megállapítást:</Label>
-                <RadioGroup value={q25} onValueChange={setQ25} className="grid gap-2 md:grid-cols-2">
+                <RadioGroup value={q24} onValueChange={setQ24} className="grid gap-2 md:grid-cols-2">
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem id="q25-25" value="1" />
                         <Label htmlFor="q25-25">az órák legfeljebb 25%-a volt megtartva</Label>
@@ -67,7 +67,7 @@ export default function AttendanceSection({
 
             <div className="space-y-2">
                 <Label>26) Válaszd ki a gyakoribb megállapítást arra az esetre, ha a Tanárod nem tudta megtartani az órát:</Label>
-                <RadioGroup value={q26} onValueChange={setQ26} className="grid gap-2 md:grid-cols-2">
+                <RadioGroup value={q25} onValueChange={setQ25} className="grid gap-2 md:grid-cols-2">
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem id="q26-helyettes" value="1" />
                         <Label htmlFor="q26-helyettes">volt helyettesítő tanár</Label>
