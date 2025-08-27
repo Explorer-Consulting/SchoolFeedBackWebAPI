@@ -26,7 +26,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation
             name: "id",
             In = ParameterLocation.Path,
             Required = true,
-            Type = typeof(Guid)
+            Type = typeof(string)
         )]
         [OpenApiRequestBody(
             contentType: "application/json",
