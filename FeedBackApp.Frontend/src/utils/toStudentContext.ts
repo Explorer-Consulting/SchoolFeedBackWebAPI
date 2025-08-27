@@ -39,7 +39,7 @@ export function toStudentContext(raw: any): StudentContext {
                 const ans = typeof answer?.answer === "string" ? answer.answer : "";
 
                 responses[qid] = multiQuestions.has(qid)
-                    ? (ans ? ans.split(",").map(s => s) : [])
+                    ? (ans ? ans.split("-").map(s => s) : [])
                     : ans;
             }
             evaluations.push({

@@ -14,7 +14,7 @@ export default function GoogleAuthApp() {
 
   const onIdTokenSuccess = (resp: CredentialResponse) => {
     const idToken = resp?.credential
-    console.log(idToken);
+
     if (!idToken) {
       console.error("No ID token from Google")
       return
@@ -23,7 +23,7 @@ export default function GoogleAuthApp() {
     loginWithGoogle(idToken, {
       onSuccess: (user:User) => {
         setUser(user)
-        console.log(user);
+        
         if (user.role === 'Admin') {
           navigate("/dashboard/admin")
         } else if (user.role === 'Student') {

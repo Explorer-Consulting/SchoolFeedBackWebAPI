@@ -16,7 +16,7 @@ export default function StudentDashboard() {
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
     
-  if (!user) return <Navigate to="/" replace />;
+
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
   else (refetchSurveys())
   
@@ -35,8 +35,11 @@ export default function StudentDashboard() {
     } catch (e) {
       console.error("Konvertalasi hiba: ", e);
     }
-  }, [questionnaires, setContext]);
+    refetchSurveys()
+  }, [questionnaires, setContext,refetchSurveys]);
 
+  if (user.role !== "Student") {return <Navigate to="/no-access" replace />}
+  else{refetchSurveys()}
   //console.log(context.evaluations)
   return (
     <main className="container mx-auto px-6 py-10">

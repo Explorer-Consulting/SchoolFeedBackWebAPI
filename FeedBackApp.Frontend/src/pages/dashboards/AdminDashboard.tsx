@@ -14,8 +14,6 @@ export default function AdminDashboard() {
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
   const [title, setTitle] = useState<string>("");
 
-  console.log(user);
-
   const {
     createQuestionnaires,
     isCreatingQuestionnaire,
@@ -33,15 +31,12 @@ export default function AdminDashboard() {
     refetchAdminSurveys,
   } = useReviews();
 
-  useEffect(() => {
-    refetchAdminSurveys(); // lekérdezzük az adatokat
-  }, [refetchAdminSurveys]);
-
   const displayedQuestionnaires = adminSurveys;
   const [file, setFile] = useState<File | null>(null);
 
   if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Admin") return <Navigate to="/no-access" replace />
+  if (user.role !== "Admin") {return <Navigate to="/no-access" replace />}
+  else{refetchAdminSurveys();}
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
