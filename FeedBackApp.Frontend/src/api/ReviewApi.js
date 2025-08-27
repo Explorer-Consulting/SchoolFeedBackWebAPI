@@ -46,7 +46,7 @@ export const DeleteQuestionnaire = async (questionnaireId) => {
 };
 
 export const PerformQuestionnaireUpdate = async (id, payload) => {
-    const { data } = await apiClient.patch(`/evaluations/${id}`, payload) //minden questionnal
+    const { data } = await apiClient.patch(`/questionnaire/${id}`, payload);
     return data;
 };
 

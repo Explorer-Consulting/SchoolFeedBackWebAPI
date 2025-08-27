@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle ,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires,PerformQuestionnaireUpdate} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import {Survey} from "@/models/Survey"
@@ -24,7 +24,7 @@ export const useReviews = (selectedSurveyId?: string) => {
         isLoading: isLoadingSurveys,
         isError: isErrorSurveys,
         error: errorSurveys,
-        refetch: refetchSurveys
+        refetch: refetchSurveys 
     } = useQuery<Survey[]>({
         queryKey: [`surveys`],
         queryFn: PerformGetSurveys,
@@ -109,23 +109,16 @@ export const useReviews = (selectedSurveyId?: string) => {
     });
 
     return {
-        // Create
         createQuestionnaires, isCreatingQuestionnaire,
-        // Summary
         surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
         questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
-        // Evaluation
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
         performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
         deleteQuestionnaire, isDeletingQuestionnaire,
-        // Export
         exportTeacherEvaluations, isExportingTeacher,
         exportGlobalSummary, isExportingSummary,
-        // Auth
         loginWithGoogle, isLoggingIn,
-        // Forms
-        //getsurveyadmin
         adminSurveys,isLoadingAdminSurveys,isErrorAdminSurveys,errorAdminSurveys,refetchAdminSurveys,
     }
 }
