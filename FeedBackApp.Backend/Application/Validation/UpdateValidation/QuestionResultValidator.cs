@@ -23,13 +23,11 @@ namespace Application.Validation.UpdateValidation
                     if (template == null)
                         return;
 
+                    if (string.IsNullOrWhiteSpace(answer))
+                        return;
+
                     switch (template.Type)
                     {
-                        case QuestionType.OpenEnded:
-                            if (string.IsNullOrWhiteSpace(answer))
-                                context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
-                            break;
-
                         case QuestionType.MultinomialSingleChoice:
                             if (!int.TryParse(answer, out int singleChoice) || singleChoice < 0 || singleChoice >= template.AnswerOptions.Count)
                                 context.AddFailure("Answer", $"Answer must be a number between 0 and {template.AnswerOptions.Count - 1} for '{template.Question}-{template.Id}'.");
