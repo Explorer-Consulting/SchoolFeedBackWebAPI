@@ -14,16 +14,12 @@ export default function StudentDashboard() {
 
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
-    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire,refetchQuestionnaires } = useReviews(selectedSurveyId);
-    
+    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId);
 
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
-  else (refetchSurveys())
-  
+
   useEffect(() => {
     console.log("questionnaires", questionnaires);
   }, [questionnaires]);
-
 
   const { context, setContext } = useStudentContextStore();
 
@@ -36,7 +32,10 @@ export default function StudentDashboard() {
       console.error("Konvertalasi hiba: ", e);
     }
     refetchSurveys()
-  }, [questionnaires, setContext,refetchSurveys]);
+  }, [questionnaires, setContext, refetchSurveys]);
+
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  else (refetchSurveys())
 
   return (
     <main className="container mx-auto px-6 py-10">
