@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail ,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, PerformQuestionnaireUpdate, DeleteQuestionnaire, LoginWithGoogle ,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import {Survey} from "@/models/Survey"
@@ -23,10 +23,12 @@ export const useReviews = (selectedSurveyId?: string) => {
         data: surveys,
         isLoading: isLoadingSurveys,
         isError: isErrorSurveys,
-        error: errorSurveys
+        error: errorSurveys,
+        refetch: refetchSurveys
     } = useQuery<Survey[]>({
         queryKey: [`surveys`],
         queryFn: PerformGetSurveys,
+        enabled: false
     })
 
    const{
@@ -72,10 +74,6 @@ export const useReviews = (selectedSurveyId?: string) => {
         }
     })
 
-    const { mutate: exportQuestionnaire, isPending: isExporting } = useMutation({
-        mutationFn: (questionnaireId: string) => ExportQuestionnaire(questionnaireId),
-    });
-
     const { mutate: deleteQuestionnaire, isPending: isDeletingQuestionnaire } = useMutation({
         mutationFn: (questionnaireId: string) => DeleteQuestionnaire(questionnaireId),
         onSuccess: (questionnaireId) => {
@@ -107,13 +105,14 @@ export const useReviews = (selectedSurveyId?: string) => {
     } = useQuery({
         queryKey: ['adminSurveys'],
         queryFn: () => GetSurveysAdmin(),
+        enabled: false
     });
 
     return {
         // Create
         createQuestionnaires, isCreatingQuestionnaire,
         // Summary
-        surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,
+        surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
         questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         // Evaluation

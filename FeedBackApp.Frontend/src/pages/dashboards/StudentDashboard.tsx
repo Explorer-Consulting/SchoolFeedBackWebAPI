@@ -15,7 +15,7 @@ export default function StudentDashboard() {
 
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
 
-  const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys,
+  const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
 
   useEffect(() => {
@@ -36,7 +36,8 @@ export default function StudentDashboard() {
   }, [questionnaires, setContext]);
 
   if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  if (user.role !== "Student") {return <Navigate to="/no-access" replace />}
+  else{refetchSurveys()}
 
   //console.log(context.evaluations)
   return (

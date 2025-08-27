@@ -11,11 +11,11 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEndPointReaction.Functions.Questionnaires
 {
-    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService questionnaireService, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger, IEmailService emailService)
+    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService questionnaireService, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger/*, IEmailService emailService*/)
     {
         private readonly IQuestionnaireService _questionnaireService = questionnaireService;
         private readonly ILogger<QuestionnaireCompilerWorkerEncapsulator> _logger = logger;
-        private readonly IEmailService _emailService = emailService;
+        //private readonly IEmailService _emailService = emailService;
 
         [RequireAdmin]
         [Function("PerformQuestionnaireCompilation")]
@@ -56,7 +56,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
                         studentEmails.Add(email);
                     }
                 }
-                await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+                //await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
 
                 if (!result.Success)
                 {

@@ -25,7 +25,7 @@ export const PerformGetSurveys = async () => {
     return data;
 };
 export const CreateQuestionnaires = async (payload) => {
-    const response = await apiClient.post(`/questionnaires`,payload); 
+    const response = await apiClient.post(`/surveys`,payload); 
     return response.data;
 };
 
