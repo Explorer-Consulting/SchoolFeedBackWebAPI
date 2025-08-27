@@ -14,9 +14,12 @@ export default function StudentDashboard() {
 
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
-    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
+    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire,refetchQuestionnaires } = useReviews(selectedSurveyId);
     
 
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  else (refetchSurveys())
+  
   useEffect(() => {
     console.log("questionnaires", questionnaires);
   }, [questionnaires]);
@@ -35,9 +38,6 @@ export default function StudentDashboard() {
     refetchSurveys()
   }, [questionnaires, setContext,refetchSurveys]);
 
-  if (user.role !== "Student") {return <Navigate to="/no-access" replace />}
-  else{refetchSurveys()}
-  //console.log(context.evaluations)
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
@@ -142,15 +142,6 @@ export default function StudentDashboard() {
                   )}
               </ul>
             )}
-
-            {selectedSurveyId && isLoadingQuestionnaire && (
-              <p className="mt-3 text-sm">Űrlap betöltése…</p>
-            )}
-            {selectedSurveyId && isErrorQuestionnaire && (
-              <p className="mt-3 text-sm text-red-600">
-                Hiba az űrlap betöltésekor: {String((errorQuestionnaire as any)?.message || "")}
-              </p>
-            )}
           </CardContent>
         </Card>
       </section>
@@ -161,7 +152,9 @@ export default function StudentDashboard() {
             subjects={context.subjects}
             teachersBySubject={context.teachersBySubject}
             evaluations={context.evaluations}
-            onAfterChange={() => { }} />
+            onAfterChange={() => {
+              refetchQuestionnaires();
+            }} />
         )}
       </section>
     </main>

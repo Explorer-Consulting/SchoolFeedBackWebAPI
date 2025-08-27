@@ -35,7 +35,8 @@ export const useReviews = (selectedSurveyId?: string) => {
         data: questionnaires,
         isLoading: isLoadingQuestionnaire,
         isError: isErrorQuestionnaire,
-        error: errorQuestionnaire
+        error: errorQuestionnaire,
+        refetch: refetchQuestionnaires
     } = useQuery ({
         queryKey: ['questionnaires',selectedSurveyId],
         queryFn: () => GetQuestionnaires(selectedSurveyId!),
@@ -111,7 +112,7 @@ export const useReviews = (selectedSurveyId?: string) => {
     return {
         createQuestionnaires, isCreatingQuestionnaire,
         surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
-        questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,
+        questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,refetchQuestionnaires,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
         performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
