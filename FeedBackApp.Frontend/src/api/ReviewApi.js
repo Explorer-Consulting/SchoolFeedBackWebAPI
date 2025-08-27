@@ -41,7 +41,7 @@ export const GetEvaluation = async (evaluationId) => {
 };
 
 export const DeleteQuestionnaire = async (questionnaireId) => {
-    const response = await apiClient.delete(`/questionnaires/${questionnaireId}`);
+    const response = await apiClient.delete(`/surveys/${questionnaireId}`);
     return response.data;
 };
 

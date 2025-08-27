@@ -16,10 +16,7 @@ export default function StudentDashboard() {
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire } = useReviews(selectedSurveyId);
     
-  if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
-  else (refetchSurveys())
-  
+
   useEffect(() => {
     console.log("questionnaires", questionnaires);
   }, [questionnaires]);
@@ -35,7 +32,8 @@ export default function StudentDashboard() {
     } catch (e) {
       console.error("Konvertalasi hiba: ", e);
     }
-  }, [questionnaires, setContext]);
+    refetchSurveys()
+  }, [questionnaires, setContext,refetchSurveys]);
 
   if (user.role !== "Student") {return <Navigate to="/no-access" replace />}
   else{refetchSurveys()}

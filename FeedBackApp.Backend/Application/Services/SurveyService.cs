@@ -24,7 +24,7 @@ namespace Application.Services
         public async Task<List<GetSurveyMetadataDto>> GetSurveyMetadataForStudent(string studentEmail)
         {
             var metadatas = await _questionnaireRepository.GetSurveyMetadataForStudentAsync(studentEmail);
-            metadatas = metadatas.Where(m => m.StartDate <= DateTime.UtcNow).ToList();
+            //metadatas = metadatas.Where(m => m.StartDate <= DateTime.UtcNow).ToList();
             metadatas = metadatas.Where(m => m.EndDate >= DateTime.UtcNow).ToList();
             List<GetSurveyMetadataDto> dto = metadatas.Select(x => x.toDto()).ToList();
             return dto;
