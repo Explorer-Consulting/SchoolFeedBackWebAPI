@@ -39,7 +39,11 @@ namespace Application.Services
                 id,
                 dto,
                 templates => new SubmitQuestionnaireValidator(templates),
-                (newQ, oldQ) => _repository.SubmitQuestionnaire(newQ, oldQ),
+                async (newQ, oldQ) =>
+                {
+                    oldQ.Status = true;
+                    return await _repository.SubmitQuestionnaire(newQ, oldQ);
+                },
                 (success, qid, errors) => success
                     ? new SubmitResponseDTO(true, $"Questionnaire {qid} was submitted successfully.")
                     : new SubmitResponseDTO(false, errors ?? $"Submit questionnaire {qid} failed"),
