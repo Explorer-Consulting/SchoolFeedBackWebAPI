@@ -153,7 +153,7 @@ namespace AzureFunctionsAPI
                 issuer: "SchoolFeedbackWebAPI",
                 audience: "SchoolFeedbackWebAPI",
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(24),
+                expires: DateTime.UtcNow.AddDays(7),
                 signingCredentials: creds
             );
 

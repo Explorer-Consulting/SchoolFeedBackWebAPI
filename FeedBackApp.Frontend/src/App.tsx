@@ -11,7 +11,15 @@ import NoAccess from "./pages/NoAccess";
 import StudentDashboard from "./pages/dashboards/StudentDashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions:{
+    queries: {
+      staleTime: 5*60*1000,
+      gcTime:30*60*1000,
+      retry: 1,
+    }
+  }
+});
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const App = () => (

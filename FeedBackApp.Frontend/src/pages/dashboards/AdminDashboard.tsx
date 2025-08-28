@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
 import { parseExcel } from "@/hooks/useExcel";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { Navigate } from "react-router-dom";
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
+  const user = useAuthStore((s) => s.user);
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
   const [title, setTitle] = useState<string>("");
@@ -28,13 +31,13 @@ export default function AdminDashboard() {
     refetchAdminSurveys,
   } = useReviews();
 
-  useEffect(() => {
-    refetchAdminSurveys(); // lekérdezzük az adatokat
-  }, [refetchAdminSurveys]);
-
   const displayedQuestionnaires = adminSurveys;
-
   const [file, setFile] = useState<File | null>(null);
+
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "Admin") {return <Navigate to="/no-access" replace />}
+  else{refetchAdminSurveys();}
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,7 +49,7 @@ export default function AdminDashboard() {
     }
     setFile(file);
   };
-  
+
   const sendQuestionnaires = async () => {
     if (!startDate || !endDate) {
       toast.error("Please set both start and end date.");

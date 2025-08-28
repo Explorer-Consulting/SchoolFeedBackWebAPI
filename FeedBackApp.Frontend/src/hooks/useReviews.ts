@@ -1,11 +1,14 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetFormByEmail ,GetSurveysAdmin} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires,PerformQuestionnaireUpdate} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
-import { StudentContext } from "@/models/StudentContext"
+import { BackendPayload } from "@/utils/toBackendPayload";
+import {Survey} from "@/models/Survey"
+import { useAuthStore } from "@/stores/useAuthStore";
 
-export const useReviews = (email?) => {
+export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
     const { questionnaireId, evaluationId } = useParams();
+    const user=useAuthStore((s)=>s.user);
 
     const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation<any, any, any>({
         mutationFn: (payload) => CreateQuestionnaires(payload),
@@ -15,6 +18,30 @@ export const useReviews = (email?) => {
             });
         }
     })
+
+    const {
+        data: surveys,
+        isLoading: isLoadingSurveys,
+        isError: isErrorSurveys,
+        error: errorSurveys,
+        refetch: refetchSurveys 
+    } = useQuery<Survey[]>({
+        queryKey: [`surveys`],
+        queryFn: PerformGetSurveys,
+        enabled: false
+    })
+
+   const{
+        data: questionnaires,
+        isLoading: isLoadingQuestionnaire,
+        isError: isErrorQuestionnaire,
+        error: errorQuestionnaire,
+        refetch: refetchQuestionnaires
+    } = useQuery ({
+        queryKey: ['questionnaires',selectedSurveyId],
+        queryFn: () => GetQuestionnaires(selectedSurveyId!),
+        enabled: !!selectedSurveyId
+    }) 
 
     const {
         data: questionnairesSummary,
@@ -38,23 +65,12 @@ export const useReviews = (email?) => {
         enabled: !!evaluationId
     })
 
-    const {
-        data: form,
-        isLoading: isLoadingForm,
-        isError: isErrorForm,
-        error: errorForm
-    } = useQuery<StudentContext>({
-        queryKey: ['form', email],
-        queryFn: () => GetFormByEmail(email!),
-        enabled: !!email,
-    })
-
-
-    const { mutate: updateEvaluation, isPending: isUpdatingEvaluation } = useMutation({
-        mutationFn: UpdateEvaluation,
-        onSuccess: (evaluationId) => {
+    const { mutate: performQuestionnaireUpdate, isPending: isPerformQuestionnaireUpdating } = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: BackendPayload }) =>
+            PerformQuestionnaireUpdate(id, payload),
+        onSuccess: (_data, variables) => {
             client.invalidateQueries({
-                queryKey: ['updatedEvaluation', evaluationId]
+                queryKey: ['questionnaireUpdate', variables.id]
             });
         }
     })
@@ -90,26 +106,20 @@ export const useReviews = (email?) => {
     } = useQuery({
         queryKey: ['adminSurveys'],
         queryFn: () => GetSurveysAdmin(),
+        enabled: false
     });
 
     return {
-        // Create
         createQuestionnaires, isCreatingQuestionnaire,
-        // Summary
+        surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
+        questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,refetchQuestionnaires,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
-        // Evaluation
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
-        updateEvaluation, isUpdatingEvaluation,
-        // Questionnaire actions
+        performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
         deleteQuestionnaire, isDeletingQuestionnaire,
-        // Export
         exportTeacherEvaluations, isExportingTeacher,
         exportGlobalSummary, isExportingSummary,
-        // Auth
         loginWithGoogle, isLoggingIn,
-        // Forms
-        form, isLoadingForm, isErrorForm, errorForm,
-        //getsurveyadmin
         adminSurveys,isLoadingAdminSurveys,isErrorAdminSurveys,errorAdminSurveys,refetchAdminSurveys,
     }
 }

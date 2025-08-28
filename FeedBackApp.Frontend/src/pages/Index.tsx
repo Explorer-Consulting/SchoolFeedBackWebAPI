@@ -14,6 +14,7 @@ export default function GoogleAuthApp() {
 
   const onIdTokenSuccess = (resp: CredentialResponse) => {
     const idToken = resp?.credential
+
     if (!idToken) {
       console.error("No ID token from Google")
       return

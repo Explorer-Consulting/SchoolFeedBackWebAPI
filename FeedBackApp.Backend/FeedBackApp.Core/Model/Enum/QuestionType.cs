@@ -6,6 +6,7 @@ namespace FeedBackApp.Core.Model.Enum
         Unknown,
         LikertScaleOneToFive,
         MultinomialSingleChoice,
+        MultiNomialSingleChoiceOther,
         MultipleChoice,
         OpenEnded
     }

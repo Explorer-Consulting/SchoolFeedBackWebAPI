@@ -1,15 +1,9 @@
 ﻿namespace Application.DTOs.Questionnaire
 {
-    public class CreationResponseDTO
+    public class CreationResponseDTO : BaseResponseDTO
     {
-        public bool Success { get; set; }
+        public CreationResponseDTO(bool success, string message) :
+            base(success, message) { }
 
-        public string Message { get; set; }
-        
-        public CreationResponseDTO(bool success, string message)
-        {
-            Success = success;
-            Message = message;
-        }
     }
 }

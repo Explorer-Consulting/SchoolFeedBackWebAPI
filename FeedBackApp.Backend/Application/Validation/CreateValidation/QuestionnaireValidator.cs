@@ -1,9 +1,9 @@
 ﻿using Application.DTOs.Questionnaire;
 using FluentValidation;
 
-namespace Application.Validation
+namespace Application.Validation.CreateValidation
 {
-    public class QuestionnaireValidator : AbstractValidator<QuestionnaireDto>
+    public class QuestionnaireValidator : AbstractValidator<QuestionnaireDTO>
     {
         public QuestionnaireValidator()
         {
@@ -24,9 +24,6 @@ namespace Application.Validation
 
             RuleFor(q => q.QuestionnaireResults)
                 .NotEmpty().WithMessage("Questionnaire must contain at least one answer");
-
-            RuleForEach(q => q.QuestionnaireResults)
-                .SetValidator(new QuestionAnswerValidator());
         }
     }
 }

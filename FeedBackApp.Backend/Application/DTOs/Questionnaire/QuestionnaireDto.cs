@@ -2,7 +2,7 @@
 
 namespace Application.DTOs.Questionnaire
 {
-    public class QuestionnaireDto
+    public class QuestionnaireDTO
     {
         [JsonProperty("surveyId")]
         public string SurveyId { get; set; } = string.Empty;
@@ -17,6 +17,6 @@ namespace Application.DTOs.Questionnaire
         public string SubjectName { get; set; } = string.Empty;
 
         [JsonProperty("questionnaireResult")]
-        public List<QuestionAnswerDto> QuestionnaireResults { get; set; } = new();
+        public List<QuestionAnswerDTO> QuestionnaireResults { get; set; } = new();
     }
 }
