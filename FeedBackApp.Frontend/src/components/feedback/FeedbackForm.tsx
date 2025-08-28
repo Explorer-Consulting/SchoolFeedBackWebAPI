@@ -20,7 +20,7 @@ type FeedbackFormProps = {
 
 export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
   const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
-     performQuestionnaireSubmit,isPerformQuestionnaireSubmit} = useReviews();
+    performQuestionnaireSubmit, isPerformQuestionnaireSubmit } = useReviews();
   const [subject, setSubject] = useState<string>("");
   const [teacher, setTeacher] = useState<string>("");
 
@@ -182,6 +182,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
       {
         onSuccess: () => {
           toast("Piszkozat sikeresen mentve!");
+          setSubject("");
           onAfterChange?.();
         },
         onError: () => {
@@ -189,7 +190,6 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         }
       }
     )
-    onAfterChange?.();
   };
 
   const onSubmit = () => {
