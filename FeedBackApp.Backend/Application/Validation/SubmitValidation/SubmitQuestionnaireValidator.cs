@@ -1,7 +1,6 @@
 ﻿using Application.DTOs.Evaluation;
 using FeedBackApp.Core.Model;
 using FluentValidation;
-using System.Linq;
 
 namespace Application.Validation.SubmitValidation
 {

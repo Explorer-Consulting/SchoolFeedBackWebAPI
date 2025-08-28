@@ -67,6 +67,12 @@ namespace Application.Services
                 return responseFactory(false, id, $"Questionnaire {id} not found.");
 
             var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
+            var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
+
+            if(endDate < DateTime.UtcNow)
+            {
+                return responseFactory(false, id, endDate.ToString());
+            }
 
             var validator = validatorFactory(questionTemplate.QuestionTemplates);
             var validationResult = await validator.ValidateAsync(dto);

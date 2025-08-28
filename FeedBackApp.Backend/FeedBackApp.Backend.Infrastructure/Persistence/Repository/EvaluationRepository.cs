@@ -39,15 +39,20 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
-        public async Task<Questionnaire> GetQuestionnaireByIdAsync(string id)
+        public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
-            return await _context.Questionnaires.FindAsync(id);
+            return await _context.Questionnaires.FindAsync(id) ?? null;
         }
 
-        public async Task<QuestionnaireTemplate> GetQuestionTemplateBySurveyIdAsync(string surveyId)
+        public async Task<QuestionnaireTemplate?> GetQuestionTemplateBySurveyIdAsync(string surveyId)
         {
-            string id = $"questiontemplates_{surveyId}";
-            return await _context.QuestionnaireTemplates.FindAsync(id);
+            return await _context.QuestionnaireTemplates.FindAsync($"questiontemplates_{surveyId}") ?? null;
+        }
+
+        public async Task<DateTime?> GetEndDateBySurveyId(string surveyId)
+        {
+            var survey = await _context.Surveys.FindAsync(surveyId);
+            return survey?.EndDate;
         }
     }
 }
