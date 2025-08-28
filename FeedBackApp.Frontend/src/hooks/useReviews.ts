@@ -1,15 +1,12 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
 import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires,PerformQuestionnaireUpdate, PerformQuestionnaireSubmit} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
-import { BackendPayload, toBackendPayload } from "@/utils/toBackendPayload";
-import {Survey} from "@/models/Survey"
-import { useAuthStore } from "@/stores/useAuthStore";
-import { Variable } from "lucide-react";
+import { BackendPayload} from "@/utils/toBackendPayload";
+import {Survey} from "@/models/StudentContext"
 
 export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
     const { questionnaireId, evaluationId } = useParams();
-    const user=useAuthStore((s)=>s.user);
 
     const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation<any, any, any>({
         mutationFn: (payload) => CreateQuestionnaires(payload),
@@ -21,7 +18,7 @@ export const useReviews = (selectedSurveyId?: string) => {
     })
 
     const {
-        data: surveys,
+        data: querySurveys,
         isLoading: isLoadingSurveys,
         isError: isErrorSurveys,
         error: errorSurveys,
@@ -122,7 +119,7 @@ export const useReviews = (selectedSurveyId?: string) => {
 
     return {
         createQuestionnaires, isCreatingQuestionnaire,
-        surveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
+        querySurveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
         questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,refetchQuestionnaires,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,

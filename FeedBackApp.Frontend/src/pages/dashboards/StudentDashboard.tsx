@@ -1,9 +1,8 @@
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
-import { toast } from "sonner";
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useStudentContextStore } from "@/stores/useStudentContextStore";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
@@ -11,29 +10,31 @@ import { Navigate } from "react-router-dom";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
-  const [selectedSurveyId, setSelectedSurveyId] = useState<string>();
-  const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
-    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId);
+  const { selectedSurveyId, setSelectedSurveyId,
+    context, setContext, surveys, setSurveys } = useStudentContextStore();
 
-  const { context, setContext } = useStudentContextStore();
+  const { querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
+    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
 
   useEffect(() => {
     if (!questionnaires) return;
-    try {
-      const ctx = toStudentContext(questionnaires);
-      setContext(ctx);
-    } catch (e) {
-      console.error("Konvertalasi hiba: ", e);
-    }
-    refetchSurveys()
-  }, [questionnaires, setContext, refetchSurveys]);
-
+    const ctx = toStudentContext(questionnaires);
+    setContext(ctx);
+  }, [questionnaires, setContext]);
 
   useEffect(() => {
-    refetchSurveys();
-  }, [refetchSurveys]);
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+    if (!surveys) {
+      refetchSurveys();
+    }
+  }, [surveys, refetchSurveys]);
+
+  useEffect(() => {
+    if (querySurveys) {
+      setSurveys(querySurveys);
+    }
+  }, [querySurveys, setSurveys]);
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
@@ -86,23 +87,9 @@ export default function StudentDashboard() {
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoadingSurveys && <p>Betöltés…</p>}
-            {isErrorSurveys && (
-              <p className="text-red-600">
-                Hiba a kérdőívek betöltésekor: {String((errorSurveys as any)?.message || '')}
-              </p>
-            )}
-
-            {!isLoadingSurveys && surveys && (
+            {!isLoadingSurveys && !isErrorSurveys && surveys && (
               <ul className="space-y-2">
                 {surveys
-                  .filter(s => {
-                    if (!s.endDate) return true;
-                    const end = new Date(s.endDate);
-                    const today = new Date();
-                    end.setHours(23, 59, 59, 999);
-                    return end >= today;
-                  })
                   .map(s => {
                     const selected = selectedSurveyId === s.id;
                     return (
@@ -127,15 +114,9 @@ export default function StudentDashboard() {
                       </li>
                     );
                   })}
-                {surveys.filter(s => {
-                  if (!s.endDate) return true;
-                  const end = new Date(s.endDate);
-                  const today = new Date();
-                  end.setHours(23, 59, 59, 999);
-                  return end >= today;
-                }).length === 0 && (
-                    <li className="text-sm text-muted-foreground">Jelenleg nincs aktív kérdőív.</li>
-                  )}
+                {surveys.length === 0 && (
+                  <li className="text-sm text-muted-foreground">Jelenleg nincs aktív kérdőív.</li>
+                )}
               </ul>
             )}
           </CardContent>
@@ -143,14 +124,22 @@ export default function StudentDashboard() {
       </section>
 
       <section>
-        {context && context.subjects.length > 0 ? (
+        {!selectedSurveyId ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Nincs kiválasztott kérdőív</CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground">
+              Kérjük, válassz ki egy kérdőívet !
+            </CardContent>
+          </Card>
+        ) : context && !isLoadingQuestionnaire && !isErrorQuestionnaire && context.subjects.length > 0 ? (
           <FeedbackForm
             subjects={context.subjects}
             teachersBySubject={context.teachersBySubject}
             evaluations={context.evaluations}
             onAfterChange={() => {
-              refetchQuestionnaires();
-            }} />
+              refetchQuestionnaires();}} />
         ) : (
           <Card>
             <CardHeader>
