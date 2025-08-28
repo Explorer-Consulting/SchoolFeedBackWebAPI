@@ -1,3 +1,9 @@
+export type Survey = {
+  id: string
+  title: string
+  endDate: string 
+}
+
 export type EvaluationResponses ={
     [key: `q${number}`]: string | string[];
 }

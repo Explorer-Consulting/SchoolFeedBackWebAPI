@@ -25,24 +25,24 @@ export const PerformGetSurveys = async () => {
     return data;
 };
 export const CreateQuestionnaires = async (payload) => {
-    const response = await apiClient.post(`/surveys`,payload); 
-    return response.data;
+    const {data} = await apiClient.post(`/surveys`,payload); 
+    return data;
 };
 
 export const GetQuestionnaireSummary = async (questionnaireId) => {
-    const response = await apiClient.get(`/summaries/${questionnaireId}`);
-    return response.data;
+    const {data} = await apiClient.get(`/summaries/${questionnaireId}`);
+    return data;
 }
 
 
 export const GetEvaluation = async (evaluationId) => {
-    const response = await apiClient.get(`/evaluations/${evaluationId}`);
-    return response.data;
+    const {data} = await apiClient.get(`/evaluations/${evaluationId}`);
+    return data
 };
 
 export const DeleteQuestionnaire = async (questionnaireId) => {
-    const response = await apiClient.delete(`/surveys/${questionnaireId}`);
-    return response.data;
+    const {data} = await apiClient.delete(`/surveys/${questionnaireId}`);
+    return data;
 };
 
 export const PerformQuestionnaireUpdate = async (id, payload) => {
@@ -56,6 +56,6 @@ export const PerformQuestionnaireSubmit = async (id,payload) => {
 }        
 
 export const GetSurveysAdmin = async () => {
-  const response = await apiClient.get(`/surveys/admin`);
-  return response.data;
+  const {data} = await apiClient.get(`/surveys/admin`);
+  return data;
 };

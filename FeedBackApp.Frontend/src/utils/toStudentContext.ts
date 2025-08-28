@@ -1,6 +1,6 @@
 import type { StudentContext, EvaluationResponses } from "@/models/StudentContext";
 
-const multiQuestions = new Set(["q20", "q21"]);
+const multiQuestions = new Set(["q19", "q20"]);
 
 export function toStudentContext(raw: any): StudentContext {
     const subjects: string[] = [];
