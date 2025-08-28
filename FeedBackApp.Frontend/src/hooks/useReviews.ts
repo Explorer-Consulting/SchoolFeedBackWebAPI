@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires,PerformQuestionnaireUpdate} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires,PerformQuestionnaireUpdate, PerformQuestionnaireSubmit} from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
-import { BackendPayload } from "@/utils/toBackendPayload";
+import { BackendPayload, toBackendPayload } from "@/utils/toBackendPayload";
 import {Survey} from "@/models/Survey"
 import { useAuthStore } from "@/stores/useAuthStore";
+import { Variable } from "lucide-react";
 
 export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
@@ -75,6 +76,16 @@ export const useReviews = (selectedSurveyId?: string) => {
         }
     })
 
+    const { mutate: performQuestionnaireSubmit, isPending :  isPerformQuestionnaireSubmit } = useMutation({
+        mutationFn: ({id,payload}: {id:string; payload: BackendPayload }) =>
+             PerformQuestionnaireSubmit(id,payload),
+        onSuccess: (_data, variables) => {
+            client.invalidateQueries({
+                queryKey: ['questionnaireSubmit',variables.id]
+            });
+        }
+    })
+
     const { mutate: deleteQuestionnaire, isPending: isDeletingQuestionnaire } = useMutation({
         mutationFn: (questionnaireId: string) => DeleteQuestionnaire(questionnaireId),
         onSuccess: (questionnaireId) => {
@@ -116,6 +127,7 @@ export const useReviews = (selectedSurveyId?: string) => {
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
         performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
+        performQuestionnaireSubmit,isPerformQuestionnaireSubmit,
         deleteQuestionnaire, isDeletingQuestionnaire,
         exportTeacherEvaluations, isExportingTeacher,
         exportGlobalSummary, isExportingSummary,
