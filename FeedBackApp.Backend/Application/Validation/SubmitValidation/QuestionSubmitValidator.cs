@@ -15,7 +15,6 @@ namespace Application.Validation.SubmitValidation
                 .WithMessage(dto => $"Question with id {dto.QuestionId} does not exist.");
 
             RuleFor(dto => dto.Answer)
-                .NotEmpty().WithMessage("Answer cannot be empty")
                 .Custom((answer, context) =>
                 {
                     var dtoInstance = (QuestionResultDTO)context.InstanceToValidate;
@@ -23,6 +22,14 @@ namespace Application.Validation.SubmitValidation
 
                     if (template == null)
                         return;
+
+                    if (dtoInstance.QuestionId == "q19")
+                        return;
+
+                    if(answer == string.Empty)
+                    {
+                        context.AddFailure($"Answer cannot be empty '{template.Question}-{template.Id}'");
+                    }
 
                     switch (template.Type)
                     {
