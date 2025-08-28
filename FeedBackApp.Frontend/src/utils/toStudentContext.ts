@@ -20,21 +20,20 @@ export function toStudentContext(raw: any): StudentContext {
         const subjectName = typeof subj?.name === "string" ? subj.name : "";
         if (!subjectName) continue;
 
-        subjects.push(subjectName);
-        teachersBySubject[subjectName] = [];
+        const teacherList = Array.isArray(subj?.teachers) ? subj.teachers : [];
+        const teacherNamesForSubject: string[] = [];
 
-        const teacherList = Array.isArray(subj.teachers) ? subj.teachers : [];
         for (const teacher of teacherList) {
             const teacherName = typeof teacher?.name === "string" ? teacher.name : "";
             if (!teacherName) continue;
 
-            teachersBySubject[subjectName].push(teacherName);
+            teacherNamesForSubject.push(teacherName);
 
             const responses: Record<string, string | string[]> = {};
             const answers = Array.isArray(teacher?.answers) ? teacher.answers : [];
 
             for (const answer of answers) {
-                const qid = typeof answer?.questionID=== "string" ? answer.questionID : "";
+                const qid = typeof answer?.questionID === "string" ? answer.questionID : "";
                 if (!qid) continue;
                 const ans = typeof answer?.answer === "string" ? answer.answer : "";
 
@@ -48,6 +47,10 @@ export function toStudentContext(raw: any): StudentContext {
                 teacher: teacherName,
                 responses: responses as EvaluationResponses
             });
+        }
+        if (teacherNamesForSubject.length > 0) {
+            subjects.push(subjectName);
+            teachersBySubject[subjectName] = teacherNamesForSubject;
         }
     }
 
