@@ -19,7 +19,8 @@ type FeedbackFormProps = {
 }
 
 export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
-  const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating } = useReviews();
+  const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
+     performQuestionnaireSubmit,isPerformQuestionnaireSubmit} = useReviews();
   const [subject, setSubject] = useState<string>("");
   const [teacher, setTeacher] = useState<string>("");
 
@@ -193,7 +194,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     const data = collectResponses();
     const payload = toBackendPayload(data);
 
-    performQuestionnaireUpdate(
+    performQuestionnaireSubmit(
       { id, payload },
       {
         onSuccess: () => {
@@ -274,7 +275,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
 
         <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>Piszkozat mentése</Button>
-          <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireUpdating}>Beküldés</Button>
+          <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireSubmit}>Beküldés</Button>
         </div>
       </CardContent>
     </Card>
