@@ -16,11 +16,6 @@ export default function StudentDashboard() {
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId);
 
-
-  useEffect(() => {
-    console.log("questionnaires", questionnaires);
-  }, [questionnaires]);
-
   const { context, setContext } = useStudentContextStore();
 
   useEffect(() => {

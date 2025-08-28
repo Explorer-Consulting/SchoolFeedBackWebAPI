@@ -55,12 +55,6 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     [subject, teachersBySubject]
   );
 
-  /*useEffect(() => {
-    if (teacher && !teachersForSubject.includes(teacher)) {
-      setTeacher("");
-    }
-  }, [teachersForSubject, teacher]); */
-
   const currentEvaluation = useMemo(
     () =>
       evaluations?.find(
@@ -205,6 +199,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         onSuccess: () => {
           toast("Kérdőív beküldve!");
           onAfterChange?.();
+          //
         },
         onError: () => {
           toast("Hiba történt a beküldés közben!");
