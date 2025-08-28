@@ -29,11 +29,11 @@ export default function StudentDashboard() {
     refetchSurveys()
   }, [questionnaires, setContext, refetchSurveys]);
 
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+
   useEffect(() => {
     refetchSurveys();
   }, [refetchSurveys]);
-
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
