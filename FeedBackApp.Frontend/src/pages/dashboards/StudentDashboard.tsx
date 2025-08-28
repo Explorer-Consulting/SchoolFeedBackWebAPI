@@ -16,11 +16,6 @@ export default function StudentDashboard() {
   const { surveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId);
 
-
-  useEffect(() => {
-    console.log("questionnaires", questionnaires);
-  }, [questionnaires]);
-
   const { context, setContext } = useStudentContextStore();
 
   useEffect(() => {
@@ -34,9 +29,11 @@ export default function StudentDashboard() {
     refetchSurveys()
   }, [questionnaires, setContext, refetchSurveys]);
 
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
-  else (refetchSurveys())
 
+  useEffect(() => {
+    refetchSurveys();
+  }, [refetchSurveys]);
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
@@ -146,7 +143,7 @@ export default function StudentDashboard() {
       </section>
 
       <section>
-        {context && (
+        {context && context.subjects.length > 0 ? (
           <FeedbackForm
             subjects={context.subjects}
             teachersBySubject={context.teachersBySubject}
@@ -154,6 +151,15 @@ export default function StudentDashboard() {
             onAfterChange={() => {
               refetchQuestionnaires();
             }} />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Kérdőív kitöltve</CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground">
+              Ezt a kérdőívet már kitöltötted. Köszönjük a visszajelzést!
+            </CardContent>
+          </Card>
         )}
       </section>
     </main>

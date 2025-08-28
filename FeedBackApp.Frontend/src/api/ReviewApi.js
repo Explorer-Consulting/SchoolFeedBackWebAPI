@@ -50,6 +50,11 @@ export const PerformQuestionnaireUpdate = async (id, payload) => {
     return data;
 };
 
+export const PerformQuestionnaireSubmit = async (id,payload) => {
+    const {data} = await apiClient.post(`/questionnaire/${id}`,payload);
+    return data;
+}        
+
 export const GetSurveysAdmin = async () => {
   const response = await apiClient.get(`/surveys/admin`);
   return response.data;
