@@ -8,6 +8,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         public DbSet<SurveyMetadata> Surveys { get; set; }
         public DbSet<Questionnaire> Questionnaires { get; set; }
         public DbSet<QuestionnaireTemplate> QuestionnaireTemplates { get; set; }
+        public DbSet<EmailsToSend> EmailsToSend { get; set; }
 
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 

@@ -11,11 +11,11 @@ using Microsoft.Extensions.Logging;
 
 namespace AzureEndPointReaction.Functions.Questionnaires
 {
-    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService questionnaireService, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger, IEmailService emailService)
+    public sealed class QuestionnaireCompilerWorkerEncapsulator(IQuestionnaireService questionnaireService, ILogger<QuestionnaireCompilerWorkerEncapsulator> logger, ICronTimerService cronTimerService)
     {
         private readonly IQuestionnaireService _questionnaireService = questionnaireService;
         private readonly ILogger<QuestionnaireCompilerWorkerEncapsulator> _logger = logger;
-        private readonly IEmailService _emailService = emailService;
+        private readonly ICronTimerService _cronTimerService = cronTimerService;
 
         [RequireAdmin]
         [Function("PerformQuestionnaireCompilation")]
@@ -49,17 +49,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
 
                 var result = await _questionnaireService.CompileAndSaveAsync(dto);
 
-                //var studentEmails = new List<string>();
-                //foreach (var set in dto.StudentSets)
-                //{
-                //    foreach (var email in set.StudentEmails)
-                //    {
-                //        studentEmails.Add(email);
-                //    }
-                //}
-                // await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
-
-                // need something that starts the timer
+                _cronTimerService.Start();
 
                 if (!result.Success)
                 {

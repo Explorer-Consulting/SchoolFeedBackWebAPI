@@ -1,6 +1,4 @@
-﻿using FeedBackApp.Backend.Infrastructure.Middleware;
-using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
-using Microsoft.Azure.Functions.Worker;
+﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
 using System.Reflection;

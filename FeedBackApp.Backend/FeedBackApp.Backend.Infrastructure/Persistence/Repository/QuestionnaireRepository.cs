@@ -63,13 +63,29 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 _context.AddRange(questionnaires);
             }
 
-            var emailToSend = new EmailsToSend
-            {
-                Id = "emailsToSend",
-                EmaailToSend = allEmails.ToList()
-            };
+            var emailDoc = await _context.EmailsToSend
+                .FirstOrDefaultAsync(e => e.Id == "emailsToSend");
 
-            _context.Add(emailToSend);
+            if (emailDoc == null)
+            {
+                // First time: create the document
+                emailDoc = new EmailsToSend
+                {
+                    Id = "emailsToSend",
+                    EmailToSend = allEmails.ToList()
+                };
+
+                _context.Add(emailDoc);
+            }
+            else
+            {
+                foreach (var email in allEmails)
+                {
+                   emailDoc.EmailToSend.Add(email); 
+                }
+                _context.Update(emailDoc);
+            }
+
 
             await _context.SaveChangesAsync();
         }

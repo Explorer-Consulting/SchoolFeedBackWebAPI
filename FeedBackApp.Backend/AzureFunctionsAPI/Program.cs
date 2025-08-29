@@ -2,7 +2,6 @@
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
-using Application.Validation.UpdateValidation;
 using Azure.Core.Serialization;
 using AzureEndPointReaction.Functions.Questionnaires;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation;
@@ -57,12 +56,14 @@ var host = new HostBuilder()
 
         // DI regisztrációid
         // services.AddScoped<IMyService, MyService>();
-        services.AddScoped<IEmailService, EmailService>();
+        
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
         services.AddScoped<IEvaluationRepository, EvaluationRepository>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IEmailRepository, EmailRepository>();
         services.AddScoped<QuestionnaireCompilerWorkerEncapsulator>();
         services.AddScoped<QuestionnaireDeletionWorkerEncapsulator>();
         services.AddScoped<QuestionnaireEvaluationWorkerEncapsulator>();
@@ -80,6 +81,8 @@ var host = new HostBuilder()
         services.AddSingleton<AdminOnlyMiddleware>();
         services.AddSingleton<StudentOnlyMiddleware>();
         services.AddSingleton<MiddlewareSelector>();
+
+        services.AddSingleton<ICronTimerService, CronTimerService>();
     })
     // Pipeline/Middleware (IFunctionsWorkerApplicationBuilder overload)
     .ConfigureFunctionsWebApplication((IFunctionsWorkerApplicationBuilder app) =>
