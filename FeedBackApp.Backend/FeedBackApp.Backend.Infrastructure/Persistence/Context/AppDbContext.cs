@@ -31,12 +31,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
-
-            modelBuilder.Entity<EmailsToSend>()
-                .ToContainer("mainContainer")
-                .HasPartitionKey(q => q.Id)
-                .HasKey(e => e.Id);
-
+            
             modelBuilder.Entity<SurveyMetadata>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<SurveyMetadata>("Survey");
@@ -49,10 +44,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<QuestionnaireTemplate>("QuestionTemplate");
 
-            modelBuilder.Entity<EmailsToSend>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<EmailsToSend>("EmailsToSend");
-
         }
+
     }
 }

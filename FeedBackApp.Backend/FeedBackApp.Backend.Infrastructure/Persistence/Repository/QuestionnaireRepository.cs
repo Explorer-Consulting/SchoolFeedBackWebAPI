@@ -25,7 +25,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             _context.Add(tempForSave);
 
             var questionnaires = new List<Questionnaire>();
-            var allEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var param in metadata.CreationParams)
             {
@@ -36,7 +35,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
                     foreach (var studentEmail in set.StudentEmails)
                     {
-                        allEmails.Add(studentEmail);
                         var q = new Questionnaire
                         {
                             Id = $"{studentEmail}_{param.TeacherEmail}_{param.SubjectName}_{metadata.Id}",
@@ -62,15 +60,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             {
                 _context.AddRange(questionnaires);
             }
-
-            var emailToSend = new EmailsToSend
-            {
-                Id = "emailsToSend",
-                EmaailToSend = allEmails.ToList()
-            };
-
-            _context.Add(emailToSend);
-
             await _context.SaveChangesAsync();
         }
 
