@@ -10,7 +10,6 @@ import { Navigate } from "react-router-dom";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
-  
 
   const { selectedSurveyId, setSelectedSurveyId,
     context, setContext, surveys, setSurveys } = useStudentContextStore();
@@ -25,19 +24,12 @@ export default function StudentDashboard() {
   }, [questionnaires, setContext]);
 
   useEffect(() => {
-    if (!surveys) {
-      refetchSurveys();
-    }
-  }, [surveys, refetchSurveys]);
-
-  useEffect(() => {
-    if (querySurveys) {
-      setSurveys(querySurveys);
-    }
-  }, [querySurveys, setSurveys]);
+    refetchSurveys();
+    setSurveys(querySurveys);
+  }, [querySurveys, setSurveys,refetchSurveys]);
 
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
-  
+
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
@@ -142,7 +134,8 @@ export default function StudentDashboard() {
             teachersBySubject={context.teachersBySubject}
             evaluations={context.evaluations}
             onAfterChange={() => {
-              refetchQuestionnaires();}} />
+              refetchQuestionnaires();
+            }} />
         ) : (
           <Card>
             <CardHeader>

@@ -84,6 +84,17 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     applyResponses(currentEvaluation?.responses);
   }, [subject, teacher, currentEvaluation]);
 
+ useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      onSaveDraft();
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  });
+
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
   const likerts = [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16];
@@ -123,6 +134,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const onSaveDraft = () => {
+    console.log("hii");
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return;
     }
@@ -146,7 +158,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
       }
     )
   };
-
+ 
   const onSubmit = () => {
     const err = validate();
 
@@ -161,7 +173,6 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         onSuccess: () => {
           toast("Kérdőív beküldve!");
           onAfterChange?.();
-          //
         },
         onError: () => { toast("Hiba történt a beküldés közben!");}
       }
