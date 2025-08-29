@@ -36,7 +36,8 @@ export default function GoogleAuthApp() {
         if (e.response?.status === 403) {
           navigate("/no-access")
         } else {
-          console.error(e)
+          navigate("/no-access")
+          console.error(e);
         }
       }
     })
