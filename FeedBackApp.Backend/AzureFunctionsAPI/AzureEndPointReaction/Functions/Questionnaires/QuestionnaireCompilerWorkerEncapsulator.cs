@@ -48,15 +48,18 @@ namespace AzureEndPointReaction.Functions.Questionnaires
                 }
 
                 var result = await _questionnaireService.CompileAndSaveAsync(dto);
-                var studentEmails = new List<string>();
-                foreach (var set in dto.StudentSets)
-                {
-                    foreach (var email in set.StudentEmails)
-                    {
-                        studentEmails.Add(email);
-                    }
-                }
-                await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+
+                //var studentEmails = new List<string>();
+                //foreach (var set in dto.StudentSets)
+                //{
+                //    foreach (var email in set.StudentEmails)
+                //    {
+                //        studentEmails.Add(email);
+                //    }
+                //}
+                // await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+
+                // need something that starts the timer
 
                 if (!result.Success)
                 {
