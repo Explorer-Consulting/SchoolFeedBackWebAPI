@@ -20,5 +20,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             return emails.EmailToSend.Take(20);
         }
+
+        public async Task RemoveEmailsAsync(IEnumerable<string> emails)
+        {
+            var record = await _context.EmailsToSend.FindAsync("emailsToSend");
+            if (record == null) return;
+
+            foreach (var email in emails)
+                record.EmailToSend.Remove(email);
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

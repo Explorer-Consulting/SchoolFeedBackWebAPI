@@ -1,6 +1,7 @@
 ﻿
 using Application.Services.Interfaces;
 using FeedBackApp.Backend.Infrastructure.Persistence.Repository;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -91,7 +92,26 @@ namespace Application.Services
                 var emails = await emailRepo.GetEmailsToSend();
                 if (!emails.Any()) { Stop(); return; }
 
-                await emailService.SendBulkEmailAsync(emails, $"Student-teacher feedback", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+                var successfullySent = new List<string>();
+
+                // Send each email individually and track success
+                foreach (var email in emails)
+                {
+                    bool sent = await emailService.SendEmailAsync(
+                        email,
+                        "Student-teacher feedback",
+                        "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net"
+                    );
+
+                    if (sent) successfullySent.Add(email);
+                }
+
+                // Remove successfully sent emails from Cosmos DB
+                if (successfullySent.Any())
+                {
+                    await emailRepo.RemoveEmailsAsync(successfullySent);
+                    _logger.LogInformation("Removed {Count} successfully sent emails from Cosmos DB", successfullySent.Count);
+                }
             }
             catch (Exception ex)
             {
