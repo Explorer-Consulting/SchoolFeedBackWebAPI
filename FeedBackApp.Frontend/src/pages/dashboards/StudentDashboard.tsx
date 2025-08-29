@@ -10,7 +10,7 @@ import { Navigate } from "react-router-dom";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  
 
   const { selectedSurveyId, setSelectedSurveyId,
     context, setContext, surveys, setSurveys } = useStudentContextStore();
@@ -35,6 +35,9 @@ export default function StudentDashboard() {
       setSurveys(querySurveys);
     }
   }, [querySurveys, setSurveys]);
+
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
