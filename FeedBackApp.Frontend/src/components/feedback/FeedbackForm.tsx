@@ -101,43 +101,6 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     applyResponses(currentEvaluation?.responses);
   }, [subject, teacher, currentEvaluation]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      onSaveDraft();
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  });
-
-  useEffect(() => {
-    // Mentés minden subject/teacher váltásnál
-    if (subject && teacher) {
-      localStorage.setItem("feedbackSelection", JSON.stringify({ subject, teacher }));
-    }
-  }, [subject, teacher]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("feedbackSelection");
-    if (saved) {
-      try {
-        const { subject: savedSubject, teacher: savedTeacher } = JSON.parse(saved);
-        if (subjects.includes(savedSubject)) {
-          setSubject(savedSubject);
-          if (teachersBySubject[savedSubject]?.includes(savedTeacher)) {
-            setTeacher(savedTeacher);
-            applyResponses(currentEvaluation?.responses);
-          }
-        }
-      } catch {
-        // ha sérült a storage, töröljük
-        localStorage.removeItem("feedbackSelection");
-      }
-    }
-  }, [subjects, teachersBySubject, currentEvaluation?.responses, setSubject, setTeacher]);
-
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
   const likerts = [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16];

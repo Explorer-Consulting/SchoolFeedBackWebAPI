@@ -74,7 +74,7 @@ namespace Application.Services
 
             var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
 
-            if(endDate < DateTime.UtcNow)
+            if (endDate < DateTime.UtcNow)
             {
                 return responseProvider(false, id, endDate.ToString());
             }

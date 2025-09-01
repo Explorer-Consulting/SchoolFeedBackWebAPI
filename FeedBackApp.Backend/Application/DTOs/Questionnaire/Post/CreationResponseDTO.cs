@@ -3,7 +3,8 @@
     public class CreationResponseDTO : BaseResponseDTO
     {
         public CreationResponseDTO(bool success, string message) :
-            base(success, message) { }
+            base(success, message)
+        { }
 
     }
 }

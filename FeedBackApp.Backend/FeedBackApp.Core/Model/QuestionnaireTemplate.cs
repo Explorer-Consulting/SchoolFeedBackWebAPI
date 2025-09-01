@@ -12,9 +12,9 @@ namespace FeedBackApp.Core.Model
         {
             Id = $"questiontemplates_{id}";
             int qId = 0;
-            foreach(var question in questionTemplates)
+            foreach (var question in questionTemplates)
             {
-                question.Id = $"q{qId++}"; 
+                question.Id = $"q{qId++}";
             }
             QuestionTemplates = questionTemplates;
         }
