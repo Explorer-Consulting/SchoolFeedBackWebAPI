@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using Application.DTOs.Questionnaire;
+using Newtonsoft.Json;
 
-namespace Application.DTOs.Questionnaire
+namespace Application.DTOs.Survey
 {
     public class CreateSurveyMetadataDTO
     {

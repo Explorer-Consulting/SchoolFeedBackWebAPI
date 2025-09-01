@@ -1,7 +1,6 @@
 using Application.Services.Interfaces;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
@@ -29,11 +28,9 @@ public class SurveyAdminGetRequestWorkerEncapsulator
         )]
     public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys/admin")] HttpRequestData request)
     {
-
         var surveyDtoList = await _service.GetAllSurveyMetadata();
         var ok = request.CreateResponse(HttpStatusCode.OK);
         await ok.WriteAsJsonAsync(surveyDtoList);
         return ok;
-
     }
 }

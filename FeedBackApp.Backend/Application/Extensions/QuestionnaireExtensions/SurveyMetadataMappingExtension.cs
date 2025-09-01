@@ -48,19 +48,20 @@ namespace Application.Extensions.QuestionnaireExtensions
                     .ToList() ?? new List<QuestionnaireCreationParamDTO>()
             };
 
-
         public static StudentSet ToModel(this StudentSetDTO dto) =>
             new()
             {
                 SetId = dto.SetId,
                 StudentEmails = dto.StudentEmails,
             };
+
         public static StudentSetDTO ToDto(this StudentSet model) =>
             new()
             {
                 SetId = model.SetId,
                 StudentEmails = [.. model.StudentEmails]
             };
+
         public static MetaTeacher ToModel(this MetaTeacherDTO dto) =>
             new()
             {
@@ -81,6 +82,7 @@ namespace Application.Extensions.QuestionnaireExtensions
                 SubjectName = dto.SubjectName,
                 StudentSetIds = dto.StudentSetIds
             };
+
         public static QuestionnaireCreationParamDTO ToDto(this QuestionnaireCreationParam model) =>
             new()
             {
@@ -88,6 +90,7 @@ namespace Application.Extensions.QuestionnaireExtensions
                 SubjectName = model.SubjectName,
                 StudentSetIds = [.. model.StudentSetIds]
             };
+
         public static Questionnaire ToModel(this QuestionnaireDTO dto) =>
             new()
             {
@@ -100,6 +103,7 @@ namespace Application.Extensions.QuestionnaireExtensions
                     .Select(q => q.ToModel())
                     .ToList() ?? new List<QuestionAnswer>(),
             };
+
         public static QuestionnaireDTO ToDto(this Questionnaire model) =>
             new()
             {
@@ -110,15 +114,15 @@ namespace Application.Extensions.QuestionnaireExtensions
                 SubjectName = model.SubjectName, 
                 QuestionnaireResults = model.QuestionnaireResults
                     .Select(q => q.ToDto())
-                    .ToList() ?? new List<QuestionAnswerDTO>()
+                    .ToList() ?? new List<PostAnswerDto>()
             };
-        public static QuestionAnswerDTO ToDto(this QuestionAnswer model) =>
+        public static PostAnswerDto ToDto(this QuestionAnswer model) =>
             new()
             {
                 Answer = model.Answer
 
             };
-        public static QuestionAnswer ToModel(this QuestionAnswerDTO dto) =>
+        public static QuestionAnswer ToModel(this PostAnswerDto dto) =>
             new()
             {
                 Answer = dto.Answer,
@@ -131,14 +135,16 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Type = dto.Type,
                 AnswerOptions = dto.AnswerOptions
             };
+
         public static QuestionTemplateDTO ToDto(this QuestionTemplate model) =>
             new()
             {
                 Question = model.Question,
                 Type = model.Type,
                 AnswerOptions = [..model.AnswerOptions]
-            };
-        public static GetSurveyMetadataDto toDto(this SurveyMetadata model) =>
+            }; 
+
+        public static GetSurveyMetadataDTO ToGetDto(this SurveyMetadata model) =>
             new()
             {
                 Id = model.Id,

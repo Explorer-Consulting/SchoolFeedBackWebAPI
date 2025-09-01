@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Survey;
 using FluentValidation;
 
 namespace Application.Validation.CreateValidation

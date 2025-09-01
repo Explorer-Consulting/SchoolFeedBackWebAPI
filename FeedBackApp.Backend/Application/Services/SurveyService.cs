@@ -14,19 +14,19 @@ namespace Application.Services
             _questionnaireRepository = questionnaireRepository;
         }
 
-        public async Task<List<GetSurveyMetadataDto>> GetAllSurveyMetadata()
+        public async Task<List<GetSurveyMetadataDTO>> GetAllSurveyMetadata()
         {
             var metadatas = await _questionnaireRepository.GetAllSurveyMetadata();
-            var dtos = metadatas.Select(m => m.toDto()).ToList();
+            var dtos = metadatas.Select(m => m.ToGetDto()).ToList();
             return dtos;
         }
 
-        public async Task<List<GetSurveyMetadataDto>> GetSurveyMetadataForStudent(string studentEmail)
+        public async Task<List<GetSurveyMetadataDTO>> GetSurveyMetadataForStudent(string studentEmail)
         {
             var metadatas = await _questionnaireRepository.GetSurveyMetadataForStudentAsync(studentEmail);
             metadatas = metadatas.Where(m => m.StartDate <= DateTime.UtcNow).ToList();
             metadatas = metadatas.Where(m => m.EndDate >= DateTime.UtcNow).ToList();
-            List<GetSurveyMetadataDto> dto = metadatas.Select(x => x.toDto()).ToList();
+            List<GetSurveyMetadataDTO> dto = metadatas.Select(x => x.ToGetDto()).ToList();
             return dto;
         }
     }
