@@ -1,9 +1,9 @@
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
-import { useAuthStore } from '@/hooks/useAuthStore'
+import { useAuthStore } from '@/hooks/useAuth'
 import { useEffect } from "react";
-import { useStudentContextStore } from "@/hooks/useStudentContextStore";
+import { useStudentContextStore } from "@/hooks/useStudentContext";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
 import { parseExcel } from "@/utils/parseExcel";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useAuthStore } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
 export default function AdminDashboard() {
