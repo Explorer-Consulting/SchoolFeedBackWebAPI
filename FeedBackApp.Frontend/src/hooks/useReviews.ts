@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle,GetSurveysAdmin,PerformGetSurveys,GetQuestionnaires,PerformQuestionnaireUpdate, PerformQuestionnaireSubmit} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
-import { BackendPayload} from "@/utils/toBackendPayload";
-import {Survey} from "@/models/StudentContext"
+import { BackendPayload } from "@/utils/toBackendPayload";
+import { Survey } from "@/models/StudentContext"
 
 export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
@@ -22,24 +22,24 @@ export const useReviews = (selectedSurveyId?: string) => {
         isLoading: isLoadingSurveys,
         isError: isErrorSurveys,
         error: errorSurveys,
-        refetch: refetchSurveys 
+        refetch: refetchSurveys
     } = useQuery<Survey[]>({
         queryKey: [`surveys`],
         queryFn: PerformGetSurveys,
         enabled: false
     })
 
-   const{
+    const {
         data: questionnaires,
         isLoading: isLoadingQuestionnaire,
         isError: isErrorQuestionnaire,
         error: errorQuestionnaire,
         refetch: refetchQuestionnaires
-    } = useQuery ({
-        queryKey: ['questionnaires',selectedSurveyId],
+    } = useQuery({
+        queryKey: ['questionnaires', selectedSurveyId],
         queryFn: () => GetQuestionnaires(selectedSurveyId!),
         enabled: !!selectedSurveyId
-    }) 
+    })
 
     const {
         data: questionnairesSummary,
@@ -73,12 +73,12 @@ export const useReviews = (selectedSurveyId?: string) => {
         }
     })
 
-    const { mutate: performQuestionnaireSubmit, isPending :  isPerformQuestionnaireSubmit } = useMutation({
-        mutationFn: ({id,payload}: {id:string; payload: BackendPayload }) =>
-             PerformQuestionnaireSubmit(id,payload),
+    const { mutate: performQuestionnaireSubmit, isPending: isPerformQuestionnaireSubmit } = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: BackendPayload }) =>
+            PerformQuestionnaireSubmit(id, payload),
         onSuccess: (_data, variables) => {
             client.invalidateQueries({
-                queryKey: ['questionnaireSubmit',variables.id]
+                queryKey: ['questionnaireSubmit', variables.id]
             });
         }
     })
@@ -119,16 +119,16 @@ export const useReviews = (selectedSurveyId?: string) => {
 
     return {
         createQuestionnaires, isCreatingQuestionnaire,
-        querySurveys,isLoadingSurveys,isErrorSurveys,errorSurveys,refetchSurveys,
-        questionnaires,isLoadingQuestionnaire,isErrorQuestionnaire,errorQuestionnaire,refetchQuestionnaires,
+        querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
+        questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire, refetchQuestionnaires,
         questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
         evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
         performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
-        performQuestionnaireSubmit,isPerformQuestionnaireSubmit,
+        performQuestionnaireSubmit, isPerformQuestionnaireSubmit,
         deleteQuestionnaire, isDeletingQuestionnaire,
         exportTeacherEvaluations, isExportingTeacher,
         exportGlobalSummary, isExportingSummary,
         loginWithGoogle, isLoggingIn,
-        adminSurveys,isLoadingAdminSurveys,isErrorAdminSurveys,errorAdminSurveys,refetchAdminSurveys,
+        adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
     }
 }

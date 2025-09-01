@@ -18,8 +18,7 @@ type FeedbackFormProps = {
   onAfterChange?: () => void;
 }
 
-export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) 
-{
+export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
   const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
     performQuestionnaireSubmit, isPerformQuestionnaireSubmit } = useReviews();
   const [subject, setSubject] = useState<string>("");
@@ -84,7 +83,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     applyResponses(currentEvaluation?.responses);
   }, [subject, teacher, currentEvaluation]);
 
- useEffect(() => {
+  useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       onSaveDraft();
       e.preventDefault();
@@ -96,30 +95,30 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   });
 
   useEffect(() => {
-  // Mentés minden subject/teacher váltásnál
-  if (subject && teacher) {
-    localStorage.setItem("feedbackSelection", JSON.stringify({ subject, teacher }));
-  }
-}, [subject, teacher]);
-
-useEffect(() => {
-  const saved = localStorage.getItem("feedbackSelection");
-  if (saved) {
-    try {
-      const { subject: savedSubject, teacher: savedTeacher } = JSON.parse(saved);
-      if (subjects.includes(savedSubject)) {
-        setSubject(savedSubject);
-        if (teachersBySubject[savedSubject]?.includes(savedTeacher)) {
-          setTeacher(savedTeacher);
-          applyResponses(currentEvaluation?.responses);
-        }
-      }
-    } catch {
-      // ha sérült a storage, töröljük
-      localStorage.removeItem("feedbackSelection");
+    // Mentés minden subject/teacher váltásnál
+    if (subject && teacher) {
+      localStorage.setItem("feedbackSelection", JSON.stringify({ subject, teacher }));
     }
-  }
-}, [subjects, teachersBySubject, currentEvaluation?.responses]);
+  }, [subject, teacher]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("feedbackSelection");
+    if (saved) {
+      try {
+        const { subject: savedSubject, teacher: savedTeacher } = JSON.parse(saved);
+        if (subjects.includes(savedSubject)) {
+          setSubject(savedSubject);
+          if (teachersBySubject[savedSubject]?.includes(savedTeacher)) {
+            setTeacher(savedTeacher);
+            applyResponses(currentEvaluation?.responses);
+          }
+        }
+      } catch {
+        // ha sérült a storage, töröljük
+        localStorage.removeItem("feedbackSelection");
+      }
+    }
+  }, [subjects, teachersBySubject, currentEvaluation?.responses]);
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
@@ -147,15 +146,15 @@ useEffect(() => {
   };
 
   const validate = () => {
-    if (!subject || !teacher) { toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return;}
-    if (likerts.some((v) => !v)) { toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17)."); return;}
-    if (!q17) { toast("Kérjük, válaszolj a 18. kérdésre."); return;}
-    if (!q18) { toast("Kérjük, válaszolj a 19. kérdésre."); return;}
-    if (isAttendingOutside && q19.length === 0) { toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél."); return;}
-    if (q20.length === 0) { toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél."); return;}
-    if (q21.length < 50) { toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return;}
-    if (q22.length < 50) { toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return;}
-    if (!q23 || !q24 || !q25) { toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26)."); return;}
+    if (!subject || !teacher) { toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return; }
+    if (likerts.some((v) => !v)) { toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17)."); return; }
+    if (!q17) { toast("Kérjük, válaszolj a 18. kérdésre."); return; }
+    if (!q18) { toast("Kérjük, válaszolj a 19. kérdésre."); return; }
+    if (isAttendingOutside && q19.length === 0) { toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél."); return; }
+    if (q20.length === 0) { toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél."); return; }
+    if (q21.length < 50) { toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return; }
+    if (q22.length < 50) { toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return; }
+    if (!q23 || !q24 || !q25) { toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26)."); return; }
     return null;
   };
 
@@ -178,11 +177,11 @@ useEffect(() => {
           setSubject("");
           onAfterChange?.();
         },
-        onError: () => { toast("Hiba történt a piszkozat mentése közben!");}
+        onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
       }
     )
   };
- 
+
   const onSubmit = () => {
     const err = validate();
 
@@ -198,7 +197,7 @@ useEffect(() => {
           toast("Kérdőív beküldve!");
           onAfterChange?.();
         },
-        onError: () => { toast("Hiba történt a beküldés közben!");}
+        onError: () => { toast("Hiba történt a beküldés közben!"); }
       }
     )
   };

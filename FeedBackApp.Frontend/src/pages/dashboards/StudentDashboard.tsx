@@ -26,7 +26,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     refetchSurveys();
     setSurveys(querySurveys);
-  }, [querySurveys, setSurveys,refetchSurveys]);
+  }, [querySurveys, setSurveys, refetchSurveys]);
 
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
