@@ -2,7 +2,7 @@
 
 namespace Application.DTOs.Questionnaire
 {
-    public class MetaTeacherDto
+    public class MetaTeacherDTO
     {
         [JsonProperty("email")]
         public string Email { get; set; } = string.Empty;

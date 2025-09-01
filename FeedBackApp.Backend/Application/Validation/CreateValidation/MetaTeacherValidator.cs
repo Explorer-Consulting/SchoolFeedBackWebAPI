@@ -1,9 +1,9 @@
 ﻿using Application.DTOs.Questionnaire;
 using FluentValidation;
 
-namespace Application.Validation
+namespace Application.Validation.CreateValidation
 {
-    public class MetaTeacherValidator : AbstractValidator<MetaTeacherDto>
+    public class MetaTeacherValidator : AbstractValidator<MetaTeacherDTO>
     {
         public MetaTeacherValidator() 
         {

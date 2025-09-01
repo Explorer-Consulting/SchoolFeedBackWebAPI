@@ -36,7 +36,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
         [OpenApiResponseWithoutBody(HttpStatusCode.NotFound)]
         [OpenApiResponseWithoutBody(HttpStatusCode.InternalServerError)]
         public async Task<HttpResponseData> ExecuteTaskAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "questionnaires/{id:guid}")] HttpRequestData request,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "surveys/{id:guid}")] HttpRequestData request,
             Guid id)
         {
             try

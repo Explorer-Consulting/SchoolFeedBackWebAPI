@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Application.DTOs.Survey
 {
-    public class CreateSurveyMetadataDto
+    public class CreateSurveyMetadataDTO
     {
         [JsonProperty("title")]
         public string Title { get; set; } = string.Empty;
@@ -15,15 +15,15 @@ namespace Application.DTOs.Survey
         public DateTime EndDate { get; set; }
 
         [JsonProperty("studentSets")]
-        public List<StudentSetDto> StudentSets { get; set; } = new();
+        public List<StudentSetDTO> StudentSets { get; set; } = new();
 
         [JsonProperty("questionnaireTemplate")]
-        public List<QuestionTemplateDto> QuestionTemplates { get; set; } = new();
+        public List<QuestionTemplateDTO> QuestionTemplates { get; set; } = new();
 
         [JsonProperty("teachers")]
-        public List<MetaTeacherDto> Teachers { get; set; } = new();
+        public List<MetaTeacherDTO> Teachers { get; set; } = new();
         
         [JsonProperty("questionnaireCreationParams")]
-        public List<QuestionnaireCreationParamDto> CreationParams { get; set; } = new();
+        public List<QuestionnaireCreationParamDTO> CreationParams { get; set; } = new();
     }
 }
