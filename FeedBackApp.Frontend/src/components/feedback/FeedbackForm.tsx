@@ -10,6 +10,7 @@ import OutsideEducationSection from "@/components/feedback/sections/OutsideEduca
 import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
+import { useStudentContextStore } from "@/stores/useStudentContextStore";
 
 type FeedbackFormProps = {
   subjects: string[];
@@ -18,12 +19,28 @@ type FeedbackFormProps = {
   onAfterChange?: () => void;
 }
 
-export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) 
-{
+
+export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
   const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
     performQuestionnaireSubmit, isPerformQuestionnaireSubmit } = useReviews();
-  const [subject, setSubject] = useState<string>("");
-  const [teacher, setTeacher] = useState<string>("");
+
+  const { selectedSubject: subject, setSelectedSubject: setSubject, selectedTeacher: teacher, setSelectedTeacher: setTeacher, } = useStudentContextStore();
+
+  const onSubjectChange = (s: string) => {
+    setSubject(s);
+    setTeacher(null);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      onSaveDraft();
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  },[]);
 
   const [q0, setQ0] = useState("");
   const [q1, setQ1] = useState("");
@@ -110,15 +127,15 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const validate = () => {
-    if (!subject || !teacher) { toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return;}
-    if (likerts.some((v) => !v)) { toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17)."); return;}
-    if (!q17) { toast("Kérjük, válaszolj a 18. kérdésre."); return;}
-    if (!q18) { toast("Kérjük, válaszolj a 19. kérdésre."); return;}
-    if (isAttendingOutside && q19.length === 0) { toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél."); return;}
-    if (q20.length === 0) { toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél."); return;}
-    if (q21.length < 50) { toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return;}
-    if (q22.length < 50) { toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return;}
-    if (!q23 || !q24 || !q25) { toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26)."); return;}
+    if (!subject || !teacher) { toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return; }
+    if (likerts.some((v) => !v)) { toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17)."); return; }
+    if (!q17) { toast("Kérjük, válaszolj a 18. kérdésre."); return; }
+    if (!q18) { toast("Kérjük, válaszolj a 19. kérdésre."); return; }
+    if (isAttendingOutside && q19.length === 0) { toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél."); return; }
+    if (q20.length === 0) { toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél."); return; }
+    if (q21.length < 50) { toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return; }
+    if (q22.length < 50) { toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return; }
+    if (!q23 || !q24 || !q25) { toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26)."); return; }
     return null;
   };
 
@@ -139,10 +156,11 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
       {
         onSuccess: () => {
           toast("Piszkozat sikeresen mentve!");
-          setSubject("");
+          //setSubject(null);
+          //setTeacher(null);
           onAfterChange?.();
         },
-        onError: () => { toast("Hiba történt a piszkozat mentése közben!");}
+        onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
       }
     )
   };
@@ -163,7 +181,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           onAfterChange?.();
           //
         },
-        onError: () => { toast("Hiba történt a beküldés közben!");}
+        onError: () => { toast("Hiba történt a beküldés közben!"); }
       }
     )
     console.log("submit saved:", JSON.stringify(payload, null, 2));
@@ -182,7 +200,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         <section className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="subject">Tantárgy</Label>
-            <Select value={subject} onValueChange={setSubject}>
+            <Select value={subject ?? ""} onValueChange={onSubjectChange}>
               <SelectTrigger id="subject">
                 <SelectValue placeholder="Válassz tantárgyat" />
               </SelectTrigger>
@@ -195,7 +213,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           </div>
           <div className="space-y-2">
             <Label htmlFor="teacher">Tanár</Label>
-            <Select value={teacher} onValueChange={setTeacher}>
+            <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
               <SelectTrigger id="teacher">
                 <SelectValue placeholder="Válassz tanárt" />
               </SelectTrigger>

@@ -11,9 +11,8 @@ import { Navigate } from "react-router-dom";
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
   
-
   const { selectedSurveyId, setSelectedSurveyId,
-    context, setContext, surveys, setSurveys } = useStudentContextStore();
+    context, setContext} = useStudentContextStore();
 
   const { querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
     questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
@@ -25,17 +24,10 @@ export default function StudentDashboard() {
   }, [questionnaires, setContext]);
 
   useEffect(() => {
-    if (!surveys) {
       refetchSurveys();
-    }
-  }, [surveys, refetchSurveys]);
+  }, [refetchSurveys]);
 
-  useEffect(() => {
-    if (querySurveys) {
-      setSurveys(querySurveys);
-    }
-  }, [querySurveys, setSurveys]);
-
+  if (!user) return <Navigate to="/" replace />;
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
   
   return (
@@ -90,9 +82,9 @@ export default function StudentDashboard() {
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
           <CardContent>
-            {!isLoadingSurveys && !isErrorSurveys && surveys && (
+            {!isLoadingSurveys && !isErrorSurveys && querySurveys && (
               <ul className="space-y-2">
-                {surveys
+                {querySurveys
                   .map(s => {
                     const selected = selectedSurveyId === s.id;
                     return (
@@ -117,7 +109,7 @@ export default function StudentDashboard() {
                       </li>
                     );
                   })}
-                {surveys.length === 0 && (
+                {querySurveys.length === 0 && (
                   <li className="text-sm text-muted-foreground">Jelenleg nincs aktív kérdőív.</li>
                 )}
               </ul>
