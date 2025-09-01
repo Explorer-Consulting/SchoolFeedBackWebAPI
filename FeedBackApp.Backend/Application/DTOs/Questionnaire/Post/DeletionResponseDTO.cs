@@ -1,5 +1,4 @@
-﻿
-namespace Application.DTOs.Questionnaire
+﻿namespace Application.DTOs.Questionnaire
 {
     public class DeletionResponseDTO : BaseResponseDTO
     {

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Application.DTOs.Survey
 {
-    public class GetSurveyMetadataDto
+    public class GetSurveyMetadataDTO
     {
         [JsonProperty("id")]
         public Guid Id { get; set; }
