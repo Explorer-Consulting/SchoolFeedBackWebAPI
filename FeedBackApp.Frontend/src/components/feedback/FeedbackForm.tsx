@@ -40,7 +40,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  },[]);
+  });
 
   const [q0, setQ0] = useState("");
   const [q1, setQ1] = useState("");
@@ -136,7 +136,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         localStorage.removeItem("feedbackSelection");
       }
     }
-  }, [subjects, teachersBySubject, currentEvaluation?.responses]);
+  }, [subjects, teachersBySubject, currentEvaluation?.responses, setSubject, setTeacher]);
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
