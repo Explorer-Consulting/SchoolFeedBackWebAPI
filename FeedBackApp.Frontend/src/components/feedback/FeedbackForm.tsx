@@ -129,7 +129,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   );
   const setQValues = useMemo(
     () => [setQ0, setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16],
-    []
+    [setQ0, setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16]
   );
 
   const isAttendingOutside = useMemo(

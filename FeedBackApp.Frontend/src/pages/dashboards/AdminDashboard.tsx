@@ -3,8 +3,8 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
-import { parseExcel } from "@/hooks/useExcel";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { parseExcel } from "@/utils/parseExcel";
+import { useAuthStore } from "@/hooks/useAuthStore";
 import { Navigate } from "react-router-dom";
 
 export default function AdminDashboard() {
@@ -35,8 +35,11 @@ export default function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
 
   if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Admin") { return <Navigate to="/no-access" replace /> }
-  else { refetchAdminSurveys(); }
+  if (user.role !== "Admin") {
+    return <Navigate to="/no-access" replace />
+  } else {
+    refetchAdminSurveys();
+  }
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
