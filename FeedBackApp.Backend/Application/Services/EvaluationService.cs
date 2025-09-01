@@ -56,7 +56,7 @@ namespace Application.Services
             string id,
             TDto dto,
             Func<IList<QuestionTemplate>, IValidator<TDto>> validatorFactory,
-            Func<Questionnaire, Questionnaire, Task<bool>> repoAsyncAction,
+            Func<Questionnaire, Questionnaire, Task<bool>> repoActionAsync,
             Func<bool, string, string?, TResponse> responseProvider,
             Func<TDto, Questionnaire> mapToModel
         )
@@ -90,7 +90,7 @@ namespace Application.Services
 
             var model = mapToModel(dto);
 
-            bool success = await repoAsyncAction(model, oldQuestionnaire);
+            bool success = await repoActionAsync(model, oldQuestionnaire);
 
             return responseProvider(success, id, null);
         }
