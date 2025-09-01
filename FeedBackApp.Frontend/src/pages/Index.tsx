@@ -1,7 +1,7 @@
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
 import { useReviews } from '@/hooks/useReviews'
-import { useAuthStore } from '@/hooks/useAuthStore'
+import { useAuthStore } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { User } from '@/models/User'
