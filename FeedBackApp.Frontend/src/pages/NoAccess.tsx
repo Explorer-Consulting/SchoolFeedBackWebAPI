@@ -1,5 +1,5 @@
-export default function NoAccess () {
-     return (
+export default function NoAccess() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-4">Sorry,you do not have access!</h1>
@@ -8,5 +8,5 @@ export default function NoAccess () {
         </a>
       </div>
     </div>
-  ); 
+  );
 }

@@ -25,23 +25,23 @@ export const PerformGetSurveys = async () => {
     return data;
 };
 export const CreateQuestionnaires = async (payload) => {
-    const {data} = await apiClient.post(`/surveys`,payload); 
+    const { data } = await apiClient.post(`/surveys`, payload);
     return data;
 };
 
 export const GetQuestionnaireSummary = async (questionnaireId) => {
-    const {data} = await apiClient.get(`/summaries/${questionnaireId}`);
+    const { data } = await apiClient.get(`/summaries/${questionnaireId}`);
     return data;
 }
 
 
 export const GetEvaluation = async (evaluationId) => {
-    const {data} = await apiClient.get(`/evaluations/${evaluationId}`);
+    const { data } = await apiClient.get(`/evaluations/${evaluationId}`);
     return data
 };
 
 export const DeleteQuestionnaire = async (questionnaireId) => {
-    const {data} = await apiClient.delete(`/surveys/${questionnaireId}`);
+    const { data } = await apiClient.delete(`/surveys/${questionnaireId}`);
     return data;
 };
 
@@ -50,12 +50,12 @@ export const PerformQuestionnaireUpdate = async (id, payload) => {
     return data;
 };
 
-export const PerformQuestionnaireSubmit = async (id,payload) => {
-    const {data} = await apiClient.post(`/questionnaire/${id}`,payload);
+export const PerformQuestionnaireSubmit = async (id, payload) => {
+    const { data } = await apiClient.post(`/questionnaire/${id}`, payload);
     return data;
-}        
+}
 
 export const GetSurveysAdmin = async () => {
-  const {data} = await apiClient.get(`/surveys/admin`);
-  return data;
+    const { data } = await apiClient.get(`/surveys/admin`);
+    return data;
 };
