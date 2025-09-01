@@ -69,7 +69,7 @@ namespace Application.Services
             var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
             if (questionTemplate == null)
             {
-                return new UpdateResponseDTO(false, $"QuestionnaireTemplates {id} not found.");
+                return responseFactory(false, id, $"QuestionnaireTemplates {id} not found.");
             }
 
             var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
