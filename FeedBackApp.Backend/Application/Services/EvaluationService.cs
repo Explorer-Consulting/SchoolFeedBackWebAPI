@@ -72,6 +72,8 @@ namespace Application.Services
                 return new UpdateResponseDTO(false, $"QuestionnaireTemplates {id} not found.");
             }
 
+            var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
+
             if(endDate < DateTime.UtcNow)
             {
                 return responseFactory(false, id, endDate.ToString());
