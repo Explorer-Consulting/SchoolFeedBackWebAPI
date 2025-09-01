@@ -10,7 +10,7 @@ import OutsideEducationSection from "@/components/feedback/sections/OutsideEduca
 import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
-import { useStudentContextStore } from "@/stores/useStudentContextStore";
+import { useStudentContextStore } from "@/hooks/useStudentContext";
 
 type FeedbackFormProps = {
   subjects: string[];

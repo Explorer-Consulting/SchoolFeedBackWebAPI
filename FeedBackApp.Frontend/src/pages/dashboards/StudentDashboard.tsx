@@ -15,8 +15,7 @@ export default function StudentDashboard() {
     setSelectedSurveyId,
     context,
     setContext,
-    surveys,
-    setSurveys } = useStudentContextStore();
+     } = useStudentContextStore();
 
   const {
     querySurveys,
@@ -36,8 +35,8 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     refetchSurveys();
-    setSurveys(querySurveys);
-  }, [querySurveys, setSurveys, refetchSurveys]);
+   
+  }, [refetchSurveys]);
 
   if (!user) return <Navigate to="/" replace />;
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
