@@ -116,31 +116,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     };
   });
 
-  useEffect(() => {
-    // Mentés minden subject/teacher váltásnál
-    if (subject && teacher) {
-      localStorage.setItem("feedbackSelection", JSON.stringify({ subject, teacher }));
-    }
-  }, [subject, teacher]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("feedbackSelection");
-    if (saved) {
-      try {
-        const { subject: savedSubject, teacher: savedTeacher } = JSON.parse(saved);
-        if (subjects.includes(savedSubject)) {
-          setSubject(savedSubject);
-          if (teachersBySubject[savedSubject]?.includes(savedTeacher)) {
-            setTeacher(savedTeacher);
-            applyResponses(currentEvaluation?.responses);
-          }
-        }
-      } catch {
-        // ha sérült a storage, töröljük
-        localStorage.removeItem("feedbackSelection");
-      }
-    }
-  }, [subjects, teachersBySubject, currentEvaluation?.responses]);
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
