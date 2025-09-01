@@ -24,6 +24,10 @@ namespace Application.Services
                 return new UpdateResponseDTO(false, $"Questionnaire {id} not found.");
 
             var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
+            if (questionTemplate == null)
+            {
+                return new UpdateResponseDTO(false, $"QuestionnaireTemplates {id} not found.");
+            }
 
             var validator = new UpdateQuestionnaireValidator(questionTemplate.QuestionTemplates);
             var validationResult = await validator.ValidateAsync(dto);
