@@ -13,6 +13,7 @@ namespace Application.Extensions.EvaluationExtensions
                     .Select(q => q.ToModel())
                     .ToList()
             };
+
         public static QuestionAnswer ToModel(this QuestionResultDTO dto) =>
             new()
             {

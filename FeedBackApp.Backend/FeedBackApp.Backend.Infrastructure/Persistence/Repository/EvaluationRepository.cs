@@ -12,6 +12,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         {
             _context = context;
         }
+
         public async Task<bool> UpdateQuestionnaire(Questionnaire newQuestionnaire, Questionnaire oldQuestionnaire)
         {
             foreach (var oldAnswer in oldQuestionnaire.QuestionnaireResults)
@@ -32,12 +33,12 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
-        public async Task<Questionnaire> GetQuestionnaireByIdAsync(string id)
+        public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
             return await _context.Questionnaires.FindAsync(id);
         }
 
-        public async Task<QuestionnaireTemplate> GetQuestionTemplateBySurveyIdAsync(string surveyId)
+        public async Task<QuestionnaireTemplate?> GetQuestionTemplateBySurveyIdAsync(string surveyId)
         {
             string id = $"questiontemplates_{surveyId}";
             return await _context.QuestionnaireTemplates.FindAsync(id);
