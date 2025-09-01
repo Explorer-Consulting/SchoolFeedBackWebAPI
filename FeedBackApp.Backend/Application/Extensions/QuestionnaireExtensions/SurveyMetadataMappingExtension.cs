@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire.Post;
 using Application.DTOs.Survey;
 using FeedBackApp.Core.Model;
 

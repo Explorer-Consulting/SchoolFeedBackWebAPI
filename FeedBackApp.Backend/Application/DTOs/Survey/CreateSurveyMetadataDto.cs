@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire.Post;
 using Newtonsoft.Json;
 
 namespace Application.DTOs.Survey

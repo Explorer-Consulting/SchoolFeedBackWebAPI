@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Application.DTOs.Questionnaire
+namespace Application.DTOs.Questionnaire.Post
 {
     public class MetaTeacherDto
     {
