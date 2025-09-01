@@ -99,7 +99,6 @@ namespace Application.Extensions.QuestionnaireExtensions
                 TeacherEmail = dto.TeacherEmail,
                 StudentEmail = dto.StudentEmail,
                 SubjectName = dto.SubjectName,
-                Status = false,
                 QuestionnaireResults = dto.QuestionnaireResults
                     .Select(q => q.ToModel())
                     .ToList() ?? new List<QuestionAnswer>(),
@@ -145,7 +144,7 @@ namespace Application.Extensions.QuestionnaireExtensions
                 AnswerOptions = [..model.AnswerOptions]
             }; 
 
-        public static GetSurveyMetadataDto ToGetDto(this SurveyMetadata model) =>
+        public static GetSurveyMetadataDTO ToGetDto(this SurveyMetadata model) =>
             new()
             {
                 Id = model.Id,

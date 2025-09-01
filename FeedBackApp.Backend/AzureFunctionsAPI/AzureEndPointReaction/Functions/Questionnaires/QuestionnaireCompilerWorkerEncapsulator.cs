@@ -26,7 +26,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
             )]
         [OpenApiRequestBody(
             contentType: "application/json", 
-            bodyType: typeof(CreateSurveyMetadataDto),
+            bodyType: typeof(CreateSurveyMetadataDTO),
             Required = true
             )]
         [OpenApiResponseWithBody(

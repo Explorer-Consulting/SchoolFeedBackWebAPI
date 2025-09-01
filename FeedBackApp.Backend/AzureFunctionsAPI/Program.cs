@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.Questionnaire;
+using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
