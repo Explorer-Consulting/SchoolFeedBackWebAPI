@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using Application.DTOs.Questionnaire.Post;
+using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions.Utils;

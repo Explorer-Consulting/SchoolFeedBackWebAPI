@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire.Post;
+using Application.DTOs;
 using Application.Services.Interfaces;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using Microsoft.Azure.Functions.Worker;

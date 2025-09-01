@@ -1,5 +1,4 @@
-using Application.DTOs.Questionnaire.GetQuestionnaires;
-using Application.DTOs.Questionnaire.Post;
+using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
@@ -74,12 +73,12 @@ namespace Application.Services
                 );
             }
         }
-        public async Task<QuestionnairesDTO?> GetQuestionnairesAsync(Guid surveyId, string studentEmail)
+        public async Task<QuestionnairesDTO> GetQuestionnairesAsync(Guid surveyId, string studentEmail)
         {
             var surveyMetadata = await _repository.GetSurveyMetadataAsync(surveyId);
             if (surveyMetadata == null)
             {
-                return null;
+                return new QuestionnairesDTO() ;
             }
 
             Dictionary<string, string> teacherData = new Dictionary<string, string>();
@@ -92,7 +91,7 @@ namespace Application.Services
             var studentSetId = surveyMetadata.StudentSets.FirstOrDefault(set => set.StudentEmails.Contains(studentEmail))?.SetId;
             if (studentSetId == null)
             {
-                return null;
+                return new QuestionnairesDTO();
             }
 
             QuestionnairesDTO response = new QuestionnairesDTO();

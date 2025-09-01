@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Application.DTOs.Questionnaire.Post
+namespace Application.DTOs.Questionnaire
 {
     public class QuestionTemplateDto
     {

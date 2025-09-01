@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire.Post;
+﻿using Application.DTOs.Questionnaire;
 using FluentValidation;
 
 namespace Application.Validation
