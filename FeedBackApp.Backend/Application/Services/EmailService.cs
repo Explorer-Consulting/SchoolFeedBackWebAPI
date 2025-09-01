@@ -20,12 +20,12 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task<bool> SendEmailAsync(string toEmail, string toName, string subject, string body, string? attachmentPath = null)
+    public async Task<bool> SendEmailAsync(string toEmail, string subject, string body, string? attachmentPath = null)
     {
         try
         {
             var from = new MailAddress(_fromAddress, _fromName);
-            var to = new MailAddress(toEmail, toName);
+            var to = new MailAddress(toEmail);
 
             using var smtp = new SmtpClient("smtp.gmail.com", 587)
             {
