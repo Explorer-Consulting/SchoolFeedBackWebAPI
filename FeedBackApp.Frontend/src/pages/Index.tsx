@@ -4,7 +4,7 @@ import { useReviews } from '@/hooks/useReviews'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
-import {User} from '@/models/User'
+import { User } from '@/models/User'
 
 export default function GoogleAuthApp() {
   const navigate = useNavigate()
@@ -21,9 +21,9 @@ export default function GoogleAuthApp() {
     }
 
     loginWithGoogle(idToken, {
-      onSuccess: (user:User) => {
+      onSuccess: (user: User) => {
         setUser(user)
-        
+
         if (user.role === 'Admin') {
           navigate("/dashboard/admin")
         } else if (user.role === 'Student') {
@@ -32,7 +32,7 @@ export default function GoogleAuthApp() {
           navigate("/no-access")
         }
       },
-      onError: (e:any) => {
+      onError: (e: any) => {
         if (e.response?.status === 403) {
           navigate("/no-access")
         } else {
