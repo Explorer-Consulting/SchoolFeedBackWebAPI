@@ -82,7 +82,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var questionTemplate = await _context.QuestionnaireTemplates
                 .FirstAsync(q => q.Id == $"questiontemplates_{surveyId}");
 
-            if(questionTemplate == null)
+            if (questionTemplate == null)
             {
                 return false;
             }
@@ -90,7 +90,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             _context.Remove(questionTemplate);
             await _context.SaveChangesAsync();
             return true;
-                
+
         }
 
         public async Task<bool> DeleteSurveyMetadataAsync(Guid id)

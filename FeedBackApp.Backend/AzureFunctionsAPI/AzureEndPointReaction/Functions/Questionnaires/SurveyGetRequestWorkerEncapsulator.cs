@@ -20,7 +20,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
         [OpenApiResponseWithBody(
             statusCode: HttpStatusCode.OK,
             contentType: "application/json",
-            bodyType: typeof(object) 
+            bodyType: typeof(object)
         )]
         public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys")] HttpRequestData request)
         {

@@ -25,13 +25,13 @@ namespace AzureEndPointReaction.Functions.Questionnaires
             tags: new[] { "Questionnaires" }
             )]
         [OpenApiRequestBody(
-            contentType: "application/json", 
+            contentType: "application/json",
             bodyType: typeof(CreateSurveyMetadataDTO),
             Required = true
             )]
         [OpenApiResponseWithBody(
-            statusCode: HttpStatusCode.OK, 
-            contentType: "application/json", 
+            statusCode: HttpStatusCode.OK,
+            contentType: "application/json",
             bodyType: typeof(CreationResponseDTO)
             )]
         public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "surveys")] HttpRequestData request)
@@ -73,7 +73,7 @@ namespace AzureEndPointReaction.Functions.Questionnaires
             }
             catch (Exception e)
             {
-                _logger.LogError("Something unexpected happenned!",e.Message);
+                _logger.LogError("Something unexpected happenned!", e.Message);
                 var response = request.CreateResponse(HttpStatusCode.InternalServerError);
                 await response.WriteAsJsonAsync(new CreationResponseDTO(false, $"Error creating questionnaire: {e.Message}"));
                 return response;

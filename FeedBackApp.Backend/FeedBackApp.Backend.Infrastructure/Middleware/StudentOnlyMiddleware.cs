@@ -29,7 +29,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
             var token = tokenCookie.Value;
 
             // Validate the token
-            if (!JwtRoleValidator.IsStudent(token,context))
+            if (!JwtRoleValidator.IsStudent(token, context))
             {
                 await ReturnForbidden.ExecuteAsync(context, httpRequestData, "Student privilages required!");
                 return;

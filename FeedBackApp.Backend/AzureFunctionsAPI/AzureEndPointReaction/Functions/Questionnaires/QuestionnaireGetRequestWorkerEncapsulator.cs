@@ -42,7 +42,7 @@ public class QuestionnaireGetRequestWorkerEncapsulator : IQuestionnaireWorker
 
         _logger.LogInformation("Student email: {Email}", email);
 
-        var responseDto = await _questionnaireService.GetQuestionnairesAsync(id,email);
+        var responseDto = await _questionnaireService.GetQuestionnairesAsync(id, email);
 
         if (responseDto == null)
         {

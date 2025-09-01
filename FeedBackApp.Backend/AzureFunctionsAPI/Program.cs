@@ -3,7 +3,6 @@ using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
-using Application.Validation.UpdateValidation;
 using Azure.Core.Serialization;
 using AzureEndPointReaction.Functions.Questionnaires;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation;

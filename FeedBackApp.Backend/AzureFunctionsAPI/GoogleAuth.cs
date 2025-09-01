@@ -20,10 +20,10 @@ namespace AzureFunctionsAPI
             _logger = logger;
         }
 
-        
+
         [Function("LoginWithGoogle")]
-    [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
-    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]
+        [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]
         public async Task<HttpResponseData> LoginWithGoogle(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {
@@ -34,7 +34,7 @@ namespace AzureFunctionsAPI
             // Get origin
             var origin = req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
             _logger.LogDebug("Request origin: {Origin}", origin ?? "None");
-            
+
             // Handle preflight request
             if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
             {
@@ -131,7 +131,7 @@ namespace AzureFunctionsAPI
                 lastName = payload.FamilyName,
                 role = isAdmin ? "Admin" : "Student"
             });
-            
+
             _logger.LogInformation("LoginWithGoogle function completed successfully for {Email}", payload.Email);
 
             return response;
@@ -139,7 +139,7 @@ namespace AzureFunctionsAPI
 
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey") ?? throw(new InvalidOperationException("JwtSecretKey environment variable not set."));
+            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."));
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

@@ -39,7 +39,7 @@ public sealed class QuestionnaireSubmitRequestWorkerEncapsulator(IEvaluationServ
             contentType: "application/json",
             bodyType: typeof(SubmitResponseDTO)
         )]
-    public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Function, "post", Route ="questionnaire/{id}")] HttpRequestData request, string id)
+    public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Function, "post", Route = "questionnaire/{id}")] HttpRequestData request, string id)
     {
         try
         {

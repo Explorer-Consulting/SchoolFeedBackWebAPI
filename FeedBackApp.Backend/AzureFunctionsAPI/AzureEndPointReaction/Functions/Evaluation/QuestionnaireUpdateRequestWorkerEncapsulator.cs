@@ -65,7 +65,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation
                 await response.WriteAsJsonAsync(result);
                 return response;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 _logger.LogError("Something unexpected happenned!", e.Message);
                 var response = request.CreateResponse(HttpStatusCode.InternalServerError);
