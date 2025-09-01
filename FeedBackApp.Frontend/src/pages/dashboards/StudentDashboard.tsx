@@ -1,9 +1,9 @@
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/hooks/useAuthStore'
 import { useEffect } from "react";
-import { useStudentContextStore } from "@/stores/useStudentContextStore";
+import { useStudentContextStore } from "@/hooks/useStudentContextStore";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 
@@ -11,11 +11,22 @@ import { Navigate } from "react-router-dom";
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
 
-  const { selectedSurveyId, setSelectedSurveyId,
-    context, setContext} = useStudentContextStore();
+  const { selectedSurveyId,
+    setSelectedSurveyId,
+    context,
+    setContext,
+    surveys,
+    setSurveys } = useStudentContextStore();
 
-  const { querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
-    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
+  const {
+    querySurveys,
+    isLoadingSurveys,
+    isErrorSurveys,
+    refetchSurveys,
+    questionnaires,
+    isLoadingQuestionnaire,
+    isErrorQuestionnaire,
+    refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
 
   useEffect(() => {
     if (!questionnaires) return;
