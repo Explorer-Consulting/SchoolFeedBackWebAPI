@@ -1,5 +1,6 @@
 ﻿using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
@@ -12,12 +13,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             _context = context;
         }
 
-        public async Task<bool> UpdateQuestionnaire(Questionnaire newQuestionnaire, Questionnaire oldQuestionnaire)
-        {
-            return await UpdateAnswersAndSaveAsync(newQuestionnaire, oldQuestionnaire);
-        }
-
-        public async Task<bool> SubmitQuestionnaire(Questionnaire newQuestionnaire, Questionnaire oldQuestionnaire)
+        public async Task<bool> UpdateOrSubmitQuestionnaire(Questionnaire newQuestionnaire, Questionnaire oldQuestionnaire)
         {
             return await UpdateAnswersAndSaveAsync(newQuestionnaire, oldQuestionnaire);
         }
@@ -41,12 +37,17 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
-            return await _context.Questionnaires.FindAsync(id) ?? null;
+            return await _context.Questionnaires
+                                 .AsNoTracking()
+                                 .FirstOrDefaultAsync(q => q.Id == id);
         }
 
         public async Task<QuestionnaireTemplate?> GetQuestionTemplateBySurveyIdAsync(string surveyId)
         {
-            return await _context.QuestionnaireTemplates.FindAsync($"questiontemplates_{surveyId}") ?? null;
+            string id = $"questiontemplates_{surveyId}";
+            return await _context.QuestionnaireTemplates
+                                 .AsNoTracking()
+                                 .FirstOrDefaultAsync(qt => qt.Id == id);
         }
 
         public async Task<DateTime?> GetEndDateBySurveyId(string surveyId)
@@ -54,7 +55,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             if (!Guid.TryParse(surveyId, out var guid))
                 return null;
 
-            var survey = await _context.Surveys.FindAsync(guid);
+            var survey = await _context.Surveys
+                                       .AsNoTracking()
+                                       .FirstOrDefaultAsync(s => s.Id == guid);
+
             return survey?.EndDate;
         }
     }

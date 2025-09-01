@@ -5,7 +5,7 @@ namespace Application.Validation.CreateValidation
 {
     public class MetaTeacherValidator : AbstractValidator<MetaTeacherDTO>
     {
-        public MetaTeacherValidator() 
+        public MetaTeacherValidator()
         {
             RuleFor(dto => dto.Email).NotEmpty().WithMessage("Teacher list: Teacher email can not be empty")
                 .EmailAddress().WithMessage("Teacher list: Incorrect teacher email adress format: {PropertyValue}");

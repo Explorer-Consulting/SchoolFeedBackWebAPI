@@ -1,11 +1,11 @@
-﻿using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Survey;
 using FluentValidation;
 
 namespace Application.Validation.CreateValidation
 {
     public class CreateSurveyMetadataValidator : AbstractValidator<CreateSurveyMetadataDTO>
     {
-        public CreateSurveyMetadataValidator() 
+        public CreateSurveyMetadataValidator()
         {
             RuleFor(dto => dto.StartDate).NotEmpty().WithMessage("Start date can not be empty")
                 .GreaterThanOrEqualTo(DateTime.UtcNow).WithMessage("Start date can not be in the past. Found: {PropertyValue}");

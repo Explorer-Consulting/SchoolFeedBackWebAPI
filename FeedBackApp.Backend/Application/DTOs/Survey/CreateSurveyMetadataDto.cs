@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using Application.DTOs.Questionnaire;
+using Newtonsoft.Json;
 
-namespace Application.DTOs.Questionnaire
+namespace Application.DTOs.Survey
 {
     public class CreateSurveyMetadataDTO
     {
@@ -21,7 +22,7 @@ namespace Application.DTOs.Questionnaire
 
         [JsonProperty("teachers")]
         public List<MetaTeacherDTO> Teachers { get; set; } = new();
-        
+
         [JsonProperty("questionnaireCreationParams")]
         public List<QuestionnaireCreationParamDTO> CreationParams { get; set; } = new();
     }

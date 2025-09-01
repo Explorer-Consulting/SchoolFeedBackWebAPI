@@ -10,6 +10,7 @@ import OutsideEducationSection from "@/components/feedback/sections/OutsideEduca
 import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
+import { useStudentContextStore } from "@/hooks/useStudentContext";
 
 type FeedbackFormProps = {
   subjects: string[];
@@ -19,10 +20,31 @@ type FeedbackFormProps = {
 }
 
 export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
-  const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
-    performQuestionnaireSubmit, isPerformQuestionnaireSubmit } = useReviews();
-  const [subject, setSubject] = useState<string>("");
-  const [teacher, setTeacher] = useState<string>("");
+  const { performQuestionnaireUpdate,
+    isPerformQuestionnaireUpdating,
+    performQuestionnaireSubmit,
+    isPerformQuestionnaireSubmit } = useReviews();
+
+  const { selectedSubject: subject,
+    setSelectedSubject: setSubject,
+    selectedTeacher: teacher,
+    setSelectedTeacher: setTeacher, } = useStudentContextStore();
+
+  const onSubjectChange = (s: string) => {
+    setSubject(s);
+    setTeacher(null);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      onSaveDraft();
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  });
 
   const [q0, setQ0] = useState("");
   const [q1, setQ1] = useState("");
@@ -174,7 +196,6 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
       {
         onSuccess: () => {
           toast("Piszkozat sikeresen mentve!");
-          setSubject("");
           onAfterChange?.();
         },
         onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
@@ -183,6 +204,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const onSubmit = () => {
+    if (!id) return;
     const err = validate();
 
     if (err !== null) return;
@@ -215,7 +237,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         <section className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="subject">Tantárgy</Label>
-            <Select value={subject} onValueChange={setSubject}>
+            <Select value={subject ?? ""} onValueChange={onSubjectChange}>
               <SelectTrigger id="subject">
                 <SelectValue placeholder="Válassz tantárgyat" />
               </SelectTrigger>
@@ -228,7 +250,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           </div>
           <div className="space-y-2">
             <Label htmlFor="teacher">Tanár</Label>
-            <Select value={teacher} onValueChange={setTeacher}>
+            <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
               <SelectTrigger id="teacher">
                 <SelectValue placeholder="Válassz tanárt" />
               </SelectTrigger>

@@ -15,7 +15,7 @@ export default function StudentDashboard() {
     setSelectedSurveyId,
     context,
     setContext,
-    surveys,
+     } = useStudentContextStore();
     setSurveys } = useStudentContextStore();
 
   const {
@@ -36,9 +36,9 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     refetchSurveys();
-    setSurveys(querySurveys);
-  }, [querySurveys, setSurveys, refetchSurveys]);
+  }, [refetchSurveys]);
 
+  if (!user) return <Navigate to="/" replace />;
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
   return (
@@ -93,9 +93,9 @@ export default function StudentDashboard() {
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
           <CardContent>
-            {!isLoadingSurveys && !isErrorSurveys && surveys && (
+            {!isLoadingSurveys && !isErrorSurveys && querySurveys && (
               <ul className="space-y-2">
-                {surveys
+                {querySurveys
                   .map(s => {
                     const selected = selectedSurveyId === s.id;
                     return (
@@ -120,7 +120,7 @@ export default function StudentDashboard() {
                       </li>
                     );
                   })}
-                {surveys.length === 0 && (
+                {querySurveys.length === 0 && (
                   <li className="text-sm text-muted-foreground">Jelenleg nincs aktív kérdőív.</li>
                 )}
               </ul>

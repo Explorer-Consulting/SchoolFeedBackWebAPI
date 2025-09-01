@@ -31,7 +31,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
-            
+
             modelBuilder.Entity<SurveyMetadata>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<SurveyMetadata>("Survey");

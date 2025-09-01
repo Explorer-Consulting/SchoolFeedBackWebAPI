@@ -6,12 +6,12 @@ namespace Application.Validation.CreateValidation
 {
     public class QuestionTemplateValidator : AbstractValidator<QuestionTemplateDTO>
     {
-        public QuestionTemplateValidator() 
+        public QuestionTemplateValidator()
         {
             RuleFor(dto => dto.Question).NotEmpty().WithMessage("Question text can not be empty")
                 .MaximumLength(500).WithMessage("Question can not be longer than 500 characters: {PropertyValue}");
             RuleFor(dto => dto.Type)
-                .Must(type => type!=0).WithMessage("Question type is required")
+                .Must(type => type != 0).WithMessage("Question type is required")
                 .IsInEnum().WithMessage("Invalid question type: {PropertyValue}");
             When(dto => dto.Type == QuestionType.MultinomialSingleChoice
                      || dto.Type == QuestionType.MultipleChoice, () =>

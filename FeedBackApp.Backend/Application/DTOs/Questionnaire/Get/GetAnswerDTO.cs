@@ -1,7 +1,6 @@
-﻿
-namespace Application.DTOs.GetQuestionnaires
+﻿namespace Application.DTOs.Questionnaire
 {
-    public class AnswerDTO
+    public class GetAnswerDTO
     {
         public string QuestionID { get; set; } = string.Empty;
         public string Answer { get; set; } = string.Empty;
