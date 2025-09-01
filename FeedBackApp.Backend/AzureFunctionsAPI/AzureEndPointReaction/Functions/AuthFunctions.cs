@@ -9,13 +9,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
-namespace AzureFunctionsAPI
+namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
-    public class GoogleAuth
+    public class AuthFunctions
     {
-        private readonly ILogger<GoogleAuth> _logger;
+        private readonly ILogger<AuthFunctions> _logger;
 
-        public GoogleAuth(ILogger<GoogleAuth> logger)
+        public AuthFunctions(ILogger<AuthFunctions> logger)
         {
             _logger = logger;
         }
