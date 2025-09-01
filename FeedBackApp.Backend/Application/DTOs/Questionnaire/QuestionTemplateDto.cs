@@ -4,7 +4,7 @@ using Newtonsoft.Json.Converters;
 
 namespace Application.DTOs.Questionnaire
 {
-    public class QuestionTemplateDto
+    public class QuestionTemplateDTO
     {
         [JsonProperty("question")]
         public string Question { get; set; } = string.Empty;
@@ -14,6 +14,6 @@ namespace Application.DTOs.Questionnaire
         public QuestionType Type { get; set; }
 
         [JsonProperty("answerOptions")]
-        public IList<string> AnswerOptions { get; set; } = new List<string>();
+        public List<string> AnswerOptions { get; set; } = new();
     }
 }

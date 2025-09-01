@@ -7,7 +7,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
     {
         public DbSet<SurveyMetadata> Surveys { get; set; }
         public DbSet<Questionnaire> Questionnaires { get; set; }
-        public DbSet<QuestionnaireTemplate> QuestionnnareTemplates { get; set; }
+        public DbSet<QuestionnaireTemplate> QuestionnaireTemplates { get; set; }
 
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 
@@ -41,8 +41,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .HasValue<Questionnaire>("Questionnaire");
 
             modelBuilder.Entity<QuestionnaireTemplate>()
-               .HasDiscriminator<string>("DocumentType")
-               .HasValue<QuestionnaireTemplate>("QuestionTemaplate");
+                .HasDiscriminator<string>("DocumentType")
+                .HasValue<QuestionnaireTemplate>("QuestionTemplate");
 
         }
 

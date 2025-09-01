@@ -1,9 +1,9 @@
 ﻿using Application.DTOs.Questionnaire;
 using FluentValidation;
 
-namespace Application.Validation
+namespace Application.Validation.CreateValidation
 {
-    public class StudentSetValidator : AbstractValidator<StudentSetDto>
+    public class StudentSetValidator : AbstractValidator<StudentSetDTO>
     {
         public StudentSetValidator() 
         {

@@ -25,19 +25,19 @@ namespace AzureEndPointReaction.Functions.Questionnaires
             )]
         [OpenApiRequestBody(
             contentType: "application/json", 
-            bodyType: typeof(object), // replace with dto
+            bodyType: typeof(CreateSurveyMetadataDTO),
             Required = true
             )]
         [OpenApiResponseWithBody(
             statusCode: HttpStatusCode.OK, 
             contentType: "application/json", 
-            bodyType: typeof(CreationResponseDTO) // replace dto
+            bodyType: typeof(CreationResponseDTO)
             )]
-        public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "questionnaires")] HttpRequestData request)
+        public async Task<HttpResponseData> ExecuteTaskAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "surveys")] HttpRequestData request)
         {
             try
             {
-                var dto = await JsonUtil.ReadFromJsonAsync<CreateSurveyMetadataDto>(request);
+                var dto = await JsonUtil.ReadFromJsonAsync<CreateSurveyMetadataDTO>(request);
 
                 if (dto == null)
                 {

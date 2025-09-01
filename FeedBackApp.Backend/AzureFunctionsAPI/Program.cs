@@ -1,8 +1,11 @@
-﻿using Application.Services;
+﻿using Application.DTOs.Questionnaire;
+using Application.Services;
 using Application.Services.Interfaces;
-using Application.Validation;
+using Application.Validation.CreateValidation;
+using Application.Validation.UpdateValidation;
 using Azure.Core.Serialization;
 using AzureEndPointReaction.Functions.Questionnaires;
+using AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation;
 using FeedBackApp.Backend.Infrastructure.Middleware;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence;
@@ -57,6 +60,7 @@ var host = new HostBuilder()
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
+        services.AddScoped<IEvaluationRepository, EvaluationRepository>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
         services.AddScoped<QuestionnaireCompilerWorkerEncapsulator>();
         services.AddScoped<QuestionnaireDeletionWorkerEncapsulator>();
@@ -64,7 +68,13 @@ var host = new HostBuilder()
         services.AddScoped<QuestionnaireSummaryRequestWorkerEncapsulator>();
         services.AddScoped<QuestionnaireUpdateRequestWorkerEncapsulator>();
 
-        services.AddValidatorsFromAssemblyContaining<CreateSurveyMetadataValidator>();
+        services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
+        services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
+        services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
+        services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
+        services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
+        services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
+
 
         services.AddSingleton<AdminOnlyMiddleware>();
         services.AddSingleton<StudentOnlyMiddleware>();

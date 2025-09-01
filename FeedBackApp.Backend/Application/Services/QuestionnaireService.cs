@@ -9,17 +9,17 @@ namespace Application.Services
     public class QuestionnaireService : IQuestionnaireService
     {
         private readonly IQuestionnaireRepository _repository;
-        private readonly IValidator<CreateSurveyMetadataDto> _validator;
-        public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDto> validator)
+        private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
+        public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDTO> createValidator)
         {
             _repository = repository;
-            _validator = validator;
+            _createValidator = createValidator;
         }
 
-        public async Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDto dto)
+        public async Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDTO dto)
         {
 
-            var validationResult = await _validator.ValidateAsync(dto);
+            var validationResult = await _createValidator.ValidateAsync(dto);
             if(!validationResult.IsValid)
             {
                 var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
@@ -38,6 +38,7 @@ namespace Application.Services
             }
             
         }
+
         public async Task<DeletionResponseDTO> DeleteSurveyAsync(Guid id)
         {
             try
