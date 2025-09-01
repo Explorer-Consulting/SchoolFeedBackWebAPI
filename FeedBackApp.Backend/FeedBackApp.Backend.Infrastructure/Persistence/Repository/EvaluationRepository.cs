@@ -51,7 +51,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task<DateTime?> GetEndDateBySurveyId(string surveyId)
         {
-            var survey = await _context.Surveys.FindAsync(surveyId);
+            if (!Guid.TryParse(surveyId, out var guid))
+                return null;
+
+            var survey = await _context.Surveys.FindAsync(guid);
             return survey?.EndDate;
         }
     }
