@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { StudentContext } from '@/models/StudentContext'
+import { StudentContext, Survey } from '@/models/StudentContext'
 
 type StudentContextStore = {
     context: StudentContext | null
