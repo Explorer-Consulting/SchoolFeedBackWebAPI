@@ -144,21 +144,49 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const validate = () => {
-    if (!subject || !teacher) { toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return; }
-    if (likerts.some((v) => !v)) { toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17)."); return; }
-    if (!q17) { toast("Kérjük, válaszolj a 18. kérdésre."); return; }
-    if (!q18) { toast("Kérjük, válaszolj a 19. kérdésre."); return; }
-    if (isAttendingOutside && q19.length === 0) { toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél."); return; }
-    if (q20.length === 0) { toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél."); return; }
-    if (q21.length < 50) { toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return; }
-    if (q22.length < 50) { toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie."); return; }
-    if (!q23 || !q24 || !q25) { toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26)."); return; }
+    if (!subject || !teacher) {
+      toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
+      return;
+    }
+    if (likerts.some((v) => !v)) {
+      toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17).");
+      return;
+    }
+    if (!q17) {
+      toast("Kérjük, válaszolj a 18. kérdésre.");
+      return;
+    }
+    if (!q18) {
+      toast("Kérjük, válaszolj a 19. kérdésre.");
+      return;
+    }
+    if (isAttendingOutside && q19.length === 0) {
+      toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél.");
+      return;
+    }
+    if (q20.length === 0) {
+      toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
+      return;
+    }
+    if (q21.length < 50) {
+      toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
+      return;
+    }
+    if (q22.length < 50) {
+      toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
+      return;
+    }
+    if (!q23 || !q24 || !q25) {
+      toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
+      return;
+     }
     return null;
   };
 
   const onSaveDraft = () => {
     if (!subject || !teacher) {
-      toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return;
+      toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
+      return;
     }
 
     if (!(q18 === "1" || q18 === "2")) {
