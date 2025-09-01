@@ -81,7 +81,6 @@ var host = new HostBuilder()
         services.AddSingleton<AdminOnlyMiddleware>();
         services.AddSingleton<StudentOnlyMiddleware>();
         services.AddSingleton<MiddlewareSelector>();
-
         services.AddSingleton<ICronTimerService, CronTimerService>();
     })
     // Pipeline/Middleware (IFunctionsWorkerApplicationBuilder overload)

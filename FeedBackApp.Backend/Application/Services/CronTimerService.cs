@@ -1,7 +1,5 @@
 ﻿
 using Application.Services.Interfaces;
-using FeedBackApp.Backend.Infrastructure.Persistence.Repository;
-using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -24,9 +22,7 @@ namespace Application.Services
         {
             _logger = logger;
             _provider = provider;
-
-            // hardcoded every minute (put it away from here)
-            _schedule = CrontabSchedule.Parse("* * * * *");
+            _schedule = CrontabSchedule.Parse("* * * * *"); // every minute for testing
         }
 
         public void Dispose()
