@@ -1,7 +1,6 @@
 ﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
-using System.Linq;
 
 namespace FeedBackApp.Backend.Infrastructure.Middleware
 {
@@ -30,7 +29,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
             var token = tokenCookie.Value;
 
             // Validate the token
-            if (!JwtRoleValidator.IsStudent(token))
+            if (!JwtRoleValidator.IsStudent(token,context))
             {
                 await ReturnForbidden.ExecuteAsync(context, httpRequestData, "Student privilages required!");
                 return;

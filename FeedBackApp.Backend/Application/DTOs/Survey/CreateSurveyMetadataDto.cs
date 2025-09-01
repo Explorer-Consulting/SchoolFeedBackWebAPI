@@ -1,9 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using Application.DTOs.Questionnaire;
+using Newtonsoft.Json;
 
-namespace Application.DTOs.Questionnaire
+namespace Application.DTOs.Survey
 {
     public class CreateSurveyMetadataDTO
     {
+        [JsonProperty("title")]
+        public string Title { get; set; } = string.Empty;
+
         [JsonProperty("startDate")]
         public DateTime StartDate { get; set; }
 
