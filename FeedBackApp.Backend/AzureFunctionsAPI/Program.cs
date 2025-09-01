@@ -26,19 +26,15 @@ var host = new HostBuilder()
     })
     .ConfigureServices((ctx, services) =>
     {
-       
+
         services.AddApplicationInsightsTelemetryWorkerService();
 
-        // WorkerOptions (serializer stb.)
         services.Configure<WorkerOptions>(o =>
         {
-            // Példa: System.Text.Json testreszabás
             o.Serializer = new JsonObjectSerializer(
                 new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    // Example: Ignore nulls
-                    // DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 });
         });
 
@@ -47,13 +43,11 @@ var host = new HostBuilder()
             var connectionString = Environment.GetEnvironmentVariable("ConnectionString")
     ?? throw new InvalidOperationException("ConnectionString environment variable is not set.");
             options.UseCosmos(
-                connectionString : connectionString,
+                connectionString: connectionString,
                 databaseName: "SchoolDatabase"
             );
         });
 
-        // DI regisztrációid
-        // services.AddScoped<IMyService, MyService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
@@ -71,17 +65,12 @@ var host = new HostBuilder()
         services.AddSingleton<StudentOnlyMiddleware>();
         services.AddSingleton<MiddlewareSelector>();
     })
-    // Pipeline/Middleware (IFunctionsWorkerApplicationBuilder overload)
     .ConfigureFunctionsWebApplication((IFunctionsWorkerApplicationBuilder app) =>
     {
         app.UseMiddleware<MiddlewareSelector>();
-        // Globális middleware-k ide:
-        // app.UseMiddleware<YourExceptionMiddleware>();
-        // app.UseWhen(ctx => true, branch => { /* branch middleware-k */ });
     })
     .Build();
 
-// add creation permission for cosmosDb
 using (var scope = host.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDBContext>();

@@ -17,6 +17,6 @@ namespace Application.DTOs.Questionnaire
         public string SubjectName { get; set; } = string.Empty;
 
         [JsonProperty("questionnaireResult")]
-        public List<QuestionAnswerDto> QuestionnaireResults { get; set; } = new();
+        public List<PostAnswerDto> QuestionnaireResults { get; set; } = new();
     }
 }

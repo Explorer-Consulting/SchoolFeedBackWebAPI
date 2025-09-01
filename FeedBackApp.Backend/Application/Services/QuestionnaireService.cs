@@ -1,6 +1,6 @@
-
-using Application.DTOs.GetQuestionnaires;
 using Application.DTOs.Questionnaire;
+using Application.DTOs.Questionnaire.GetQuestionnaires;
+using Application.DTOs.Survey;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
 using FeedBackApp.Core.Repositories;
@@ -74,28 +74,32 @@ namespace Application.Services
                 );
             }
         }
-        public async Task<GetQuestionnairesResponseDTO?> GetQuestionnairesAsync(Guid surveyId, string studentEmail)
+        public async Task<QuestionnairesDTO?> GetQuestionnairesAsync(Guid surveyId, string studentEmail)
         {
             var surveyMetadata = await _repository.GetSurveyMetadataAsync(surveyId);
             if (surveyMetadata == null)
             {
                 return null;
             }
+
             Dictionary<string, string> teacherData = new Dictionary<string, string>();
             var teacherInfo = surveyMetadata.Teachers;
             foreach (var item in teacherInfo)
             {
                 teacherData[item.Email] = item.Name;
             }
+
             var studentSetId = surveyMetadata.StudentSets.FirstOrDefault(set => set.StudentEmails.Contains(studentEmail))?.SetId;
             if (studentSetId == null)
             {
                 return null;
             }
-            GetQuestionnairesResponseDTO response = new GetQuestionnairesResponseDTO();
+
+            QuestionnairesDTO response = new QuestionnairesDTO();
             response.Class = studentSetId;
             response.Subjects = new List<SubjectDTO>();
             Dictionary<string, List<string>> subjectTeachers = new Dictionary<string, List<string>>();
+
             var creationParams = surveyMetadata.CreationParams.Where(par => par.StudentSetIds.Any(setId => setId == studentSetId));
             foreach (var item in creationParams)
             {
@@ -114,6 +118,7 @@ namespace Application.Services
                 string subject = keyValuePair.Key;
                 subjectDto.Name = subject;
                 subjectDto.Teachers = new List<TeacherDTO>();
+
                 List<string> teachers = keyValuePair.Value;
                 foreach (var teacherEmail in teachers)
                 {
@@ -121,21 +126,22 @@ namespace Application.Services
                     teacherDto.Name = teacherData[teacherEmail];
                     string questionnaireId = $"{studentEmail}_{teacherEmail}_{subject}_{surveyId}";
                     teacherDto.Id = questionnaireId;
+
                     var questionnaire = await _repository.GetQuestionnaireByIdAsync(questionnaireId);
                     if (questionnaire != null && questionnaire.Status == false)
                     {
-                        List<AnswerDTO> answersDto = new List<AnswerDTO>();
+                        List<GetAnswerDTO> answersDto = new List<GetAnswerDTO>();
+
                         var answers = questionnaire.QuestionnaireResults;
                         foreach (var item in answers)
                         {
-                            answersDto.Add(new AnswerDTO { QuestionID = item.QuestionId, Answer = item.Answer });
+                            answersDto.Add(new GetAnswerDTO { QuestionID = item.QuestionId, Answer = item.Answer });
                         }
                         teacherDto.Answers = answersDto;
                         subjectDto.Teachers.Add(teacherDto);
                     }
                 }
                 response.Subjects.Add(subjectDto);
-
             }
             return response;
         }

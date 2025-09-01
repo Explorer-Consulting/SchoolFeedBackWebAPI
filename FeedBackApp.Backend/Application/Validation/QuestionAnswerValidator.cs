@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace Application.Validation
 {
-    public class QuestionAnswerValidator : AbstractValidator<QuestionAnswerDto>
+    public class QuestionAnswerValidator : AbstractValidator<PostAnswerDto>
     {
         public QuestionAnswerValidator()
         {

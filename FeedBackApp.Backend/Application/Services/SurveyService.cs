@@ -17,7 +17,7 @@ namespace Application.Services
         public async Task<List<GetSurveyMetadataDto>> GetAllSurveyMetadata()
         {
             var metadatas = await _questionnaireRepository.GetAllSurveyMetadata();
-            var dtos = metadatas.Select(m => m.toDto()).ToList();
+            var dtos = metadatas.Select(m => m.ToGetDto()).ToList();
             return dtos;
         }
 
@@ -26,7 +26,7 @@ namespace Application.Services
             var metadatas = await _questionnaireRepository.GetSurveyMetadataForStudentAsync(studentEmail);
             metadatas = metadatas.Where(m => m.StartDate <= DateTime.UtcNow).ToList();
             metadatas = metadatas.Where(m => m.EndDate >= DateTime.UtcNow).ToList();
-            List<GetSurveyMetadataDto> dto = metadatas.Select(x => x.toDto()).ToList();
+            List<GetSurveyMetadataDto> dto = metadatas.Select(x => x.ToGetDto()).ToList();
             return dto;
         }
     }

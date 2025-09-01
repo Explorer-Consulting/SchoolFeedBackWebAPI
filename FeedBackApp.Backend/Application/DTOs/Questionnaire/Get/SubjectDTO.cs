@@ -1,5 +1,4 @@
-﻿
-namespace Application.DTOs.GetQuestionnaires
+﻿namespace Application.DTOs.Questionnaire.GetQuestionnaires
 {
     public class SubjectDTO
     {
