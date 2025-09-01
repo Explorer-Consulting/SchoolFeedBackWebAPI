@@ -19,12 +19,16 @@ type FeedbackFormProps = {
   onAfterChange?: () => void;
 }
 
-export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) 
-{
-  const { performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
-    performQuestionnaireSubmit, isPerformQuestionnaireSubmit } = useReviews();
+export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
+  const { performQuestionnaireUpdate,
+    isPerformQuestionnaireUpdating,
+    performQuestionnaireSubmit,
+    isPerformQuestionnaireSubmit } = useReviews();
 
-  const { selectedSubject: subject, setSelectedSubject: setSubject, selectedTeacher: teacher, setSelectedTeacher: setTeacher, } = useStudentContextStore();
+  const { selectedSubject: subject,
+    setSelectedSubject: setSubject,
+    selectedTeacher: teacher,
+    setSelectedTeacher: setTeacher, } = useStudentContextStore();
 
   const onSubjectChange = (s: string) => {
     setSubject(s);
@@ -110,7 +114,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   );
   const setQValues = useMemo(
     () => [setQ0, setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16],
-    []
+    [setQ0, setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16]
   );
 
   const isAttendingOutside = useMemo(
@@ -140,6 +144,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const onSaveDraft = () => {
+    if (!id) return;
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt."); return;
     }
@@ -155,8 +160,6 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
       {
         onSuccess: () => {
           toast("Piszkozat sikeresen mentve!");
-          //setSubject(null);
-          //setTeacher(null);
           onAfterChange?.();
         },
         onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
@@ -165,6 +168,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const onSubmit = () => {
+    if (!id) return;
     const err = validate();
 
     if (err !== null) return;
