@@ -41,6 +41,13 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                                  .FirstOrDefaultAsync(q => q.Id == id);
         }
 
+        public async Task<Questionnaire?> GetQuestionnaresByIdAsNoTrackingAsync(string id)
+        {
+            return await _context.Questionnaires
+                                 .AsNoTracking()
+                                 .FirstOrDefaultAsync(q => q.Id == id);
+        }
+
         public async Task<QuestionnaireTemplate?> GetQuestionTemplateBySurveyIdAsync(string surveyId)
         {
             string id = $"questiontemplates_{surveyId}";
