@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
@@ -60,7 +60,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
                     studentEmails.Add(email);
                 }
             }
-            await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+            await _emailService.SendBulkEmailAsync(studentEmails, $"Tanár értékelés: {dto.Title}", "Kérünk értékeld a tanáraid a következő kérdőíveken: https://witty-beach-0b0c08903.2.azurestaticapps.net");
 
             if (!result.Success)
             {
