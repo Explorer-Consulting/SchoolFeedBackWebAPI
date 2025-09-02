@@ -10,13 +10,9 @@ import OutsideEducationSection from "@/components/feedback/sections/OutsideEduca
 import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
-<<<<<<< Updated upstream
 import { useStudentContextStore } from "@/hooks/useStudentContext";
-=======
-import { useStudentContextStore } from "@/stores/useStudentContextStore";
-import { initialFeedbackForm, FeedbackFormState } from "./feedback-form.state.ts";
-import { useCallback } from "react"; 
->>>>>>> Stashed changes
+import { initialFeedbackForm, FeedbackFormState } from "../../utils/feedback-form.state";
+import { useCallback } from "react";
 
 type FeedbackFormProps = {
   subjects: string[];
@@ -25,18 +21,19 @@ type FeedbackFormProps = {
   onAfterChange: () => void;
 }
 
-export function FeedbackForm({ 
-  subjects, 
-  teachersBySubject, 
-  evaluations, 
+export function FeedbackForm({
+  subjects,
+  teachersBySubject,
+  evaluations,
   onAfterChange }: FeedbackFormProps) {
-  const { 
+
+  const {
     performQuestionnaireUpdate,
     isPerformQuestionnaireUpdating,
     performQuestionnaireSubmit,
     isPerformQuestionnaireSubmit } = useReviews();
 
-  const { 
+  const {
     selectedSubject: subject,
     setSelectedSubject: setSubject,
     selectedTeacher: teacher,
@@ -61,17 +58,12 @@ export function FeedbackForm({
   const [form, setForm] = useState<FeedbackFormState>(initialFeedbackForm);
 
   const setField = <K extends keyof FeedbackFormState>(key: K) =>
-    (val: FeedbackFormState[K]) =>
-      setForm(prev => ({ ...prev, [key]: val }));
-  const setArrayField = <K extends "q19" | "q20">(key: K):
-    React.Dispatch<React.SetStateAction<string[]>> =>
-    (updater) => setForm(prev => {
-      const curr = prev[key] as string[];
-      const next = typeof updater === "function"
-        ? (updater as (p: string[]) => string[])(curr)
-        : updater;
-      return { ...prev, [key]: next };
-    });
+    (val: FeedbackFormState[K] | ((prev: FeedbackFormState[K]) => FeedbackFormState[K])) =>
+      setForm(prev => {
+        const nextVal =
+          typeof val === "function" ? (val as (p: FeedbackFormState[K]) => FeedbackFormState[K])(prev[key]) : val
+        return { ...prev, [key]: nextVal }
+      })
 
   const teachersForSubject = useMemo(
     () => (subject ? (teachersBySubject[subject] ?? []) : []),
@@ -87,42 +79,29 @@ export function FeedbackForm({
   );
 
   const applyResponses = useCallback((r?: Partial<EvaluationResponses>) => {
-  if (!r) return;
+    if (!r) return;
 
-  setForm(prev => {
-    const next = { ...prev };
+    setForm(prev => {
+      const next = { ...prev };
 
-    for (const [key, val] of Object.entries(r)) {
-      if (key === "q19" || key === "q20") {
-        next[key as "q19" | "q20"] = Array.isArray(val)
-          ? (val as string[])
-          : prev[key as "q19" | "q20"]; // ha nem jön tömb, hagyjuk a meglévőt
-      } else {
-        next[key as keyof FeedbackFormState] = String(val ?? "") as any;
+      for (const [key, val] of Object.entries(r)) {
+        if (key === "q19" || key === "q20") {
+          next[key as "q19" | "q20"] = Array.isArray(val)
+            ? (val as string[])
+            : prev[key as "q19" | "q20"];
+        } else {
+          next[key as keyof FeedbackFormState] = String(val ?? "") as any;
+        }
       }
-    }
 
-    return next;
-  });
-}, [setForm]);
+      return next;
+    });
+  }, [setForm]);
 
   useEffect(() => {
     if (!subject || !teacher) return;
     applyResponses(currentEvaluation?.responses);
-  }, [subject, teacher, currentEvaluation]);
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      onSaveDraft();
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  });
-
-
+  }, [subject, teacher, currentEvaluation, applyResponses]);
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
@@ -133,7 +112,7 @@ export function FeedbackForm({
   const likerts = qValues;
   const setQValues = useMemo(
     () => Array.from({ length: 17 }, (_, i) => setField(`q${i}` as keyof FeedbackFormState)) as Array<(v: string) => void>,
-    [] // stabil referenciák
+    []
   );
 
   const isAttendingOutside = useMemo(
@@ -143,7 +122,7 @@ export function FeedbackForm({
 
   const collectResponses = (): FeedbackFormState => ({
     ...form,
-    q19: isAttendingOutside ? form.q19 : [] // ha nem jár, ürítjük
+    q19: isAttendingOutside ? form.q19 : []
   });
 
 
@@ -156,36 +135,6 @@ export function FeedbackForm({
       toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17).");
       return;
     }
-<<<<<<< Updated upstream
-    if (!q17) {
-      toast("Kérjük, válaszolj a 18. kérdésre.");
-      return;
-    }
-    if (!q18) {
-      toast("Kérjük, válaszolj a 19. kérdésre.");
-      return;
-    }
-    if (isAttendingOutside && q19.length === 0) {
-      toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél.");
-      return;
-    }
-    if (q20.length === 0) {
-      toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
-      return;
-    }
-    if (q21.length < 50) {
-      toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
-      return;
-    }
-    if (q22.length < 50) {
-      toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
-      return;
-    }
-    if (!q23 || !q24 || !q25) {
-      toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
-      return;
-     }
-=======
     if (!form.q17) {
       toast("Kérjük, válaszolj a 18. kérdésre.");
       return;
@@ -214,18 +163,18 @@ export function FeedbackForm({
       toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
       return;
     }
->>>>>>> Stashed changes
     return null;
   };
 
   const onSaveDraft = () => {
+    if (!id) return;
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
     }
 
     if (!(form.q18 === "1" || form.q18 === "2")) {
-       setForm(prev => ({ ...prev, q19: [] }));
+      setForm(prev => ({ ...prev, q19: [] }));
     }
 
     const data = collectResponses();
@@ -251,7 +200,7 @@ export function FeedbackForm({
 
     const data = collectResponses();
     const payload = toBackendPayload(data);
-console.log(payload);
+    console.log(payload);
     performQuestionnaireSubmit(
       { id, payload },
       {
@@ -315,9 +264,9 @@ console.log(payload);
           q18={form.q18}
           setQ18={setField("q18")}
           q19={form.q19}
-          setQ19={setArrayField("q19")}
+          setQ19={setField("q19")}
           q20={form.q20}
-          setQ20={setArrayField("q20")}
+          setQ20={setField("q20")}
           q21={form.q21}
           setQ21={setField("q21")}
           q22={form.q22}
@@ -325,7 +274,6 @@ console.log(payload);
           isAttendingOutside={isAttendingOutside}
           toggleMulti={toggleMulti}
         />
-
 
         <AttendanceSection
           q23={form.q23} setQ23={setField("q23")}
