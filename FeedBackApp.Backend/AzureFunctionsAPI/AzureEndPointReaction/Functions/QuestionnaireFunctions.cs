@@ -1,5 +1,6 @@
 using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
+using Application.Services;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
@@ -14,12 +15,13 @@ using System.Security.Claims;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
 
-public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, IEmailService emailService, ISurveyService surveyService)
+public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, IEmailService emailService, ISurveyService surveyService, ICronTimerService cronTimerService)
 {
     private readonly IQuestionnaireService _questionnaireService = questionnaireService;
     private readonly ILogger<QuestionnaireFunctions> _logger = logger;
     private readonly IEmailService _emailService = emailService;
     private readonly ISurveyService _surveyService = surveyService;
+    private readonly ICronTimerService _cronTimerService = cronTimerService;
 
     [RequireAdmin]
     [Function("PerformQuestionnaireCompilation")]
@@ -52,15 +54,8 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             }
 
             var result = await _questionnaireService.CompileAndSaveAsync(dto);
-            var studentEmails = new List<string>();
-            foreach (var set in dto.StudentSets)
-            {
-                foreach (var email in set.StudentEmails)
-                {
-                    studentEmails.Add(email);
-                }
-            }
-            await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+
+            _cronTimerService.Start();
 
             if (!result.Success)
             {
