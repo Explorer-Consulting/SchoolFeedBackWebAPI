@@ -136,7 +136,7 @@ export default function OutsideEducationSection({
                     maxLength={300}
                 />
                 <p className="text-sm text-gray-500">
-                    {q21.trim().length}/300 karakter (min. 20) </p>d
+                    {q21.trim().length}/300 karakter (min. 20) </p>
             </div>
 
             <div className="space-y-2">
