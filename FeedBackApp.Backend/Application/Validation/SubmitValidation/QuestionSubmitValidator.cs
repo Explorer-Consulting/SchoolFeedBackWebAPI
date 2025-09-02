@@ -34,7 +34,7 @@ namespace Application.Validation.SubmitValidation
                     switch (template.Type)
                     {
                         case QuestionType.OpenEnded:
-                            if (string.IsNullOrWhiteSpace(answer))
+                            if (string.IsNullOrWhiteSpace(answer) || answer.Length < 20 || answer.Length > 300)
                                 context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
                             break;
 
