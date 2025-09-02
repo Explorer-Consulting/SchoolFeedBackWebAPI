@@ -19,8 +19,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
              * allitolag ez jo lesz.
              */
 
-            var questionnaireAnswerCollection = await _context.Questionnaires
+            //
+            var groupedCollection = await _context.Questionnaires
                 .AsNoTracking()
+                .Where(q => q.Status == true)
                 .Select(q => new
                 {
                     q.TeacherEmail,
@@ -35,15 +37,15 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 })
                 .ToListAsync();
 
-            var groupedCollection = questionnaireAnswerCollection
+            // itt kapnek egy ImmutableDictionary<(string TeacherEmail, string SubjectName), ImmutableList<QuestionAnswer>> tipusu objektumot amit majd fel kell dolgoznom
+            var answerCollection = groupedCollection
                 .GroupBy(x => (x.TeacherEmail, x.SubjectName))
                 .ToImmutableDictionary(
                     g => g.Key,
-                    g => g.SelectMany(x => x.Results)
-                            .Where(r => !string.IsNullOrWhiteSpace(r.Answer))
-                            .ToImmutableList()
+                    g => g.SelectMany(x => x.Results).ToImmutableList()
                 );
-            await foreach(var a in EvaluationReportCompiler.RenderReports())
+
+            await foreach (var a in EvaluationReportCompiler.RenderReports())
             {
 
             }

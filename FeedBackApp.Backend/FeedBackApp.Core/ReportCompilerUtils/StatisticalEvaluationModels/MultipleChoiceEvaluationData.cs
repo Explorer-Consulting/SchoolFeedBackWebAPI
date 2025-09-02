@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using FeedBackApp.Core.ReportCompilerUtils.ReportComponents;
+using System.Collections.Immutable;
 namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 {
     public sealed class MultipleChoiceEvaluationData(string questionStatement, ImmutableArray<string> questionOptions) : EvaluationData
@@ -10,9 +11,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         public ImmutableArray<((int a, int b) pair, int count)> Cooccurances { get; private set; }
 
         #endregion
-        protected override void EvaluateData()
+        protected override ReportComponent EvaluateData()
         {
-            throw new NotImplementedException();
+            return new MultipleChoiceReportComponent(this);
         }
     }
 }
