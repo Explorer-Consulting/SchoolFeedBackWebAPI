@@ -68,7 +68,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
                     studentEmails.Add(email);
                 }
             }
-            await _emailService.SendBulkEmailAsync(studentEmails, $"Tanár értékelés: {dto.Title}", $"Kérünk értékeld a tanáraid a következő kérdőíveken {dto.StartDate}-től kezdődően: https://witty-beach-0b0c08903.2.azurestaticapps.net \nHatáridő: {dto.EndDate.Date}");
+            await _emailService.SendBulkEmailAsync(studentEmails, $"Tanár értékelés: {dto.Title}", $"Kérünk értékeld a tanáraid a következő kérdőíveken {dto.StartDate.ToShortDateString()}-től kezdődően: https://witty-beach-0b0c08903.2.azurestaticapps.net \nHatáridő: {dto.EndDate.Date.ToShortDateString()}");
 
             
 
