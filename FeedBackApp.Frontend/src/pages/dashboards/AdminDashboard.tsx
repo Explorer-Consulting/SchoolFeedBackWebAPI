@@ -63,6 +63,13 @@ export default function AdminDashboard() {
       toast.error("A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.");
       return;
     }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate < today) {
+      toast.error("A kezdő dátum nem lehet korábbi, mint a mai nap.");
+      return;
+    }
 
     if (!title) {
       toast.error("Kérlek, add meg a címet.");
