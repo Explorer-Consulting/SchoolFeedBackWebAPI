@@ -8,7 +8,7 @@ namespace Application.Validation.CreateValidation
         public CreateSurveyMetadataValidator()
         {
             RuleFor(dto => dto.StartDate).NotEmpty().WithMessage("Start date can not be empty")
-                .GreaterThanOrEqualTo(DateTime.UtcNow).WithMessage("Start date can not be in the past. Found: {PropertyValue}");
+                .GreaterThanOrEqualTo(DateTime.Today).WithMessage("Start date can not be in the past. Found: {PropertyValue}");
             RuleFor(dto => dto.EndDate).NotEmpty().WithMessage("End date can not be empty")
                 .GreaterThanOrEqualTo(DateTime.UtcNow).WithMessage("End date must be a future date. Found: {PropertyValue}");
             RuleFor(dto => dto.StudentSets).NotEmpty().WithMessage("Student sets can not be empty");
