@@ -8,7 +8,7 @@ namespace FeedBackApp.Core.Repositories
         Task<bool> UpdateOrSubmitQuestionnaire(Questionnaire newQuestionnaire, Questionnaire oldQuestionnaire);
         Task<Questionnaire?> GetQuestionnaireByIdAsync(string id);
         Task<Questionnaire?> GetQuestionnaireByIdAsNoTrackingAsync(string id);
-        Task<QuestionnaireTemplate?> GetQuestionTemplateBySurveyIdAsync(string surevyId);
+        Task<QuestionnaireTemplate?> GetQuestionnaresByIdAsNoTrackingAsync(string surevyId);
         Task<DateTime?> GetEndDateBySurveyId(string surveyId);
 
     }
