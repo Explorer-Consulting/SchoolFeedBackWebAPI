@@ -80,7 +80,7 @@ namespace Application.Services
 
             try
             {
-                _logger.LogInformation("Executing emial sender function...");
+                _logger.LogInformation("Executing email sender function...");
                 using var scope = _provider.CreateScope(); //  create a new scope every tick
                 var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();

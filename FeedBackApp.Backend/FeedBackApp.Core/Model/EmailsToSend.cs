@@ -5,6 +5,6 @@ namespace FeedBackApp.Core.Model
     {
         public string Id { get; set; } = string.Empty;
 
-        public IList<string> EmailToSend { get; set; } = new List<string>();
+        public IList<string> Emails { get; set; } = new List<string>();
     }
 }

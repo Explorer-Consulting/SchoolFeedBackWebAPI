@@ -72,7 +72,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 emailDoc = new EmailsToSend
                 {
                     Id = "emailsToSend",
-                    EmailToSend = allEmails.ToList()
+                    Emails = allEmails.ToList()
                 };
 
                 _context.Add(emailDoc);
@@ -81,7 +81,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             {
                 foreach (var email in allEmails)
                 {
-                   emailDoc.EmailToSend.Add(email); 
+                   emailDoc.Emails.Add(email); 
                 }
                 _context.Update(emailDoc);
             }
