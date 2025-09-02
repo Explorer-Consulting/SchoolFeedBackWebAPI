@@ -1,5 +1,4 @@
-﻿using Application.DTOs.Evaluation;
-using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using FeedBackApp.Core.Model;
 
@@ -111,7 +110,7 @@ namespace Application.Extensions.QuestionnaireExtensions
 
                 TeacherEmail = model.TeacherEmail,
                 StudentEmail = model.StudentEmail,
-                SubjectName = model.SubjectName, 
+                SubjectName = model.SubjectName,
                 QuestionnaireResults = model.QuestionnaireResults
                     .Select(q => q.ToDto())
                     .ToList() ?? new List<PostAnswerDto>()
@@ -141,8 +140,8 @@ namespace Application.Extensions.QuestionnaireExtensions
             {
                 Question = model.Question,
                 Type = model.Type,
-                AnswerOptions = [..model.AnswerOptions]
-            }; 
+                AnswerOptions = [.. model.AnswerOptions]
+            };
 
         public static GetSurveyMetadataDTO ToGetDto(this SurveyMetadata model) =>
             new()

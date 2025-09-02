@@ -1,16 +1,14 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-export default function ClassroomSection({
-    qValues,
-    setQValues,
-    likertValues
-}:{
-    qValues: string[];
-    setQValues: ((v: string) => void)[];
-    likertValues: string[];
-}) {
-    const questions = [
+type Props = {
+  qValues: string[];
+  setQValues: ((v: string) => void)[];
+  likertValues: string[];
+};
+
+export default function ClassroomSection({ qValues, setQValues, likertValues }: Props) {
+  const questions = [
     "1) A Tanár érthetően magyarázza a tananyagot.",
     "2) A Tanár olyan magyarázatokat ad, amelyek segítenek a hatékony tanulásban.",
     "3) A tanórai feladatok érdekesek.",
@@ -30,7 +28,7 @@ export default function ClassroomSection({
     "17) Ezen az órán ideges vagyok, gyomoridegem van."
   ];
 
-   return (
+  return (
     <section className="space-y-6">
       <header>
         <h2 className="text-xl font-semibold">Osztálytermi tevékenység</h2>
@@ -55,9 +53,9 @@ export default function ClassroomSection({
                 </div>
               ))}
             </RadioGroup>
-            {i === 12 && ( 
+            {i === 12 && (
               <p className="text-xs text-muted-foreground">
-                1 = nagyon lassú, 3 = megfelelő, 5 = nagyon gyors
+                1 = nagyon lassú, 2 = lassú, 3 = megfelelő, 4 = gyors, 5 = nagyon gyors
               </p>
             )}
           </div>

@@ -1,14 +1,14 @@
-import {create} from 'zustand'
+import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import {User} from "@/models/User"
+import { User } from "@/models/User"
 
-type AuthStore ={
-    user:User | null
-    setUser: (u:User | null) => void
+type AuthStore = {
+  user: User | null
+  setUser: (u: User | null) => void
 }
 
 export const useAuthStore = create<AuthStore>()(
-     persist(
+  persist(
     (set) => ({
       user: null,
       setUser: (u) => set({ user: u }),

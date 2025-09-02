@@ -1,16 +1,16 @@
 import type { EvaluationResponses } from "@/models/StudentContext";
 
-export type BackendAnswer = { question: string; answer: string };
-export type BackendPayload = { id: string;status: string ; responses: BackendAnswer[];};
+export type BackendAnswer = { questionId: string; answer: string };
+export type BackendPayload = { questionnaireResult: BackendAnswer[]; };
 
-export function toBackendPayload(id: string, r: EvaluationResponses,status: string): BackendPayload {
-  const responses: BackendAnswer[] = [];
-  for (const [question, value] of Object.entries(r)) {
+export function toBackendPayload(r: EvaluationResponses): BackendPayload {
+  const questionnaireResult: BackendAnswer[] = [];
+  for (const [questionId, value] of Object.entries(r)) {
     const answer = Array.isArray(value)
-      ? value.map((s) => String(s)).join(",")
+      ? value.map((s) => String(s)).join("-")
       : String(value ?? "").trim();
 
-    if (answer) responses.push({ question, answer }); 
+    questionnaireResult.push({ questionId, answer });
   }
-  return {id,status,responses};
+  return { questionnaireResult };
 }

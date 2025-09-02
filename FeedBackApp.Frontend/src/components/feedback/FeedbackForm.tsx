@@ -9,57 +9,66 @@ import ClassroomSection from "@/components/feedback/sections/ClassroomSection"
 import OutsideEducationSection from "@/components/feedback/sections/OutsideEducationSection"
 import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
-
+import { useReviews } from "@/hooks/useReviews";
+import { useStudentContextStore } from "@/hooks/useStudentContext";
+import { initialFeedbackForm, FeedbackFormState } from "../../utils/feedback-form.state";
+import { useCallback } from "react";
 
 type FeedbackFormProps = {
   subjects: string[];
   teachersBySubject: Record<string, string[]>;
   evaluations: Evaluation[];
-  onAfterChange?: () => void;
+  onAfterChange: () => void;
 }
 
-export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfterChange }: FeedbackFormProps) {
+export function FeedbackForm({
+  subjects,
+  teachersBySubject,
+  evaluations,
+  onAfterChange }: FeedbackFormProps) {
 
-  const [subject, setSubject] = useState<string>("");
-  const [teacher, setTeacher] = useState<string>("");
+  const {
+    performQuestionnaireUpdate,
+    isPerformQuestionnaireUpdating,
+    performQuestionnaireSubmit,
+    isPerformQuestionnaireSubmit } = useReviews();
 
-  const [q1, setQ1] = useState("");
-  const [q2, setQ2] = useState("");
-  const [q3, setQ3] = useState("");
-  const [q4, setQ4] = useState("");
-  const [q5, setQ5] = useState("");
-  const [q6, setQ6] = useState("");
-  const [q7, setQ7] = useState("");
-  const [q8, setQ8] = useState("");
-  const [q9, setQ9] = useState("");
-  const [q10, setQ10] = useState("");
-  const [q11, setQ11] = useState("");
-  const [q12, setQ12] = useState("");
-  const [q13, setQ13] = useState("");
-  const [q14, setQ14] = useState("");
-  const [q15, setQ15] = useState("");
-  const [q16, setQ16] = useState("");
-  const [q17, setQ17] = useState("");
-  const [q18, setQ18] = useState("");
-  const [q19, setQ19] = useState("");
-  const [q20, setQ20] = useState<string[]>([]);
-  const [q21, setQ21] = useState<string[]>([]);
-  const [q22, setQ22] = useState("");
-  const [q23, setQ23] = useState("");
-  const [q24, setQ24] = useState("");
-  const [q25, setQ25] = useState("");
-  const [q26, setQ26] = useState("");
+  const {
+    selectedSubject: subject,
+    setSelectedSubject: setSubject,
+    selectedTeacher: teacher,
+    setSelectedTeacher: setTeacher, } = useStudentContextStore();
+
+  const onSubjectChange = (s: string) => {
+    setSubject(s);
+    setTeacher(null);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      onSaveDraft();
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  });
+
+  const [form, setForm] = useState<FeedbackFormState>(initialFeedbackForm);
+
+  const setField = <K extends keyof FeedbackFormState>(key: K) =>
+    (val: FeedbackFormState[K] | ((prev: FeedbackFormState[K]) => FeedbackFormState[K])) =>
+      setForm(prev => {
+        const nextVal =
+          typeof val === "function" ? (val as (p: FeedbackFormState[K]) => FeedbackFormState[K])(prev[key]) : val
+        return { ...prev, [key]: nextVal }
+      })
 
   const teachersForSubject = useMemo(
     () => (subject ? (teachersBySubject[subject] ?? []) : []),
     [subject, teachersBySubject]
   );
-
-  useEffect(() => {
-    if (teacher && !teachersForSubject.includes(teacher)) {
-      setTeacher("");
-    }
-  }, [teachersForSubject, teacher]);
 
   const currentEvaluation = useMemo(
     () =>
@@ -69,94 +78,89 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
     [evaluations, subject, teacher]
   );
 
-  const applyResponses = (r?: Partial<EvaluationResponses>) => {
-    setQ1(String(r?.q1 ?? "")); setQ2(String(r?.q2 ?? "")); setQ3(String(r?.q3 ?? ""));
-    setQ4(String(r?.q4 ?? "")); setQ5(String(r?.q5 ?? "")); setQ6(String(r?.q6 ?? ""));
-    setQ7(String(r?.q7 ?? "")); setQ8(String(r?.q8 ?? "")); setQ9(String(r?.q9 ?? ""));
-    setQ10(String(r?.q10 ?? "")); setQ11(String(r?.q11 ?? "")); setQ12(String(r?.q12 ?? ""));
-    setQ13(String(r?.q13 ?? "")); setQ14(String(r?.q14 ?? "")); setQ15(String(r?.q15 ?? ""));
-    setQ16(String(r?.q16 ?? "")); setQ17(String(r?.q17 ?? ""));
-    setQ18(String(r?.q18 ?? "")); setQ19(String(r?.q19 ?? ""));
-    setQ20(Array.isArray(r?.q20) ? (r?.q20 as string[]) : []);
-    setQ21(Array.isArray(r?.q21) ? (r?.q21 as string[]) : []);
-    setQ22(String(r?.q22 ?? "")); setQ23(String(r?.q23 ?? ""));
-    setQ24(String(r?.q24 ?? "")); setQ25(String(r?.q25 ?? "")); setQ26(String(r?.q26 ?? ""));
-  };
+  const applyResponses = useCallback((r?: Partial<EvaluationResponses>) => {
+    if (!r) return;
+
+    setForm(prev => {
+      const next = { ...prev };
+
+      for (const [key, val] of Object.entries(r)) {
+        if (key === "q19" || key === "q20") {
+          next[key as "q19" | "q20"] = Array.isArray(val)
+            ? (val as string[])
+            : prev[key as "q19" | "q20"];
+        } else {
+          next[key as keyof FeedbackFormState] = String(val ?? "") as any;
+        }
+      }
+
+      return next;
+    });
+  }, [setForm]);
 
   useEffect(() => {
     if (!subject || !teacher) return;
     applyResponses(currentEvaluation?.responses);
-  }, [subject, teacher, currentEvaluation]);
+  }, [subject, teacher, currentEvaluation, applyResponses]);
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
 
   const qValues = useMemo(
-    () => [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17],
-    [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17]
+    () => Array.from({ length: 17 }, (_, i) => form[`q${i}` as keyof FeedbackFormState] as string),
+    [form]
   );
+  const likerts = qValues;
   const setQValues = useMemo(
-    () => [setQ1, setQ2, setQ3, setQ4, setQ5, setQ6, setQ7, setQ8, setQ9, setQ10, setQ11, setQ12, setQ13, setQ14, setQ15, setQ16, setQ17],
+    () => Array.from({ length: 17 }, (_, i) => setField(`q${i}` as keyof FeedbackFormState)) as Array<(v: string) => void>,
     []
   );
 
   const isAttendingOutside = useMemo(
-    () => q19 === "1" || q19 === "2",
-    [q19]
+    () => form.q18 === "1" || form.q18 === "2",
+    [form.q18]
   );
 
-  const collectResponses = (): EvaluationResponses => {
-    const normalizedQ20 = (q19 === "1" || q19 === "2") ? q20 : [];
-    return {
-      q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17,
-      q18, q19, q20: normalizedQ20, q21, q22, q23, q24, q25, q26
-    };
-  };
+  const collectResponses = (): FeedbackFormState => ({
+    ...form,
+    q19: isAttendingOutside ? form.q19 : []
+  });
+
 
   const validate = () => {
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
     }
-
-    const likerts = [
-      q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17,
-    ];
     if (likerts.some((v) => !v)) {
       toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17).");
       return;
     }
-
-    if (!q18) {
+    if (!form.q17) {
       toast("Kérjük, válaszolj a 18. kérdésre.");
       return;
     }
-
-    if (!q19) {
+    if (!form.q18) {
       toast("Kérjük, válaszolj a 19. kérdésre.");
       return;
     }
-    if (isAttendingOutside && q20.length === 0) {
+    if (isAttendingOutside && form.q19.length === 0) {
       toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél.");
       return;
     }
-
-    if (q21.length === 0) {
+    if (form.q20.length === 0) {
       toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
       return;
     }
-
-    if (q22.length < 50) {
+    if (form.q21.length < 20) {
       toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
       return;
     }
-
-    if (q23.length < 50) {
+    if (form.q22.length < 20) {
       toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
       return;
     }
-
-    if (!q24 || !q25 || !q26) {
+    if (!form.q23 || !form.q24 || !form.q25) {
       toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
       return;
     }
@@ -164,29 +168,50 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
   };
 
   const onSaveDraft = () => {
+    if (!id) return;
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
     }
 
-    if (!(q19 === "1" || q19 === "2")) {
-      setQ20([]);
+    if (!(form.q18 === "1" || form.q18 === "2")) {
+      setForm(prev => ({ ...prev, q19: [] }));
     }
 
     const data = collectResponses();
-    const payload = toBackendPayload(id, data, "Unsubmitted");
-    console.log("Draft saved:", JSON.stringify(payload, null, 2));
-    onAfterChange?.();
+    const payload = toBackendPayload(data);
+    console.log(payload);
+    performQuestionnaireUpdate(
+      { id, payload },
+      {
+        onSuccess: () => {
+          toast("Piszkozat sikeresen mentve!");
+          onAfterChange();
+        },
+        onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
+      }
+    )
   };
 
   const onSubmit = () => {
+    if (!id) return;
     const err = validate();
+
     if (err !== null) return;
-    toast("Küldésre kész. Supabase engedélyezésével anonim módon tudjuk tárolni.");
+
     const data = collectResponses();
-    const payload = toBackendPayload(id, data, "Submitted");
-    console.log("submit saved:", JSON.stringify(payload, null, 2));
-    onAfterChange?.();
+    const payload = toBackendPayload(data);
+    console.log(payload);
+    performQuestionnaireSubmit(
+      { id, payload },
+      {
+        onSuccess: () => {
+          toast("Kérdőív beküldve!");
+          onAfterChange();
+        },
+        onError: () => { toast("Hiba történt a beküldés közben!"); }
+      }
+    )
   };
 
   const toggleMulti = (value: string, setFn: (updater: (prev: string[]) => string[]) => void) => {
@@ -202,7 +227,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         <section className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="subject">Tantárgy</Label>
-            <Select value={subject} onValueChange={setSubject}>
+            <Select value={subject ?? ""} onValueChange={onSubjectChange}>
               <SelectTrigger id="subject">
                 <SelectValue placeholder="Válassz tantárgyat" />
               </SelectTrigger>
@@ -215,7 +240,7 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
           </div>
           <div className="space-y-2">
             <Label htmlFor="teacher">Tanár</Label>
-            <Select value={teacher} onValueChange={setTeacher}>
+            <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
               <SelectTrigger id="teacher">
                 <SelectValue placeholder="Válassz tanárt" />
               </SelectTrigger>
@@ -235,25 +260,31 @@ export function FeedbackForm({ subjects, teachersBySubject, evaluations, onAfter
         />
 
         <OutsideEducationSection
-          q18={q18} setQ18={setQ18}
-          q19={q19} setQ19={setQ19}
-          q20={q20} setQ20={setQ20}
-          q21={q21} setQ21={setQ21}
-          q22={q22} setQ22={setQ22}
-          q23={q23} setQ23={setQ23}
+          q17={form.q17}
+          setQ17={setField("q17")}
+          q18={form.q18}
+          setQ18={setField("q18")}
+          q19={form.q19}
+          setQ19={setField("q19")}
+          q20={form.q20}
+          setQ20={setField("q20")}
+          q21={form.q21}
+          setQ21={setField("q21")}
+          q22={form.q22}
+          setQ22={setField("q22")}
           isAttendingOutside={isAttendingOutside}
           toggleMulti={toggleMulti}
         />
 
         <AttendanceSection
-          q24={q24} setQ24={setQ24}
-          q25={q25} setQ25={setQ25}
-          q26={q26} setQ26={setQ26}
+          q23={form.q23} setQ23={setField("q23")}
+          q24={form.q24} setQ24={setField("q24")}
+          q25={form.q25} setQ25={setField("q25")}
         />
 
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={onSaveDraft}>Piszkozat mentése</Button>
-          <Button variant="default" onClick={onSubmit}>Beküldés</Button>
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>Piszkozat mentése</Button>
+          <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireSubmit}>Beküldés</Button>
         </div>
       </CardContent>
     </Card>

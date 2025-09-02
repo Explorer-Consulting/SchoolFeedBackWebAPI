@@ -1,6 +1,6 @@
 import type { StudentContext, EvaluationResponses } from "@/models/StudentContext";
 
-const multiQuestions = new Set(["q20", "q21"]);
+const multiQuestions = new Set(["q19", "q20"]);
 
 export function toStudentContext(raw: any): StudentContext {
     const subjects: string[] = [];
@@ -20,26 +20,25 @@ export function toStudentContext(raw: any): StudentContext {
         const subjectName = typeof subj?.name === "string" ? subj.name : "";
         if (!subjectName) continue;
 
-        subjects.push(subjectName);
-        teachersBySubject[subjectName] = [];
+        const teacherList = Array.isArray(subj?.teachers) ? subj.teachers : [];
+        const teacherNamesForSubject: string[] = [];
 
-        const teacherList = Array.isArray(subj.teachers) ? subj.teachers : [];
         for (const teacher of teacherList) {
             const teacherName = typeof teacher?.name === "string" ? teacher.name : "";
             if (!teacherName) continue;
 
-            teachersBySubject[subjectName].push(teacherName);
+            teacherNamesForSubject.push(teacherName);
 
             const responses: Record<string, string | string[]> = {};
             const answers = Array.isArray(teacher?.answers) ? teacher.answers : [];
 
             for (const answer of answers) {
-                const qid = typeof answer?.questionId === "string" ? answer.questionId : "";
+                const qid = typeof answer?.questionID === "string" ? answer.questionID : "";
                 if (!qid) continue;
                 const ans = typeof answer?.answer === "string" ? answer.answer : "";
 
                 responses[qid] = multiQuestions.has(qid)
-                    ? (ans ? ans.split(",").map(s => s) : [])
+                    ? (ans ? ans.split("-").map(s => s) : [])
                     : ans;
             }
             evaluations.push({
@@ -49,6 +48,10 @@ export function toStudentContext(raw: any): StudentContext {
                 responses: responses as EvaluationResponses
             });
         }
+        if (teacherNamesForSubject.length > 0) {
+            subjects.push(subjectName);
+            teachersBySubject[subjectName] = teacherNamesForSubject;
+        }
     }
 
     return {
@@ -56,5 +59,5 @@ export function toStudentContext(raw: any): StudentContext {
         subjects,
         teachersBySubject,
         evaluations,
-    }
+    };
 }

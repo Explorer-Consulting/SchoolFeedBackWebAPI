@@ -3,11 +3,11 @@ using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FluentValidation;
 
-namespace Application.Validation.UpdateValidation
+namespace Application.Validation.SubmitValidation
 {
-    public class QuestionResultValidator : AbstractValidator<QuestionResultDTO>
+    public class QuestionSubmitValidator : AbstractValidator<QuestionResultDTO>
     {
-        public QuestionResultValidator(IList<QuestionTemplate> templates)
+        public QuestionSubmitValidator(IList<QuestionTemplate> templates)
         {
             RuleFor(dto => dto.QuestionId)
                 .NotEmpty().WithMessage("QuestionId cannot be null/empty")
@@ -23,14 +23,24 @@ namespace Application.Validation.UpdateValidation
                     if (template == null)
                         return;
 
-                    if (string.IsNullOrWhiteSpace(answer))
+                    if (dtoInstance.QuestionId == "q19")
                         return;
+
+                    if (answer == string.Empty)
+                    {
+                        context.AddFailure($"Answer cannot be empty '{template.Question}-{template.Id}'");
+                    }
 
                     switch (template.Type)
                     {
+                        case QuestionType.OpenEnded:
+                            if (string.IsNullOrWhiteSpace(answer))
+                                context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
+                            break;
+
                         case QuestionType.MultinomialSingleChoice:
                             if (!int.TryParse(answer, out int singleChoice) || singleChoice < 1 || singleChoice > template.AnswerOptions.Count)
-                                context.AddFailure("Answer", $"Answer must be a number between 0 and {template.AnswerOptions.Count - 1} for '{template.Question}-{template.Id}'.");
+                                context.AddFailure("Answer", $"Answer must be a number between 1 and {template.AnswerOptions.Count} for '{template.Question}-{template.Id}'.");
                             break;
 
                         case QuestionType.MultipleChoice:
@@ -46,7 +56,7 @@ namespace Application.Validation.UpdateValidation
 
                         case QuestionType.LikertScaleOneToFive:
                             if (!int.TryParse(answer, out int scale) || scale < 1 || scale > 5)
-                                context.AddFailure("Answer", $"Answer must be a number between 0 and 5 for '{template.Question}-{template.Id}'.");
+                                context.AddFailure("Answer", $"Answer must be a number between 1 and 5 for '{template.Question}-{template.Id}'.");
                             break;
 
                         case QuestionType.MultiNomialSingleChoiceOther:
@@ -54,7 +64,7 @@ namespace Application.Validation.UpdateValidation
                             {
                                 if (singleChoice2 < 1 || singleChoice2 > template.AnswerOptions.Count)
                                 {
-                                    context.AddFailure("Answer", $"Answer must be a number between 0 and {template.AnswerOptions.Count - 1} for '{template.Question}-{template.Id}'.");
+                                    context.AddFailure("Answer", $"Answer must be a number between 1 and {template.AnswerOptions.Count} for '{template.Question}-{template.Id}'.");
                                 }
                             }
                             else
@@ -65,7 +75,6 @@ namespace Application.Validation.UpdateValidation
                                 }
                             }
                             break;
-
                     }
                 });
         }

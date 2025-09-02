@@ -1,19 +1,44 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, UpdateEvaluation, DeleteQuestionnaire, LoginWithGoogle , GetFormByEmail} from "@/api/ReviewApi"
+import { CreateQuestionnaires, GetQuestionnaireSummary, GetEvaluation, DeleteQuestionnaire, LoginWithGoogle, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
-import {StudentContext} from "@/models/StudentContext"
+import { BackendPayload } from "@/utils/toBackendPayload";
+import { Survey } from "@/models/StudentContext"
 
-export const useReviews = (email?) => {
+export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
     const { questionnaireId, evaluationId } = useParams();
 
-    const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation({
-        mutationFn:(payload: { startDate: string; endDate: string }) => CreateQuestionnaires(payload),
+    const { mutate: createQuestionnaires, isPending: isCreatingQuestionnaire } = useMutation<any, any, any>({
+        mutationFn: (payload) => CreateQuestionnaires(payload),
         onSuccess: () => {
             client.invalidateQueries({
                 queryKey: ['questionnaires']
             });
         }
+    })
+
+    const {
+        data: querySurveys,
+        isLoading: isLoadingSurveys,
+        isError: isErrorSurveys,
+        error: errorSurveys,
+        refetch: refetchSurveys
+    } = useQuery<Survey[]>({
+        queryKey: [`surveys`],
+        queryFn: PerformGetSurveys,
+        enabled: false
+    })
+
+    const {
+        data: questionnaires,
+        isLoading: isLoadingQuestionnaire,
+        isError: isErrorQuestionnaire,
+        error: errorQuestionnaire,
+        refetch: refetchQuestionnaires
+    } = useQuery({
+        queryKey: ['questionnaires', selectedSurveyId],
+        queryFn: () => GetQuestionnaires(selectedSurveyId!),
+        enabled: !!selectedSurveyId
     })
 
     const {
@@ -23,7 +48,8 @@ export const useReviews = (email?) => {
         error: errorQuestionnairesSummary
     } = useQuery({
         queryKey: [`questionnairesSummary`, questionnaireId],
-        queryFn:() => GetQuestionnaireSummary(questionnaireId),
+        queryFn: () => GetQuestionnaireSummary(questionnaireId),
+        enabled: !!questionnaireId,
     })
 
     const {
@@ -33,33 +59,32 @@ export const useReviews = (email?) => {
         error: errorEvaluation
     } = useQuery({
         queryKey: [`evaluation`, evaluationId],
-        queryFn:() => GetEvaluation(evaluationId),
+        queryFn: () => GetEvaluation(evaluationId),
         enabled: !!evaluationId
     })
 
-    const{
-        data: form,
-        isLoading: isLoadingForm,
-        isError: isErrorForm,
-        error: errorForm
-    } =useQuery<StudentContext>({
-        queryKey: ['form',email],
-        queryFn:() => GetFormByEmail(email!),
-        enabled: !!email,
+    const { mutate: performQuestionnaireUpdate, isPending: isPerformQuestionnaireUpdating } = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: BackendPayload }) =>
+            PerformQuestionnaireUpdate(id, payload),
+        onSuccess: (_data, variables) => {
+            client.invalidateQueries({
+                queryKey: ['questionnaireUpdate', variables.id]
+            });
+        }
     })
 
-
-    const { mutate: updateEvaluation, isPending: isUpdatingEvaluation } = useMutation({
-        mutationFn: UpdateEvaluation,
-        onSuccess: (evaluationId) => {
+    const { mutate: performQuestionnaireSubmit, isPending: isPerformQuestionnaireSubmit } = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: BackendPayload }) =>
+            PerformQuestionnaireSubmit(id, payload),
+        onSuccess: (_data, variables) => {
             client.invalidateQueries({
-                queryKey: ['updatedEvaluation', evaluationId]
+                queryKey: ['questionnaireSubmit', variables.id]
             });
         }
     })
 
     const { mutate: deleteQuestionnaire, isPending: isDeletingQuestionnaire } = useMutation({
-        mutationFn: DeleteQuestionnaire,
+        mutationFn: (questionnaireId: string) => DeleteQuestionnaire(questionnaireId),
         onSuccess: (questionnaireId) => {
             client.invalidateQueries({
                 queryKey: ['deletedQuestionnaire', questionnaireId],
@@ -67,16 +92,43 @@ export const useReviews = (email?) => {
         }
     })
 
-    const { mutate: loginWithGoogle, isPending: isLoggingIn} = useMutation({
-    mutationFn: (idToken:string) => LoginWithGoogle(idToken)
+    const { mutate: exportTeacherEvaluations, isPending: isExportingTeacher } = useMutation({
+        mutationFn: (evaluationId: string) => GetEvaluation(evaluationId)
+    });
+
+    const { mutate: exportGlobalSummary, isPending: isExportingSummary } = useMutation({
+        mutationFn: (questionnaireId: string) => GetQuestionnaireSummary(questionnaireId)
+    });
+
+
+    const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
+        mutationFn: (idToken: string) => LoginWithGoogle(idToken)
+    });
+
+    const {
+        data: adminSurveys,
+        isLoading: isLoadingAdminSurveys,
+        isError: isErrorAdminSurveys,
+        error: errorAdminSurveys,
+        refetch: refetchAdminSurveys
+    } = useQuery({
+        queryKey: ['adminSurveys'],
+        queryFn: () => GetSurveysAdmin(),
+        enabled: false
     });
 
     return {
-        createQuestionnaires,isCreatingQuestionnaire,
-        questionnairesSummary,isLoadingQuestionnairesSummary,isErrorQuestionnairesSummary,errorQuestionnairesSummary,
-        evaluation,isLoadingEvaluation,isErrorEvaluation,errorEvaluation,
-        updateEvaluation,isUpdatingEvaluation,deleteQuestionnaire,isDeletingQuestionnaire,
-        loginWithGoogle,isLoggingIn,
-        form,isLoadingForm,isErrorForm,errorForm
+        createQuestionnaires, isCreatingQuestionnaire,
+        querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
+        questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, errorQuestionnaire, refetchQuestionnaires,
+        questionnairesSummary, isLoadingQuestionnairesSummary, isErrorQuestionnairesSummary, errorQuestionnairesSummary,
+        evaluation, isLoadingEvaluation, isErrorEvaluation, errorEvaluation,
+        performQuestionnaireUpdate, isPerformQuestionnaireUpdating,
+        performQuestionnaireSubmit, isPerformQuestionnaireSubmit,
+        deleteQuestionnaire, isDeletingQuestionnaire,
+        exportTeacherEvaluations, isExportingTeacher,
+        exportGlobalSummary, isExportingSummary,
+        loginWithGoogle, isLoggingIn,
+        adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
     }
 }

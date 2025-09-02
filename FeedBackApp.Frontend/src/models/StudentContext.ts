@@ -1,4 +1,10 @@
-export type EvaluationResponses ={
+export type Survey = {
+    id: string
+    title: string
+    endDate: string
+}
+
+export type EvaluationResponses = {
     [key: `q${number}`]: string | string[];
 }
 
@@ -12,6 +18,6 @@ export type Evaluation = {
 export type StudentContext = {
     class: string;
     subjects: string[];
-    teachersBySubject:Record<string,string[]>;
+    teachersBySubject: Record<string, string[]>;
     evaluations: Evaluation[];
 }

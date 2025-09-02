@@ -1,10 +1,11 @@
-﻿
-using Application.DTOs.Evaluation;
+﻿using Application.DTOs.Evaluation;
 using Application.Extensions.EvaluationExtensions;
-using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
+using Application.Validation.SubmitValidation;
 using Application.Validation.UpdateValidation;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -19,31 +20,79 @@ namespace Application.Services
 
         public async Task<UpdateResponseDTO> UpdateQuestionnaire(string id, UpdateQuestionnaireDTO dto)
         {
+            return await HandleQuestionnaireAsync(
+                id,
+                dto,
+                templates => new UpdateQuestionnaireValidator(templates),
+                (newQ, oldQ) => _repository.UpdateOrSubmitQuestionnaire(newQ, oldQ),
+                (success, qid, errors) => success
+                    ? new UpdateResponseDTO(true, $"Questionnaire {qid} was updated successfully.")
+                    : new UpdateResponseDTO(false, errors ?? $"Update questionnaire {qid} failed"),
+                d => d.ToModel()
+            );
+        }
+
+
+        public async Task<SubmitResponseDTO> SubmitQuestionnaire(string id, SubmitQuestionnaireDTO dto)
+        {
+            return await HandleQuestionnaireAsync(
+                id,
+                dto,
+                templates => new SubmitQuestionnaireValidator(templates),
+                async (newQ, oldQ) =>
+                {
+                    oldQ.Status = true;
+                    return await _repository.UpdateOrSubmitQuestionnaire(newQ, oldQ);
+                },
+                (success, qid, errors) => success
+                    ? new SubmitResponseDTO(true, $"Questionnaire {qid} was submitted successfully.")
+                    : new SubmitResponseDTO(false, errors ?? $"Submit questionnaire {qid} failed"),
+                d => d.ToModel()
+            );
+        }
+
+
+        private async Task<TResponse> HandleQuestionnaireAsync<TDto, TResponse>(
+            string id,
+            TDto dto,
+            Func<IList<QuestionTemplate>, IValidator<TDto>> validatorFactory,
+            Func<Questionnaire, Questionnaire, Task<bool>> repoActionAsync,
+            Func<bool, string, string?, TResponse> responseProvider,
+            Func<TDto, Questionnaire> mapToModel
+        )
+        where TDto : class
+        {
             var oldQuestionnaire = await _repository.GetQuestionnaireByIdAsync(id);
             if (oldQuestionnaire == null)
-                return new UpdateResponseDTO(false, $"Questionnaire {id} not found.");
+                return responseProvider(false, id, $"Questionnaire {id} not found.");
 
             var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
             if (questionTemplate == null)
             {
-                return new UpdateResponseDTO(false, $"QuestionnaireTemplates {id} not found.");
+                return responseProvider(false, id, $"QuestionnaireTemplates {id} not found.");
             }
 
-            var validator = new UpdateQuestionnaireValidator(questionTemplate.QuestionTemplates);
+            var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
+
+            if (endDate < DateTime.UtcNow)
+            {
+                return responseProvider(false, id, endDate.ToString());
+            }
+
+            var validator = validatorFactory(questionTemplate.QuestionTemplates);
             var validationResult = await validator.ValidateAsync(dto);
 
             if (!validationResult.IsValid)
             {
                 var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-                return new UpdateResponseDTO(false, $"Validation failed: {errors}");
+                return responseProvider(false, id, $"Validation failed: {errors}");
             }
 
-            var newQuestionnaire = dto.ToModel();
-            bool questionnaireUpdated = await _repository.UpdateQuestionnaire(newQuestionnaire, oldQuestionnaire);
+            var model = mapToModel(dto);
 
-            return questionnaireUpdated
-                ? new UpdateResponseDTO(true, $"Questionnaire {id} was updated successfully.")
-                : new UpdateResponseDTO(false, $"Update questionnaire {id} failed");
+            bool success = await repoActionAsync(model, oldQuestionnaire);
+
+            return responseProvider(success, id, null);
         }
     }
 }

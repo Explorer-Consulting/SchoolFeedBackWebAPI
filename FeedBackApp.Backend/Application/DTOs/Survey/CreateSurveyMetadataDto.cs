@@ -22,7 +22,7 @@ namespace Application.DTOs.Survey
 
         [JsonProperty("teachers")]
         public List<MetaTeacherDTO> Teachers { get; set; } = new();
-        
+
         [JsonProperty("questionnaireCreationParams")]
         public List<QuestionnaireCreationParamDTO> CreationParams { get; set; } = new();
     }
