@@ -39,7 +39,7 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
             contentType: "application/json",
             bodyType: typeof(SubmitResponseDTO)
         )]
-    public async Task<HttpResponseData> PerformQuestionnaireSubmit([HttpTrigger(AuthorizationLevel.Function, "post", Route = "questionnaire/{id}")] HttpRequestData request, string id)
+    public async Task<HttpResponseData> PerformQuestionnaireSubmit([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "questionnaire/{id}")] HttpRequestData request, string id)
     {
         try
         {
