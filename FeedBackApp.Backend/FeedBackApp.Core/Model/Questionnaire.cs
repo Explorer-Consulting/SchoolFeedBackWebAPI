@@ -14,7 +14,7 @@ namespace FeedBackApp.Core.Model
         public string StudentEmail { get; set; } = string.Empty;
 
         public string SubjectName { get; set; } = string.Empty;
-             
+
         public IList<QuestionAnswer> QuestionnaireResults { get; set; } = new List<QuestionAnswer>();
     }
 }

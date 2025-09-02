@@ -79,7 +79,7 @@ namespace Application.Services
             var surveyMetadata = await _repository.GetSurveyMetadataAsync(surveyId);
             if (surveyMetadata == null)
             {
-                return new QuestionnairesDTO() ;
+                return new QuestionnairesDTO();
             }
 
             Dictionary<string, string> teacherData = new Dictionary<string, string>();

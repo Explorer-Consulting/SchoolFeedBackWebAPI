@@ -21,16 +21,16 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
             var tokenCookie = httpRequestData.Cookies.FirstOrDefault(c => c.Name == JwtCookieName);
             if (tokenCookie == null || string.IsNullOrWhiteSpace(tokenCookie.Value))
             {
-                await ReturnForbidden.ExecuteAsync(context, httpRequestData,"Cookie not provided in the request.");
+                await ReturnForbidden.ExecuteAsync(context, httpRequestData, "Cookie not provided in the request.");
                 return;
             }
 
             var token = tokenCookie.Value;
 
             // Validate the token
-            if (!JwtRoleValidator.IsAdmin(token,context))
+            if (!JwtRoleValidator.IsAdmin(token, context))
             {
-                await ReturnForbidden.ExecuteAsync(context, httpRequestData,"Admin privileges required!");
+                await ReturnForbidden.ExecuteAsync(context, httpRequestData, "Admin privileges required!");
                 return;
             }
 

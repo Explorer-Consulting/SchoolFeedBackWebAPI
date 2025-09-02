@@ -1,8 +1,7 @@
-﻿
-using Microsoft.Azure.Functions.Worker.Http;
+﻿using Microsoft.Azure.Functions.Worker.Http;
 using Newtonsoft.Json;
 
-namespace AzureFunctionsAPI.AzureEndPointReaction.Functions.Utils
+namespace AzureFunctionsAPI.AzureEndPointReaction.Utils
 {
     public class JsonUtil
     {

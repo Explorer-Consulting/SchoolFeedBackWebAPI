@@ -4,8 +4,7 @@ using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
 using Azure.Core.Serialization;
-using AzureEndPointReaction.Functions.Questionnaires;
-using AzureFunctionsAPI.AzureEndPointReaction.Functions.Evaluation;
+using AzureFunctionsAPI.AzureEndPointReaction.Functions;
 using FeedBackApp.Backend.Infrastructure.Middleware;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence;
@@ -59,11 +58,8 @@ var host = new HostBuilder()
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailRepository, EmailRepository>();
-        services.AddScoped<QuestionnaireCompilerWorkerEncapsulator>();
-        services.AddScoped<QuestionnaireDeletionWorkerEncapsulator>();
-        services.AddScoped<QuestionnaireEvaluationWorkerEncapsulator>();
-        services.AddScoped<QuestionnaireSummaryRequestWorkerEncapsulator>();
-        services.AddScoped<QuestionnaireUpdateRequestWorkerEncapsulator>();
+        services.AddScoped<QuestionnaireFunctions>();
+        services.AddScoped<EvaluationFunctions>();
 
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
         services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();

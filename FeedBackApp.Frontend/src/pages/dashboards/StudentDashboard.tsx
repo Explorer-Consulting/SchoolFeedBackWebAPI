@@ -1,22 +1,32 @@
 import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/hooks/useAuth'
 import { useEffect } from "react";
-import { useStudentContextStore } from "@/stores/useStudentContextStore";
+import { useStudentContextStore } from "@/hooks/useStudentContext";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
-  const { selectedSurveyId, setSelectedSurveyId,
-    context, setContext, surveys, setSurveys } = useStudentContextStore();
+  const { 
+    selectedSurveyId,
+    setSelectedSurveyId,
+    context,
+    setContext,
+     } = useStudentContextStore();
 
-  const { querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
-    questionnaires, isLoadingQuestionnaire, isErrorQuestionnaire, refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
+  const {
+    querySurveys,
+    isLoadingSurveys,
+    isErrorSurveys,
+    refetchSurveys,
+    questionnaires,
+    isLoadingQuestionnaire,
+    isErrorQuestionnaire,
+    refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
 
   useEffect(() => {
     if (!questionnaires) return;
@@ -25,16 +35,13 @@ export default function StudentDashboard() {
   }, [questionnaires, setContext]);
 
   useEffect(() => {
-    if (!surveys) {
-      refetchSurveys();
-    }
-  }, [surveys, refetchSurveys]);
+    refetchSurveys();
+   
+  }, [refetchSurveys]);
 
-  useEffect(() => {
-    if (querySurveys) {
-      setSurveys(querySurveys);
-    }
-  }, [querySurveys, setSurveys]);
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+
   return (
     <main className="container mx-auto px-6 py-10">
       <header className="mb-8">
@@ -87,9 +94,9 @@ export default function StudentDashboard() {
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
           <CardContent>
-            {!isLoadingSurveys && !isErrorSurveys && surveys && (
+            {!isLoadingSurveys && !isErrorSurveys && querySurveys && (
               <ul className="space-y-2">
-                {surveys
+                {querySurveys
                   .map(s => {
                     const selected = selectedSurveyId === s.id;
                     return (
@@ -114,7 +121,7 @@ export default function StudentDashboard() {
                       </li>
                     );
                   })}
-                {surveys.length === 0 && (
+                {querySurveys.length === 0 && (
                   <li className="text-sm text-muted-foreground">Jelenleg nincs aktív kérdőív.</li>
                 )}
               </ul>
@@ -139,7 +146,8 @@ export default function StudentDashboard() {
             teachersBySubject={context.teachersBySubject}
             evaluations={context.evaluations}
             onAfterChange={() => {
-              refetchQuestionnaires();}} />
+              refetchQuestionnaires();
+            }} />
         ) : (
           <Card>
             <CardHeader>

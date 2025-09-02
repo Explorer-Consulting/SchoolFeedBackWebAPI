@@ -1,5 +1,4 @@
-﻿
-using FeedBackApp.Core.Model;
+﻿using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -107,9 +106,9 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         public async Task<bool> DeleteQuestionTemplateBySurveyIdAsync(Guid surveyId)
         {
             var questionTemplate = await _context.QuestionnaireTemplates
-                .FirstAsync(q => q.Id == $"questiontemplates_{surveyId}");
+                .FirstOrDefaultAsync(q => q.Id == $"questiontemplates_{surveyId}");
 
-            if(questionTemplate == null)
+            if (questionTemplate == null)
             {
                 return false;
             }
@@ -117,12 +116,13 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             _context.Remove(questionTemplate);
             await _context.SaveChangesAsync();
             return true;
-                
         }
 
         public async Task<bool> DeleteSurveyMetadataAsync(Guid id)
         {
-            var metadata = await _context.Surveys.FirstOrDefaultAsync(m => m.Id == id);
+            var metadata = await _context.Surveys
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (metadata == null)
                 return false;
 
@@ -130,25 +130,32 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
         public async Task<List<SurveyMetadata>> GetAllSurveyMetadata()
         {
-            return await _context.Surveys.ToListAsync();
+            return await _context.Surveys
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
-            var questionnair = await _context.Questionnaires.FirstOrDefaultAsync(questionnair => questionnair.Id == id);
-            return questionnair;
+            return await _context.Questionnaires
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Id == id);
         }
 
         public async Task<SurveyMetadata?> GetSurveyMetadataAsync(Guid surveyId)
         {
-            var metadata = await _context.Surveys.FirstOrDefaultAsync(survey => survey.Id == surveyId);
-            return metadata;
+            return await _context.Surveys
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == surveyId);
         }
+
         public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
         {
             return await _context.Surveys
+                .AsNoTracking()
                 .Where(s => s.StudentSets
                     .Any(set => set.StudentEmails.Contains(studentEmail)))
                 .ToListAsync();

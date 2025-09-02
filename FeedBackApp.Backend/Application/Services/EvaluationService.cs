@@ -18,13 +18,13 @@ namespace Application.Services
             _repository = repository;
         }
 
-        public Task<UpdateResponseDTO> UpdateQuestionnaire(string id, UpdateQuestionnaireDTO dto)
+        public async Task<UpdateResponseDTO> UpdateQuestionnaire(string id, UpdateQuestionnaireDTO dto)
         {
-            return HandleQuestionnaireAsync(
+            return await HandleQuestionnaireAsync(
                 id,
                 dto,
                 templates => new UpdateQuestionnaireValidator(templates),
-                (newQ, oldQ) => _repository.UpdateQuestionnaire(newQ, oldQ),
+                (newQ, oldQ) => _repository.UpdateOrSubmitQuestionnaire(newQ, oldQ),
                 (success, qid, errors) => success
                     ? new UpdateResponseDTO(true, $"Questionnaire {qid} was updated successfully.")
                     : new UpdateResponseDTO(false, errors ?? $"Update questionnaire {qid} failed"),
@@ -33,16 +33,16 @@ namespace Application.Services
         }
 
 
-        public Task<SubmitResponseDTO> SubmitQuestionnaire(string id, SubmitQuestionnaireDTO dto)
+        public async Task<SubmitResponseDTO> SubmitQuestionnaire(string id, SubmitQuestionnaireDTO dto)
         {
-            return HandleQuestionnaireAsync(
+            return await HandleQuestionnaireAsync(
                 id,
                 dto,
                 templates => new SubmitQuestionnaireValidator(templates),
                 async (newQ, oldQ) =>
                 {
                     oldQ.Status = true;
-                    return await _repository.SubmitQuestionnaire(newQ, oldQ);
+                    return await _repository.UpdateOrSubmitQuestionnaire(newQ, oldQ);
                 },
                 (success, qid, errors) => success
                     ? new SubmitResponseDTO(true, $"Questionnaire {qid} was submitted successfully.")
@@ -56,26 +56,27 @@ namespace Application.Services
             string id,
             TDto dto,
             Func<IList<QuestionTemplate>, IValidator<TDto>> validatorFactory,
-            Func<Questionnaire, Questionnaire, Task<bool>> repoAction,
-            Func<bool, string, string?, TResponse> responseFactory,
+            Func<Questionnaire, Questionnaire, Task<bool>> repoActionAsync,
+            Func<bool, string, string?, TResponse> responseProvider,
             Func<TDto, Questionnaire> mapToModel
         )
         where TDto : class
         {
             var oldQuestionnaire = await _repository.GetQuestionnaireByIdAsync(id);
             if (oldQuestionnaire == null)
-                return responseFactory(false, id, $"Questionnaire {id} not found.");
+                return responseProvider(false, id, $"Questionnaire {id} not found.");
 
             var questionTemplate = await _repository.GetQuestionTemplateBySurveyIdAsync(oldQuestionnaire.SurveyId);
-            var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
             if (questionTemplate == null)
             {
                 return responseFactory(false, id, $"QuestionnaireTemplates {id} not found.");
             }
 
-            if(endDate < DateTime.UtcNow)
+            var endDate = await _repository.GetEndDateBySurveyId(oldQuestionnaire.SurveyId);
+
+            if (endDate < DateTime.UtcNow)
             {
-                return responseFactory(false, id, endDate.ToString());
+                return responseProvider(false, id, endDate.ToString());
             }
 
             var validator = validatorFactory(questionTemplate.QuestionTemplates);
@@ -84,14 +85,14 @@ namespace Application.Services
             if (!validationResult.IsValid)
             {
                 var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
-                return responseFactory(false, id, $"Validation failed: {errors}");
+                return responseProvider(false, id, $"Validation failed: {errors}");
             }
 
             var model = mapToModel(dto);
 
-            bool success = await repoAction(model, oldQuestionnaire);
+            bool success = await repoActionAsync(model, oldQuestionnaire);
 
-            return responseFactory(success, id, null);
+            return responseProvider(success, id, null);
         }
     }
 }

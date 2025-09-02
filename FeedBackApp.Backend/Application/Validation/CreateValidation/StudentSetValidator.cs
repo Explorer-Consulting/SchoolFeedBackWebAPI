@@ -5,7 +5,7 @@ namespace Application.Validation.CreateValidation
 {
     public class StudentSetValidator : AbstractValidator<StudentSetDTO>
     {
-        public StudentSetValidator() 
+        public StudentSetValidator()
         {
             RuleFor(dto => dto.SetId).NotEmpty().WithMessage("StudentSets: Studentset needs an ID");
             RuleFor(dto => dto.StudentEmails).NotEmpty().WithMessage("StudentSets: Student email list can not be empty");

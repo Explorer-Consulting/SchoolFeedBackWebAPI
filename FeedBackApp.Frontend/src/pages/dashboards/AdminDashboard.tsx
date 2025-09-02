@@ -3,8 +3,8 @@ import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useReviews } from "@/hooks/useReviews";
-import { parseExcel } from "@/hooks/useExcel";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { parseExcel } from "@/utils/parseExcel";
+import { useAuthStore } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
 export default function AdminDashboard() {
@@ -35,8 +35,11 @@ export default function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
 
   if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Admin") {return <Navigate to="/no-access" replace />}
-  else{refetchAdminSurveys();}
+  if (user.role !== "Admin") {
+    return <Navigate to="/no-access" replace />
+  } else {
+    refetchAdminSurveys();
+  }
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,37 +68,12 @@ export default function AdminDashboard() {
       toast.error("Please enter a title.");
       return;
     }
+
     if (!file) {
       toast.error("Please upload an Excel file.");
       return;
     }
-    /*const payload = {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      title,
-      file
-    };*/
 
-    /*const payload = {
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
-      title,
-      studentSets: [
-        { setId: "XI. A", studentEmails: ["a1@example.com", "a2@example.com"] },
-        { setId: "XI. B", studentEmails: ["b1@example.com", "b2@example.com"] }
-      ],
-      questionnaireTemplate: [
-        { question: "How satisfied are you with the course?", type: "LikertScaleOneToFive" },
-        { question: "Do you like the course?", type: "MultinomialSingleChoice", answerOptions: ["igen", "nem"] },
-        { question: "Any comments?", type: "OpenEnded" }
-      ],
-      teachers: [
-        { email: "kovacs.maria@gimi.ro", name: "Kovács Mária" }
-      ],
-      questionnaireCreationParams: [
-        { teacherEmail: "kovacs.maria@gimi.ro", subjectName: "Matematika", studentSetIds: ["XI. A", "XI. B"] }
-      ]
-    };*/
     let payload;
     try {
       payload = await parseExcel(file, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0], title);
