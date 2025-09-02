@@ -11,13 +11,13 @@ import { Navigate } from "react-router-dom";
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
 
-  const { 
+  const {
     selectedSurveyId,
     setSelectedSurveyId,
     context,
     setContext,
-     } = useStudentContextStore();
-    setSurveys } = useStudentContextStore();
+  } = useStudentContextStore();
+
 
   const {
     querySurveys,
