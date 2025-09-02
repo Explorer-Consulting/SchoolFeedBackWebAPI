@@ -11,7 +11,7 @@ import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
-import { initialFeedbackForm, FeedbackFormState } from "../../utils/feedback-form.state";
+import { initialFeedbackForm, FeedbackFormState } from "../../utils/feedbackFormState";
 import { useCallback } from "react";
 
 type FeedbackFormProps = {
