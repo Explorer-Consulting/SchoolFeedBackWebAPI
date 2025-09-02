@@ -105,6 +105,7 @@ export function FeedbackForm({
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
+
   const qValues = useMemo(
     () => Array.from({ length: 17 }, (_, i) => form[`q${i}` as keyof FeedbackFormState] as string),
     [form]
@@ -151,11 +152,11 @@ export function FeedbackForm({
       toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
       return;
     }
-    if (form.q21.length < 50) {
+    if (form.q21.length < 20) {
       toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
       return;
     }
-    if (form.q22.length < 50) {
+    if (form.q22.length < 20) {
       toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
       return;
     }
