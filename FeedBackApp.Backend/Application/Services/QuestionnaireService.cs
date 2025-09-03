@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire;
+using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
@@ -9,13 +9,11 @@ namespace Application.Services
 {
     public class QuestionnaireService : IQuestionnaireService
     {
-        private readonly IQuestionnaireRepository _questionnaireRepository;
-        private readonly IEvaluationRepository _evaluationRepository;
+        private readonly IQuestionnaireRepository _repository;
         private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
-        public QuestionnaireService(IQuestionnaireRepository questionnaireRepository, IEvaluationRepository evaluationRepository, IValidator<CreateSurveyMetadataDTO> createValidator)
+        public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDTO> createValidator)
         {
-            _questionnaireRepository = questionnaireRepository;
-            _evaluationRepository = evaluationRepository;
+            _repository = repository;
             _createValidator = createValidator;
         }
 
@@ -31,7 +29,7 @@ namespace Application.Services
             var metadata = dto.ToModel();
             try
             {
-                await _questionnaireRepository.CompileAndSaveAsync(metadata);
+                await _repository.CompileAndSaveAsync(metadata);
 
                 return new CreationResponseDTO(true, "Creation successful!");
             }
@@ -46,9 +44,9 @@ namespace Application.Services
         {
             try
             {
-                bool surveyDeleted = await _questionnaireRepository.DeleteSurveyMetadataAsync(id);
-                bool questionnairesDeleted = await _questionnaireRepository.DeleteQuestionnairesBySurveyIdAsync(id);
-                bool questionTemplateDeleted = await _questionnaireRepository.DeleteQuestionTemplateBySurveyIdAsync(id);
+                bool surveyDeleted = await _repository.DeleteSurveyMetadataAsync(id);
+                bool questionnairesDeleted = await _repository.DeleteQuestionnairesBySurveyIdAsync(id);
+                bool questionTemplateDeleted = await _repository.DeleteQuestionTemplateBySurveyIdAsync(id);
 
                 if (surveyDeleted && questionnairesDeleted && questionTemplateDeleted)
                 {
@@ -78,7 +76,7 @@ namespace Application.Services
         }
         public async Task<QuestionnairesDTO> GetQuestionnairesAsync(Guid surveyId, string studentEmail)
         {
-            var surveyMetadata = await _questionnaireRepository.GetSurveyMetadataAsync(surveyId);
+            var surveyMetadata = await _repository.GetSurveyMetadataAsync(surveyId);
             if (surveyMetadata == null)
             {
                 return new QuestionnairesDTO();
@@ -129,43 +127,21 @@ namespace Application.Services
                     string questionnaireId = $"{studentEmail}_{teacherEmail}_{subject}_{surveyId}";
                     teacherDto.Id = questionnaireId;
 
-                    var questionnaire = await _questionnaireRepository.GetQuestionnaireByIdAsync(questionnaireId);
+                    var questionnaire = await _repository.GetQuestionnaireByIdAsync(questionnaireId);
                     if (questionnaire != null && questionnaire.Status == false)
                     {
-                        List<QuestionDTO> questionDTOs = new List<QuestionDTO>();
-                        var questionnaireTemplate = await _evaluationRepository.GetQuestionTemplateBySurveyIdAsync(questionnaire.SurveyId);
+                        List<GetAnswerDTO> answersDto = new List<GetAnswerDTO>();
+
                         var answers = questionnaire.QuestionnaireResults;
-
-                        var dtoList = new List<QuestionDTO>();
-
-                        foreach (var template in questionnaireTemplate.QuestionTemplates)
+                        foreach (var item in answers)
                         {
-                            string answer = string.Empty;
-
-                            foreach (var ans in answers)
-                            {
-                                if (ans.QuestionId == template.Id)
-                                {
-                                    answer = ans.Answer;
-                                    break;
-                                }
-                            }
-
-                            dtoList.Add(new QuestionDTO
-                            {
-                                QuestionID = template.Id,
-                                Question = template.Question,
-                                Type = template.Type,
-                                AnswerOptions = template.AnswerOptions,
-                                Answer = answer
-                            });
-
-                            teacherDto.Questions = dtoList;
-                            subjectDto.Teachers.Add(teacherDto);
+                            answersDto.Add(new GetAnswerDTO { QuestionID = item.QuestionId, Answer = item.Answer });
                         }
+                        teacherDto.Answers = answersDto;
+                        subjectDto.Teachers.Add(teacherDto);
                     }
-                    response.Subjects.Add(subjectDto);
                 }
+                response.Subjects.Add(subjectDto);
             }
             return response;
         }
