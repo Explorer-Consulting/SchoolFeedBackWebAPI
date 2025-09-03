@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
@@ -52,6 +52,14 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             }
 
             var result = await _questionnaireService.CompileAndSaveAsync(dto);
+            
+            if (!result.Success)
+            {
+                var error = request.CreateResponse(HttpStatusCode.BadRequest);
+                await error.WriteAsJsonAsync(result);
+                return error;
+            }
+
             var studentEmails = new List<string>();
             foreach (var set in dto.StudentSets)
             {
@@ -60,14 +68,9 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
                     studentEmails.Add(email);
                 }
             }
-            await _emailService.SendBulkEmailAsync(studentEmails, $"Student-teacher feedback: {dto.Title}", "Please complete the following questionnaires and give constructive feedback to your teachers! https://witty-beach-0b0c08903.2.azurestaticapps.net");
+            await _emailService.SendBulkEmailAsync(studentEmails, $"Tanár értékelés: {dto.Title}", $"Kérünk értékeld a tanáraid a következő kérdőíveken {dto.StartDate}-től kezdődően: https://witty-beach-0b0c08903.2.azurestaticapps.net \nHatáridő: {dto.EndDate.Date}");
 
-            if (!result.Success)
-            {
-                var error = request.CreateResponse(HttpStatusCode.BadRequest);
-                await error.WriteAsJsonAsync(result);
-                return error;
-            }
+            
 
             var response = request.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(result);

@@ -3,6 +3,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {Dispatch,SetStateAction} from "react";
 
 type OutsideEducationSectionProps = {
     q17: string;
@@ -10,9 +11,9 @@ type OutsideEducationSectionProps = {
     q18: string;
     setQ18: (val: string) => void;
     q19: string[];
-    setQ19: React.Dispatch<React.SetStateAction<string[]>>;
+    setQ19: Dispatch<SetStateAction<string[]>>;
     q20: string[];
-    setQ20: React.Dispatch<React.SetStateAction<string[]>>;
+    setQ20: Dispatch<SetStateAction<string[]>>;
     q21: string;
     setQ21: (val: string) => void;
     q22: string;
@@ -135,7 +136,7 @@ export default function OutsideEducationSection({
                     maxLength={300}
                 />
                 <p className="text-sm text-gray-500">
-                    {q21.length}/300 karakter (min. 50) </p>
+                    {q21.trim().length}/300 karakter (min. 20) </p>
             </div>
 
             <div className="space-y-2">
@@ -147,7 +148,7 @@ export default function OutsideEducationSection({
                     maxLength={300}
                 />
                 <p className="text-sm text-gray-500">
-                    {q22.length}/300 karakter (min. 50) </p>
+                    {q22.trim().length}/300 karakter (min. 20) </p>
             </div>
         </section>
     )
