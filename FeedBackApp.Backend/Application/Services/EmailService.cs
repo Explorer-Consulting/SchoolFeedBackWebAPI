@@ -73,6 +73,21 @@ public class EmailService : IEmailService
 
             }
 
+            // remove sent emails from the document
+            foreach (var e in batch)
+            {
+                var surveyBatch = doc.EmailsToSendList.FirstOrDefault(s => s.SurveyId == e.SurveyId);
+                if (surveyBatch != null)
+                    surveyBatch.Emails.Remove(e.Email);
+
+                if (!surveyBatch.Emails.Any())
+                {
+                    doc.EmailsToSendList.Remove(surveyBatch);
+                }
+            }
+
+            await _emailRepository.UpdateEmailsDocumentAsync(doc);
+
             return true;
         }
         catch (Exception ex)
