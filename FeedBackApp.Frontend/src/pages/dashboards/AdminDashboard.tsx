@@ -46,7 +46,7 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+    if (!/\.(xlsx|xls|xlsm)$/i.test(file.name)) {
       toast.error("Kérlek, tölts fel egy érvényes Excel fájlt (.xlsx vagy .xls).");
       return;
     }
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       toast.error("A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.");
       return;
     }
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (startDate < today) {
@@ -90,6 +90,10 @@ export default function AdminDashboard() {
 
     createQuestionnaires(payload, {
       onSuccess: () => {
+        setStartDate(undefined);
+        setEndDate(undefined);
+        setTitle("");
+        setFile(null);
         toast.success("A kérdőívek létrehozva!");
         refetchAdminSurveys();
       },
@@ -180,7 +184,7 @@ export default function AdminDashboard() {
         <label className="block mb-1">Excel feltöltése:</label>
         <input
           type="file"
-          accept=".xlsx, .xls"
+          accept=".xlsx, .xls, .xlsm"
           className="border rounded p-2 w-full mb-4"
           onChange={handleFileChange}
         />
