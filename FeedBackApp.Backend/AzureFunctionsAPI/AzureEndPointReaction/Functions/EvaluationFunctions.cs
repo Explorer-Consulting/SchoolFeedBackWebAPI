@@ -59,6 +59,7 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
             if (principal == null)
             {
                 var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
                 return unauthorizedResponse;
             }
 
@@ -66,6 +67,7 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
 
             if (id.Split('_')[0] != email){
                 var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: Questionnaire does not belong to the current user.");
                 return unauthorizedResponse;
             }
 
@@ -132,6 +134,7 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
             if (principal == null)
             {
                 var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
                 return unauthorizedResponse;
             }
 
@@ -140,6 +143,7 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
             if (id.Split('_')[0] != email)
             {
                 var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: Questionnaire does not belong to the current user.");
                 return unauthorizedResponse;
             }
 
