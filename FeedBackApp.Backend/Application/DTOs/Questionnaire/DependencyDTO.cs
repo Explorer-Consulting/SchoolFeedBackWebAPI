@@ -1,9 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.DTOs.Questionnaire.Post
 {
@@ -12,7 +7,7 @@ namespace Application.DTOs.Questionnaire.Post
         [JsonProperty("id")]
         public string Id { get; set; } = string.Empty;
 
-        [JsonProperty("answerConditions")]        
+        [JsonProperty("answerConditions")]
         public List<int> AnswerConditions { get; set; } = new List<int>();
     }
 }

@@ -9,6 +9,6 @@ namespace FeedBackApp.Core.Model
         public string Question { get; set; } = string.Empty;
         public QuestionType Type { get; set; }
         public IList<string> AnswerOptions { get; set; } = new List<string>();
-        public QuestionDependency? Dependency { get; set; } = new QuestionDependency();
+        public QuestionDependency? Dependency { get; set; }
     }
 }

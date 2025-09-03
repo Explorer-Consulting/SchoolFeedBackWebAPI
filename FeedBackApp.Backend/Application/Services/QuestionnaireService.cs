@@ -157,7 +157,8 @@ namespace Application.Services
                                 Question = template.Question,
                                 Type = template.Type,
                                 AnswerOptions = template.AnswerOptions,
-                                Answer = answer
+                                Answer = answer,
+                                Dependency = template.Dependency?.ToDto()
                             });
 
                             teacherDto.Questions = dtoList;
