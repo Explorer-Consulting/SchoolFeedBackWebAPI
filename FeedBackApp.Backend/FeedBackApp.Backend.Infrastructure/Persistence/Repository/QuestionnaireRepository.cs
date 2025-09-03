@@ -65,23 +65,29 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var emailDoc = await _context.EmailsToSend
                 .FirstOrDefaultAsync(e => e.Id == "emailsToSend");
 
+            var newEmailEntry = new Email
+            {
+                SurveyId = metadata.Id.ToString(),
+                SurveyName = metadata.Title,
+                StartDate = metadata.StartDate,
+                EndDate = metadata.EndDate,
+                Emails = allEmails.ToList()
+            };
+
             if (emailDoc == null)
             {
                 // First time: create the document
                 emailDoc = new EmailsToSend
                 {
                     Id = "emailsToSend",
-                    Emails = allEmails.ToList()
+                    EmailsToSendList = new List<Email> { newEmailEntry }
                 };
 
                 _context.Add(emailDoc);
             }
             else
             {
-                foreach (var email in allEmails)
-                {
-                   emailDoc.Emails.Add(email); 
-                }
+                emailDoc.EmailsToSendList.Add(newEmailEntry);
                 _context.Update(emailDoc);
             }
 

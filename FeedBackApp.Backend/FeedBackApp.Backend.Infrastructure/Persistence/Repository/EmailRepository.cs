@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.Repositories;
+﻿using FeedBackApp.Core.Model;
+using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
@@ -7,30 +8,19 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
     {
         private readonly AppDBContext _context;
 
-        private static short HOURLY_EMAIL_LIMTI = 20;
-
         public EmailRepository(AppDBContext context)
         {
             _context = context;
         }
-        public async Task<IEnumerable<string>> GetEmailsToSend()
+        public async Task<EmailsToSend?> GetEmailsDocumentAsync()
         {
-            var emails = await _context.EmailsToSend.FindAsync("emailsToSend");
-
-            if (emails == null || emails.Emails == null)
-                return Enumerable.Empty<string>();
-
-            return emails.Emails.Take(HOURLY_EMAIL_LIMTI);
+            return await _context.EmailsToSend
+                .FirstOrDefaultAsync(e => e.Id == "emailsToSend");
         }
 
-        public async Task RemoveEmailsAsync(IEnumerable<string> emails)
+        public async Task UpdateEmailsDocumentAsync(EmailsToSend doc)
         {
-            var record = await _context.EmailsToSend.FindAsync("emailsToSend");
-            if (record == null) return;
-
-            foreach (var email in emails)
-                record.Emails.Remove(email);
-
+            _context.EmailsToSend.Update(doc);
             await _context.SaveChangesAsync();
         }
     }

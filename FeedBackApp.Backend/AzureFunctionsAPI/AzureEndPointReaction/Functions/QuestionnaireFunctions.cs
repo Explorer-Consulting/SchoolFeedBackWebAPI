@@ -1,6 +1,5 @@
 using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
-using Application.Services;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
@@ -15,13 +14,11 @@ using System.Security.Claims;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
 
-public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, IEmailService emailService, ISurveyService surveyService, ICronTimerService cronTimerService)
+public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, ISurveyService surveyService)
 {
     private readonly IQuestionnaireService _questionnaireService = questionnaireService;
     private readonly ILogger<QuestionnaireFunctions> _logger = logger;
-    private readonly IEmailService _emailService = emailService;
     private readonly ISurveyService _surveyService = surveyService;
-    private readonly ICronTimerService _cronTimerService = cronTimerService;
 
     [RequireAdmin]
     [Function("PerformQuestionnaireCompilation")]
@@ -55,14 +52,13 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
 
             var result = await _questionnaireService.CompileAndSaveAsync(dto);
 
-            _cronTimerService.Start();
-
             if (!result.Success)
             {
                 var error = request.CreateResponse(HttpStatusCode.BadRequest);
                 await error.WriteAsJsonAsync(result);
                 return error;
             }
+
 
             var response = request.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(result);
