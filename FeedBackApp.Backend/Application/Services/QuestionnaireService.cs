@@ -37,8 +37,15 @@ namespace Application.Services
                 if (current.Dependency == null)
                     continue;
 
-                var depIndex = metadata.QuestionTemplates.ToList()
-                    .FindIndex(q => q.Id == current.Dependency.Id);
+                int depIndex = -1;
+                for (int j = 0; j < metadata.QuestionTemplates.Count; j++)
+                {
+                    if (metadata.QuestionTemplates[j].Id == current.Dependency.Id)
+                    {
+                        depIndex = j;
+                        break;
+                    }
+                }
 
                 if (depIndex == -1)
                     return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} not found for question {current.Id}.");
