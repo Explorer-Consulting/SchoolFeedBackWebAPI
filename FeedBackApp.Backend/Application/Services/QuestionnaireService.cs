@@ -40,7 +40,7 @@ namespace Application.Services
                 int depIndex = -1;
                 for (int j = 0; j < metadata.QuestionTemplates.Count; j++)
                 {
-                    if (metadata.QuestionTemplates[j].Id == current.Dependency.Id)
+                    if ($"q{j}" == current.Dependency.Id)
                     {
                         depIndex = j;
                         break;
