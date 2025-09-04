@@ -47,7 +47,7 @@ export default function AdminDashboard() {
     if (!file) return;
 
     if (!/\.(xlsx|xls)$/i.test(file.name)) {
-      toast.error("Please upload a valid Excel file (.xlsx or .xls).");
+      toast.error("Kérlek, tölts fel egy érvényes Excel fájlt (.xlsx vagy .xls).");
       return;
     }
     setFile(file);
@@ -55,102 +55,104 @@ export default function AdminDashboard() {
 
   const sendQuestionnaires = async () => {
     if (!startDate || !endDate) {
-      toast.error("Please set both start and end date.");
+      toast.error("Kérlek, állítsd be mind a kezdő-, mind a záró dátumot.");
       return;
     }
 
     if (startDate >= endDate) {
-      toast.error("Start date must be sooner than end date.");
+      toast.error("A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.");
+      return;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate < today) {
+      toast.error("A kezdő dátum nem lehet korábbi, mint a mai nap.");
       return;
     }
 
     if (!title) {
-      toast.error("Please enter a title.");
+      toast.error("Kérlek, add meg a címet.");
       return;
     }
 
     if (!file) {
-      toast.error("Please upload an Excel file.");
+      toast.error("Kérlek, tölts fel egy Excel-fájlt.");
       return;
     }
 
     let payload;
     try {
       payload = await parseExcel(file, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0], title);
-      console.log("Final payload:", payload);
     } catch (err) {
       console.error("Failed to parse Excel:", err);
     }
 
-    console.log("Payload to send:", payload);
     createQuestionnaires(payload, {
       onSuccess: () => {
-        toast.success("Questionnaires created!");
+        toast.success("A kérdőívek létrehozva!");
         refetchAdminSurveys();
       },
-      onError: () => toast.error("Failed to create questionnaires."),
+      onError: () => toast.error("A kérdőívek létrehozása sikertelen."),
     });
   };
 
   const deleteSelectedQuestionnaire = () => {
     if (!selectedQuestionnaireId) {
-      toast.error("Select a questionnaire first!");
+      toast.error("Először válassz ki egy kérdőívet!");
       return;
     }
-    console.log("delete: ", selectedQuestionnaireId);
     deleteQuestionnaire(selectedQuestionnaireId, {
       onSuccess: () => {
-        toast.success("Deleted questionnaire!");
+        toast.success("A kérdőív törölve!");
         refetchAdminSurveys();
         setSelectedQuestionnaireId("");
       },
       onError: () => {
-        toast.error("Failed to delete questionnaire.");
+        toast.error("A kérdőív törlése sikertelen.");
       }
     });
   };
 
   const handleExportTeacher = () => {
     if (!selectedQuestionnaireId) {
-      toast.error("Select a questionnaire first!");
+      toast.error("Először válassz ki egy kérdőívet!");
       return;
     }
-    console.log("export teacher: ", selectedQuestionnaireId);
     exportTeacherEvaluations(selectedQuestionnaireId, {
       onSuccess: () => {
-        toast.success("Teacher evaluations exported!");
+        toast.success("A tanári értékelések exportálva!");
         setSelectedQuestionnaireId("");
       },
-      onError: () => toast.error("Failed to export teacher evaluations.")
+      onError: () => toast.error("A tanári értékelések exportálása sikertelen.")
     });
   };
 
   const handleExportSummary = () => {
     if (!selectedQuestionnaireId) {
-      toast.error("Select a questionnaire first!");
+      toast.error("Először válassz ki egy kérdőívet!");
       return;
     }
-    console.log("export summary: ", selectedQuestionnaireId);
     exportGlobalSummary(selectedQuestionnaireId, {
       onSuccess: () => {
-        toast.success("Global summary exported!");
+        toast.success("Az összesített összefoglaló exportálva!");
         setSelectedQuestionnaireId("");
       },
-      onError: () => toast.error("Failed to export global summary.")
+      onError: () => toast.error("Az összesített összefoglaló exportálása sikertelen.")
     });
   };
 
   return (
     <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10">
       <header className="mb-6 sm:mb-8 text-center sm:text-left">
-        <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Adminisztrációs irányítófelület</h1>
         <p className="text-sm sm:text-base text-muted-foreground">
-          Manage feedback windows, access, and exports.
+          Kezeld a visszajelzési időablakokat, a hozzáférést és az exportálást.
         </p>
       </header>
 
       <CardContent>
-        <label className="block mb-1">Start Date:</label>
+        <label className="block mb-1">Kezdő dátum:</label>
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
@@ -158,7 +160,7 @@ export default function AdminDashboard() {
           onChange={(e) => setStartDate(new Date(e.target.value))}
         />
 
-        <label className="block mb-1">End Date:</label>
+        <label className="block mb-1">Záró dátum:</label>
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
@@ -166,7 +168,7 @@ export default function AdminDashboard() {
           onChange={(e) => setEndDate(new Date(e.target.value))}
         />
 
-        <label className="block mb-1">Title:</label>
+        <label className="block mb-1">Kérdőív címe:</label>
         <input
           type="text"
           className="border rounded p-2 w-full mb-4"
@@ -175,7 +177,7 @@ export default function AdminDashboard() {
           placeholder="Enter questionnaire title"
         />
 
-        <label className="block mb-1">Upload Excel:</label>
+        <label className="block mb-1">Excel feltöltése:</label>
         <input
           type="file"
           accept=".xlsx, .xls"
@@ -190,21 +192,21 @@ export default function AdminDashboard() {
           onClick={sendQuestionnaires}
           disabled={isCreatingQuestionnaire || !endDate || !startDate || !file || !title}
         >
-          Create Questionnaires
+          Kérdőívek létrehozása
         </Button>
       </div>
 
       <br />
 
       <CardContent>
-        {isLoadingAdminSurveys && <p>Loading surveys...</p>}
-        {isErrorAdminSurveys && <p>Error loading surveys.</p>}
+        {isLoadingAdminSurveys && <p>Kérdőívek betöltése…</p>}
+        {isErrorAdminSurveys && <p>Hiba a kérdőívek betöltése közben.</p>}
         <select
           className="border rounded p-2 w-full"
           value={selectedQuestionnaireId}
           onChange={(e) => setSelectedQuestionnaireId(e.target.value)}
         >
-          <option value="">-- Select a questionnaire --</option>
+          <option value="">-- Válassz egy kérdőívet --</option>
           {displayedQuestionnaires?.map((q: any) => (
             <option key={q.id} value={q.id}>
               {q.title || q.id}
@@ -219,7 +221,7 @@ export default function AdminDashboard() {
           onClick={handleExportTeacher}
           disabled={!selectedQuestionnaireId || isExportingTeacher || isLoadingAdminSurveys}
         >
-          Export Teacher Evaluations
+          Tanári értékelések exportálása
         </Button>
 
         <Button
@@ -227,7 +229,7 @@ export default function AdminDashboard() {
           onClick={handleExportSummary}
           disabled={!selectedQuestionnaireId || isExportingSummary || isLoadingAdminSurveys}
         >
-          Export Global Summary
+          Összesített összefoglaló exportálása
         </Button>
 
         <Button
@@ -235,7 +237,7 @@ export default function AdminDashboard() {
           onClick={deleteSelectedQuestionnaire}
           disabled={!selectedQuestionnaireId || isDeletingQuestionnaire || isLoadingAdminSurveys}
         >
-          Delete Selected Questionnaire
+          Kijelölt kérdőív törlése
         </Button>
       </div>
     </main>
