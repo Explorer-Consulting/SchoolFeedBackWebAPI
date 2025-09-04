@@ -13,7 +13,7 @@ namespace Application.DTOs.Questionnaire
 
         public DependencyDTO? Dependency { get; set; }
 
-        public string Category { get; set; } = string.Empty;
+        public required string Category { get; set; }
 
         public string Description { get; set; } = string.Empty;
 
