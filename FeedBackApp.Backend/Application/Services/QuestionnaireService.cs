@@ -26,7 +26,9 @@ namespace Application.Services
                 var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
                 return new CreationResponseDTO(false, errors);
             }
+
             var metadata = dto.ToModel();
+
             try
             {
                 await _repository.CompileAndSaveAsync(metadata);

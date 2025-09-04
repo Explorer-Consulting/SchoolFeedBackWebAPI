@@ -50,12 +50,14 @@ var host = new HostBuilder()
             );
         });
 
-        services.AddScoped<IEmailService, EmailService>();
+        
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
         services.AddScoped<IEvaluationRepository, EvaluationRepository>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IEmailRepository, EmailRepository>();
         services.AddScoped<QuestionnaireFunctions>();
         services.AddScoped<EvaluationFunctions>();
 
