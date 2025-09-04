@@ -164,9 +164,9 @@ namespace Application.Services
                         }
                         teacherDto.Questions = dtoList;
                         subjectDto.Teachers.Add(teacherDto);
-                    }
-                    response.Subjects.Add(subjectDto);
+                    }   
                 }
+                response.Subjects.Add(subjectDto);
             }
             return response;
         }
