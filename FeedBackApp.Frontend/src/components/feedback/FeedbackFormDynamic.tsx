@@ -151,10 +151,49 @@ export function FeedbackFormDynamic({
         setAnswers(ensureInitialAnswers(currentEvaluation.questions, currentEvaluation.responses));
     }, [currentEvaluation]);
 
+    // subject automatikus választása
+    useEffect(() => {
+        if (subjects.length > 0) {
+            if (!subject || !subjects.includes(subject)) {
+                setSubject(subjects[0]);
+            }
+        } else {
+            setSubject(null);
+        }
+    }, [subjects, subject, setSubject]);
+
+    // teacher automatikus választása, ha subject változik
+    useEffect(() => {
+        if (subject) {
+            const teachers = teachersBySubject[subject] ?? [];
+            if (teachers.length > 0) {
+                if (!teacher || !teachers.includes(teacher)) {
+                    setTeacher(teachers[0]);
+                }
+            } else {
+                setTeacher(null);
+            }
+        } else {
+            setTeacher(null);
+        }
+    }, [subject, teachersBySubject, teacher, setTeacher]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            onSaveDraft();
+            e.preventDefault();
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    });
+
     const onSaveDraft = () => {
         if (!id) return;
+
         if (!subject || !teacher) {
-            toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
+            toast.warning("Kérjük, válaszd ki a tantárgyat és a tanárt.");
             return;
         }
 
@@ -164,16 +203,23 @@ export function FeedbackFormDynamic({
             { id, payload },
             {
                 onSuccess: () => {
-                    toast("Piszkozat sikeresen mentve!");
+                    toast.success("Piszkozat sikeresen mentve!");
+                    document.getElementById("topList")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
                     onAfterChange();
                 },
-                onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
+                onError: () => { toast.error("Hiba történt a piszkozat mentése közben!"); }
             }
         )
     };
 
     const onSubmit = () => {
         if (!id) return;
+
+        const confirmed = window.confirm("Biztosan be szeretnéd küldeni a kérdőívet?");
+        if (!confirmed) return;
 
         const { msg, invalid } = validateAll(visibleQuestions, answers);
         if (msg) {
@@ -188,10 +234,16 @@ export function FeedbackFormDynamic({
             { id, payload },
             {
                 onSuccess: () => {
-                    toast("Kérdőív beküldve!");
+                    toast.success("Kérdőív beküldve!");
+                    document.getElementById("topList")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+                    setTeacher(null);
+                    setSubject(null);
                     onAfterChange();
                 },
-                onError: () => { toast("Hiba történt a beküldés közben!"); }
+                onError: () => { toast.error("Hiba történt a beküldés közben!"); }
             }
         )
     };
@@ -208,74 +260,93 @@ export function FeedbackFormDynamic({
     });
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Oktatási visszajelzés</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-                <section className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                        <Label htmlFor="subject">Tantárgy</Label>
-                        <Select value={subject ?? ""} onValueChange={onSubjectChange}>
-                            <SelectTrigger id="subject">
-                                <SelectValue placeholder="Válassz tantárgyat" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {subjects.map((s) => (
-                                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="teacher">Tanár</Label>
-                        <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
-                            <SelectTrigger id="teacher">
-                                <SelectValue placeholder="Válassz tanárt" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {teachersForSubject.map((t) => (
-                                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </section>
-
-                {currentEvaluation ? (
-                    <section className="space-y-6">
-                        {visibleQuestions.map((q, idx) => (
-                            <DynamicQuestion
-                                key={q.id}
-                                q={q}
-                                index={idx + 1}
-                                value={answers[q.id] ?? (isMulti(q) ? [] : "")}
-                                isInvalid={invalidIds.has(q.id)}
-                                onChange={(val) => {
-                                    setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
-
-                                    setInvalidIds((prev) => {
-                                        if (!prev.size) return prev;
-                                        if (!prev.has(q.id)) return prev;
-                                        const next = new Set(prev);
-                                        next.delete(q.id as QuestionID);
-                                        return next;
-                                    });
-                                }}
-                            />
-                        ))}
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Oktatási visszajelzés</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    {/* Tantárgy és tanár kiválasztás */}
+                    <section className="grid gap-4 md:grid-cols-3">
+                        <div className="space-y-2">
+                            <Label htmlFor="subject">Tantárgy</Label>
+                            <Select value={subject ?? ""} onValueChange={onSubjectChange}>
+                                <SelectTrigger id="subject">
+                                    <SelectValue placeholder="Válassz tantárgyat" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {subjects.map((s) => (
+                                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="teacher">Tanár</Label>
+                            <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
+                                <SelectTrigger id="teacher">
+                                    <SelectValue placeholder="Válassz tanárt" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teachersForSubject.map((t) => (
+                                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </section>
-                ) : (
-                    <div className="text-muted-foreground">
-                        Válassz tantárgyat és tanárt a kérdőív megjelenítéséhez.
-                    </div>
-                )}
+                </CardContent>
+            </Card>
 
-                <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                    <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>Piszkozat mentése</Button>
-                    <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireSubmit}>Beküldés</Button>
-                </div>
-            </CardContent>
-        </Card>
+            {/* Kérdések – csak akkor jelennek meg, ha van subject és teacher */}
+            {
+                subject && teacher && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Kérdések</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {currentEvaluation ? (
+                                <section className="space-y-6">
+                                    {visibleQuestions.map((q, idx) => (
+                                        <DynamicQuestion
+                                            key={q.id}
+                                            q={q}
+                                            index={idx + 1}
+                                            value={answers[q.id] ?? (isMulti(q) ? [] : "")}
+                                            isInvalid={invalidIds.has(q.id)}
+                                            onChange={(val) => {
+                                                setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+
+                                                setInvalidIds((prev) => {
+                                                    if (!prev.size) return prev;
+                                                    if (!prev.has(q.id)) return prev;
+                                                    const next = new Set(prev);
+                                                    next.delete(q.id as QuestionID);
+                                                    return next;
+                                                });
+                                            }}
+                                        />
+                                    ))}
+                                </section>
+                            ) : (
+                                <div className="text-muted-foreground">
+                                    Válassz tantárgyat és tanárt a kérdőív megjelenítéséhez.
+                                </div>
+                            )}
+
+                            <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                                <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>
+                                    Piszkozat mentése
+                                </Button>
+                                <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireSubmit}>
+                                    Beküldés
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            }
+        </>
     );
 }

@@ -37,7 +37,7 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             const match = row.dependency.match(/^(\d+)=\{(.*)\}$/);
             if (match) {
               dependency = {
-                id: `q${match[1]-1}`,
+                id: `q${match[1] - 1}`,
                 answerConditions: match[2].split(";").map((o: string) => o.trim()),
               };
             }
