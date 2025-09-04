@@ -51,6 +51,14 @@ function deleteHiddenAnswers(all: Question[], vis: Question[], answers: Evaluati
     return out;
 }
 
+function isNewCategory(list: Question[], idx: number) {
+    const curr = list[idx];
+    if (!curr.category) return false;
+    if (idx === 0) return true;
+    const prev = list[idx - 1];
+    return prev?.category !== curr.category;
+}
+
 type FeedbackFormDynamicProps = {
     subjects: string[];
     teachersBySubject: Record<string, string[]>;
@@ -307,27 +315,41 @@ export function FeedbackFormDynamic({
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {currentEvaluation ? (
-                                <section className="space-y-6">
-                                    {visibleQuestions.map((q, idx) => (
-                                        <DynamicQuestion
-                                            key={q.id}
-                                            q={q}
-                                            index={idx + 1}
-                                            value={answers[q.id] ?? (isMulti(q) ? [] : "")}
-                                            isInvalid={invalidIds.has(q.id)}
-                                            onChange={(val) => {
-                                                setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+                    <section className="space-y-2">
+                        {visibleQuestions.map((q, idx) => {
+                            const showCategory = isNewCategory(visibleQuestions, idx);
+                            return (
+                                <div key={q.id} className="space-y-2">
+                                    {showCategory && (
+                                        <div className="pt-6">
+                                            <h3 className="text-2xl font-semibold">{q.category}</h3>
+                                            {q.description && (
+                                                <p className="text-sm text-muted-foreground">{q.description}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    <DynamicQuestion
+                                        key={q.id}
+                                        q={q}
+                                        index={idx + 1}
+                                        value={answers[q.id] ?? (isMulti(q) ? [] : "")}
+                                        isInvalid={invalidIds.has(q.id)}
+                                        onChange={(val) => {
+                                            setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
 
-                                                setInvalidIds((prev) => {
-                                                    if (!prev.size) return prev;
-                                                    if (!prev.has(q.id)) return prev;
-                                                    const next = new Set(prev);
-                                                    next.delete(q.id as QuestionID);
-                                                    return next;
-                                                });
-                                            }}
-                                        />
+                                            setInvalidIds((prev) => {
+                                                if (!prev.size) return prev;
+                                                if (!prev.has(q.id)) return prev;
+                                                const next = new Set(prev);
+                                                next.delete(q.id as QuestionID);
+                                                return next;
+                                            });
+                                        }}
+                                    />
+                                </div>
                                     ))}
+                            );
+                        })}
                                 </section>
                             ) : (
                                 <div className="text-muted-foreground">

@@ -23,14 +23,14 @@ export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: 
             const opts = ["1", "2", "3", "4", "5"];
             return (
                 <div className={wrapper}>
-                    <Label>{index}.{q.text}</Label>
+                    <Label>{index}. {q.text}</Label>
                     <RadioGroup
                         value={v}
                         onValueChange={(val) => onChange(val)}
                         className="grid grid-cols-5 gap-4"
                     >
                         {opts.map((opt) => (
-                            <div key={opt} className="flex items-center justify-center gap-2">
+                            <div key={opt} className="flex items justify gap-2">
                                 <RadioGroupItem id={`${q.id}-${opt}`} value={opt} />
                                 <Label htmlFor={`${q.id}-${opt}`}>{opt}</Label>
                             </div>
@@ -45,7 +45,7 @@ export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: 
             const options = q.options ?? [];
             return (
                 <div className={wrapper}>
-                    <Label>{index}.{q.text}</Label>
+                    <Label>{index}. {q.text}</Label>
                     <RadioGroup
                         value={v}
                         onValueChange={(val) => onChange(val)}
@@ -73,7 +73,7 @@ export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: 
 
             return (
                 <div className={wrapper}>
-                    <Label>{index}.{q.text}</Label>
+                    <Label>{index}. {q.text}</Label>
                     <RadioGroup
                         value={isPredef ? v : ""}
                         onValueChange={(val) => onChange(val)}
@@ -103,12 +103,12 @@ export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: 
 
             return (
                 <div className={wrapper}>
-                    <Label>{index}.{q.text}</Label>
-                    <div>
+                    <Label>{index}. {q.text}</Label>
+                    <div className="space-y-2">
                         {(q.options ?? []).map((opt, idx) => {
                             const id = String(idx + 1); 
                             return (
-                                <div key={id} className="flex items-center gap-3 space-x-2">
+                                <div key={id} className="flex items-center gap-2">
                                     <Checkbox
                                         id={`${q.id}-${id}`}
                                         checked={arr.includes(id)}
@@ -127,7 +127,7 @@ export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: 
             const v = String(value ?? "");
             return (
                 <div className={wrapper}>
-                    <Label>{index}.{q.text}</Label>
+                    <Label>{index}. {q.text}</Label>
                     <Textarea
                         value={v}
                         onChange={(e) => onChange(e.target.value)}

@@ -17,7 +17,9 @@ export type Question = {
   text: string;        
   type: QuestionType;
   dependency?:QuestionDependency
-  options?: string[];  
+  options?: string[];
+  category:string;
+  description?:string;
 };
 
 export type Survey = {

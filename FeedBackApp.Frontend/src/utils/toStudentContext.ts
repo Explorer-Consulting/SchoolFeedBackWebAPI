@@ -27,6 +27,8 @@ type RawQuestion = {
     answerOptions: string[];
     dependency?: RawDependency;
     answer: string;
+    category: string;
+    description?: string;
 };
 
 type RawTeacher = {
@@ -81,6 +83,9 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                     : undefined;
 
                 const text = typeof rq?.question === "string" ? rq.question : "";
+                const category = typeof rq?.category === "string" ? rq.category : "";
+                const description =typeof rq?.description === "string" ? rq.description : "";
+
                 if (!id || !tpe || !text) return;
 
                 questions.push({
@@ -93,7 +98,9 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                             tpe === "MultipleChoice"
                             ? (Array.isArray(rq?.answerOptions) ? rq.answerOptions : [])
                             : undefined,
-                            dependency,
+                    dependency,
+                    category,
+                    description
                 });
 
                 const ansRaw = typeof rq?.answer === "string" ? rq.answer : "";
