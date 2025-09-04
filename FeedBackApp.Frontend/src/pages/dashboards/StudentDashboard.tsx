@@ -10,12 +10,13 @@ import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
 
-  const { 
+  const {
     selectedSurveyId,
     setSelectedSurveyId,
     context,
     setContext,
-     } = useStudentContextStore();
+  } = useStudentContextStore();
+
 
   const {
     querySurveys,
@@ -88,7 +89,7 @@ export default function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader id="topList">
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
           <CardContent>
