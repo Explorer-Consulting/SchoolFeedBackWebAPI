@@ -15,11 +15,17 @@ const type_map: Record<number, QuestionType> = {
     5: "OpenEnded",
 };
 
+type RawDependency = {
+    id: QuestionID;
+    answerConditions: Array<number>;
+}
+
 type RawQuestion = {
     questionID: QuestionID;
     question: string;
     type: number;
     answerOptions: string[];
+    dependency?: RawDependency;
     answer: string;
 };
 
@@ -67,6 +73,13 @@ export function toStudentContext(raw: RawPayload): StudentContext {
             rawQs.forEach((rq) => {
                 const id = rq?.questionID;
                 const tpe = type_map[rq?.type as number];
+                const dependency = rq?.dependency
+                    ? {
+                        id: rq.dependency.id,
+                        answerConditions: (rq.dependency.answerConditions ?? []).map(String),
+                    }
+                    : undefined;
+
                 const text = typeof rq?.question === "string" ? rq.question : "";
                 if (!id || !tpe || !text) return;
 
@@ -80,6 +93,7 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                             tpe === "MultipleChoice"
                             ? (Array.isArray(rq?.answerOptions) ? rq.answerOptions : [])
                             : undefined,
+                            dependency,
                 });
 
                 const ansRaw = typeof rq?.answer === "string" ? rq.answer : "";
@@ -103,7 +117,7 @@ export function toStudentContext(raw: RawPayload): StudentContext {
         }
     }
 
-    const subjects = Array.from(subjectToTeachers.keys()); 
+    const subjects = Array.from(subjectToTeachers.keys());
     const teachersBySubject = Object.fromEntries(
         Array.from(subjectToTeachers.entries()).map(([subj, set]) => [subj, Array.from(set)])
     );
