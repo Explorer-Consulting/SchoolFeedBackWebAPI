@@ -10,16 +10,19 @@ type Props = {
     index: number;
     value: string| string[];
     onChange: (val: string | string[]) => void;
+    isInvalid?: boolean;
 };
 
-export default function DynamicQuestion({ q,index, value, onChange }: Props) {
+export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: Props) {
 
+    const wrapper = "space-y-2 p-3 rounded-md border " + (isInvalid ? "border-red-500" : "border-transparent");
+    
     switch (q.type) {
         case "LikertScaleOneToFive": {
             const v = String(value ?? "");
             const opts = ["1", "2", "3", "4", "5"];
             return (
-                <div className="space-y-2">
+                <div className={wrapper}>
                     <Label>{index}.{q.text}</Label>
                     <RadioGroup
                         value={v}
@@ -41,7 +44,7 @@ export default function DynamicQuestion({ q,index, value, onChange }: Props) {
             const v = String(value ?? "");
             const options = q.options ?? [];
             return (
-                <div className="space-y-2">
+                <div className={wrapper}>
                     <Label>{index}.{q.text}</Label>
                     <RadioGroup
                         value={v}
@@ -69,7 +72,7 @@ export default function DynamicQuestion({ q,index, value, onChange }: Props) {
             const isOther = v !== "" && !isPredef;
 
             return (
-                <div className="space-y-2">
+                <div className={wrapper}>
                     <Label>{index}.{q.text}</Label>
                     <RadioGroup
                         value={isPredef ? v : ""}
@@ -99,7 +102,7 @@ export default function DynamicQuestion({ q,index, value, onChange }: Props) {
                 onChange(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
 
             return (
-                <div className="space-y-2">
+                <div className={wrapper}>
                     <Label>{index}.{q.text}</Label>
                     <div>
                         {(q.options ?? []).map((opt, idx) => {
@@ -124,7 +127,7 @@ export default function DynamicQuestion({ q,index, value, onChange }: Props) {
             const v = String(value ?? "");
             const tooShort = v.trim().length < 20;
             return (
-                <div className="space-y-2">
+                <div className={wrapper}>
                     <Label>{index}.{q.text}</Label>
                     <Textarea
                         value={v}

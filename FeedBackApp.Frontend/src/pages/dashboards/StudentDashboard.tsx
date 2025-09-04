@@ -7,7 +7,6 @@ import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 
-
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
 
@@ -27,19 +26,15 @@ export default function StudentDashboard() {
     isLoadingQuestionnaire,
     isErrorQuestionnaire,
     refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
-console.log("backend0:",questionnaires);
-console.log("surveys",querySurveys);
+
   useEffect(() => {
     if (!questionnaires) return;
-    console.log("backend:",questionnaires);
     const ctx = toStudentContext(questionnaires);
-    console.log("frontend:",ctx);
     setContext(ctx);
   }, [questionnaires, setContext]);
 
   useEffect(() => {
     refetchSurveys();
-   
   }, [refetchSurveys]);
 
   if (!user) return <Navigate to="/" replace />;

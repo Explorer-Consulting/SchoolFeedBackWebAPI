@@ -29,6 +29,29 @@ function ensureInitialAnswers(
     return out;
 }
 
+function shouldShowQuestion(q: Question, answers: EvaluationResponses): boolean {
+    if (!q.dependency) return true;
+
+    const { id, answerConditions } = q.dependency;
+    const raw = answers[id];
+
+    const chosen: string[] = Array.isArray(raw)
+        ? raw.map(String)
+        : raw ? [String(raw)] : [];
+    return chosen.some(v => answerConditions.map(String).includes(v));
+}
+
+function deleteHiddenAnswers(all: Question[], vis: Question[], answers: EvaluationResponses) {
+    const visibleIds = new Set(vis.map(q => q.id));
+    const out = { ...answers };
+    for (const q of all) {
+        if (!visibleIds.has(q.id)) {
+            out[q.id] = isMulti(q) ? [] : "";
+        }
+    }
+    return out;
+}
+
 type FeedbackFormDynamicProps = {
     subjects: string[];
     teachersBySubject: Record<string, string[]>;
@@ -62,6 +85,8 @@ export function FeedbackFormDynamic({
     };
 
     const [answers, setAnswers] = useState<EvaluationResponses>({});
+    const [invalidIds, setInvalidIds] = useState<Set<QuestionID>>(new Set());
+
 
     const teachersForSubject = useMemo(
         () => (subject ? (teachersBySubject[subject] ?? []) : []),
@@ -76,31 +101,47 @@ export function FeedbackFormDynamic({
         [evaluations, subject, teacher]
     );
 
+    const visibleQuestions = useMemo(
+        () =>
+            currentEvaluation
+                ? currentEvaluation.questions.filter(q => shouldShowQuestion(q, answers))
+                : [],
+        [currentEvaluation, answers]
+    );
+
     const id = currentEvaluation?.id;
 
-    function validateAll(questions: Question[], answers: EvaluationResponses):string | null {
-        for (let i = 0; i < questions.length; i++) {
-            const q=questions[i];
-            const ind=i+1;
-            const v = answers[q.id];
+    function validateAll(questions: Question[], answers: EvaluationResponses): { msg: string | null; invalid: Set<QuestionID> } {
+        const invalid = new Set<QuestionID>();
+        let msg: string | null = null;
 
-            if (isMulti(q)) {
-                if (!Array.isArray(v) || v.length === 0) {
-                    return `Kérjük, válaszolj a(z) ${ind}. kérdésre.`;
-                }
-            } else if (isOpen(q)) {
-                const s = String(v ?? "");
-                if (s.trim().length < 20) {
-                    return `A ${ind}. kérdésnél a válasz legyen legalább 20 karakter.`;
-                }
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i];
+            const ind = i + 1;
+            const val = answers[q.id];
+
+            let isInvalid = false;
+
+            if (q.type === "MultipleChoice") {
+                isInvalid = !Array.isArray(val) || val.length === 0;
+            } else if (q.type === "OpenEnded") {
+                const text = String(val ?? "").trim();
+                isInvalid = text.length < 20;
             } else {
-                const s = String(v ?? "");
-                if (!s) {
-                    return `Kérjük, válaszolj a(z) ${ind}. kérdésre."`;
+                const text = String(val ?? "").trim();
+                isInvalid = text === "";
+            }
+
+            if (isInvalid) {
+                invalid.add(q.id);
+                if (!msg) {
+                    msg = q.type === "OpenEnded"
+                        ? `A ${ind}. kérdésnél a válasz legyen legalább 20 karakter.`
+                        : `Kérjük, válaszolj a(z) ${ind}. kérdésre.`;
                 }
             }
         }
-        return null;
+        return { msg, invalid };
     }
 
     useEffect(() => {
@@ -118,8 +159,8 @@ export function FeedbackFormDynamic({
             return;
         }
 
-        const payload = toBackendPayload(answers);
-        console.log(payload);
+        const cleaned = deleteHiddenAnswers(currentEvaluation.questions, visibleQuestions, answers);
+        const payload = toBackendPayload(cleaned);
         performQuestionnaireUpdate(
             { id, payload },
             {
@@ -135,15 +176,15 @@ export function FeedbackFormDynamic({
     const onSubmit = () => {
         if (!id) return;
 
-        const err = validateAll(currentEvaluation.questions, answers);
-        if(err) {
-            console.log(err);
-            toast.error(err);
+        const { msg, invalid } = validateAll(visibleQuestions, answers);
+        if (msg) {
+            setInvalidIds(invalid);
+            toast.error(msg);
             return;
         }
 
-        const payload = toBackendPayload(answers);
-        console.log(payload);
+        const cleaned = deleteHiddenAnswers(currentEvaluation.questions, visibleQuestions, answers);
+        const payload = toBackendPayload(cleaned);
         performQuestionnaireSubmit(
             { id, payload },
             {
@@ -156,7 +197,7 @@ export function FeedbackFormDynamic({
         )
     };
 
-     useEffect(() => {
+    useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             onSaveDraft();
             e.preventDefault();
@@ -204,15 +245,24 @@ export function FeedbackFormDynamic({
 
                 {currentEvaluation ? (
                     <section className="space-y-6">
-                        {currentEvaluation.questions.map((q,idx) => (
+                        {visibleQuestions.map((q, idx) => (
                             <DynamicQuestion
                                 key={q.id}
                                 q={q}
-                                index={idx +1}
+                                index={idx + 1}
                                 value={answers[q.id] ?? (isMulti(q) ? [] : "")}
-                                onChange={(val) =>
-                                    setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }))
-                                }
+                                isInvalid={invalidIds.has(q.id)}
+                                onChange={(val) => {
+                                    setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+
+                                    setInvalidIds((prev) => {
+                                        if (!prev.size) return prev;
+                                        if (!prev.has(q.id)) return prev;
+                                        const next = new Set(prev);
+                                        next.delete(q.id as QuestionID);
+                                        return next;
+                                    });
+                                }}
                             />
                         ))}
                     </section>
