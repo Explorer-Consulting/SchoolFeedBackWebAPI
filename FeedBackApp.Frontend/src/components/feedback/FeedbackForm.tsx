@@ -157,50 +157,49 @@ export function FeedbackForm({
 
   const validate = () => {
     if (!subject || !teacher) {
-      toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
+      toast.warning("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
     }
     if (likerts.some((v) => !v)) {
-      toast("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17).");
+      toast.warning("Kérjük, töltsd ki az osztálytermi tevékenység minden kérdését (1–17).");
       return;
     }
     if (!form.q17) {
-      toast("Kérjük, válaszolj a 18. kérdésre.");
+      toast.warning("Kérjük, válaszolj a 18. kérdésre.");
       return;
     }
     if (!form.q18) {
-      toast("Kérjük, válaszolj a 19. kérdésre.");
+      toast.warning("Kérjük, válaszolj a 19. kérdésre.");
       return;
     }
     if (isAttendingOutside && form.q19.length === 0) {
-      toast("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél.");
+      toast.warning("Kérjük, jelöld meg legalább egy okot a 20. kérdésnél.");
       return;
     }
     if (form.q20.length === 0) {
-      toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
+      toast.warning("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
       return;
     }
     if (form.q21.trim().length < 20) {
-      toast("A 22. kérdésnél a válasznak legalább 20 karakternek kell lennie.");
+      toast.warning("A 22. kérdésnél a válasznak legalább 20 karakternek kell lennie.");
       return;
     }
     if (form.q22.trim().length < 20) {
-      toast("A 23. kérdésnél a válasznak legalább 20 karakternek kell lennie.");
+      toast.warning("A 23. kérdésnél a válasznak legalább 20 karakternek kell lennie.");
       return;
     }
     if (!form.q23 || !form.q24 || !form.q25) {
-      toast("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
+      toast.warning("Kérjük, töltsd ki a jelenlétre és elmaradt tanórákra vonatkozó kérdéseket (24–26).");
       return;
     }
     return null;
   };
 
   const onSaveDraft = () => {
-    console.log(id, teacher, subject);
     if (!id) return;
 
     if (!subject || !teacher) {
-      toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
+      toast.warning("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
     }
 
@@ -215,20 +214,19 @@ export function FeedbackForm({
       { id, payload },
       {
         onSuccess: () => {
-          toast("Piszkozat sikeresen mentve!");
+          toast.success("Piszkozat sikeresen mentve!");
           document.getElementById("topList")?.scrollIntoView({
             behavior: "smooth",
             block: "start"
           });
           onAfterChange();
         },
-        onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
+        onError: () => { toast.error("Hiba történt a piszkozat mentése közben!"); }
       }
     )
   };
 
   const onSubmit = () => {
-    console.log(id, teacher, subject);
     if (!id) return;
 
     const confirmed = window.confirm("Biztosan be szeretnéd küldeni a kérdőívet?");
@@ -244,7 +242,7 @@ export function FeedbackForm({
       { id, payload },
       {
         onSuccess: () => {
-          toast("Kérdőív beküldve!");
+          toast.success("Kérdőív beküldve!");
           document.getElementById("topList")?.scrollIntoView({
             behavior: "smooth",
             block: "start"
@@ -253,7 +251,7 @@ export function FeedbackForm({
           setSubject(null);
           onAfterChange();
         },
-        onError: () => { toast("Hiba történt a beküldés közben!"); }
+        onError: () => { toast.error("Hiba történt a beküldés közben!"); }
       }
     )
   };

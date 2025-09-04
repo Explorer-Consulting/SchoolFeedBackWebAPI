@@ -47,7 +47,7 @@ export default function AdminDashboard() {
     if (!file) return;
 
     if (!/\.(xlsx|xls|xlsm)$/i.test(file.name)) {
-      toast.error("Kérlek, tölts fel egy érvényes Excel fájlt (.xlsx vagy .xls).");
+      toast.warning("Kérlek, tölts fel egy érvényes Excel fájlt (.xlsx vagy .xls).");
       return;
     }
     setFile(file);
@@ -55,29 +55,29 @@ export default function AdminDashboard() {
 
   const sendQuestionnaires = async () => {
     if (!startDate || !endDate) {
-      toast.error("Kérlek, állítsd be mind a kezdő-, mind a záró dátumot.");
+      toast.warning("Kérlek, állítsd be mind a kezdő-, mind a záró dátumot.");
       return;
     }
 
     if (startDate >= endDate) {
-      toast.error("A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.");
+      toast.warning("A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.");
       return;
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (startDate < today) {
-      toast.error("A kezdő dátum nem lehet korábbi, mint a mai nap.");
+      toast.warning("A kezdő dátum nem lehet korábbi, mint a mai nap.");
       return;
     }
 
     if (!title) {
-      toast.error("Kérlek, add meg a címet.");
+      toast.warning("Kérlek, add meg a címet.");
       return;
     }
 
     if (!file) {
-      toast.error("Kérlek, tölts fel egy Excel-fájlt.");
+      toast.warning("Kérlek, tölts fel egy Excel-fájlt.");
       return;
     }
 
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
 
   const deleteSelectedQuestionnaire = () => {
     if (!selectedQuestionnaireId) {
-      toast.error("Először válassz ki egy kérdőívet!");
+      toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
     deleteQuestionnaire(selectedQuestionnaireId, {
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
 
   const handleExportTeacher = () => {
     if (!selectedQuestionnaireId) {
-      toast.error("Először válassz ki egy kérdőívet!");
+      toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
     exportTeacherEvaluations(selectedQuestionnaireId, {
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
 
   const handleExportSummary = () => {
     if (!selectedQuestionnaireId) {
-      toast.error("Először válassz ki egy kérdőívet!");
+      toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
     exportGlobalSummary(selectedQuestionnaireId, {
