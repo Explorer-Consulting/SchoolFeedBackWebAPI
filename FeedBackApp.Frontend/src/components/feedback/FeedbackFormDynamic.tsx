@@ -94,7 +94,6 @@ export function FeedbackFormDynamic({
     const [answers, setAnswers] = useState<EvaluationResponses>({});
     const [invalidIds, setInvalidIds] = useState<Set<QuestionID>>(new Set());
 
-
     const teachersForSubject = useMemo(
         () => (subject ? (teachersBySubject[subject] ?? []) : []),
         [subject, teachersBySubject]
@@ -159,7 +158,6 @@ export function FeedbackFormDynamic({
         setAnswers(ensureInitialAnswers(currentEvaluation.questions, currentEvaluation.responses));
     }, [currentEvaluation]);
 
-    // subject automatikus választása
     useEffect(() => {
         if (subjects.length > 0) {
             if (!subject || !subjects.includes(subject)) {
@@ -170,7 +168,6 @@ export function FeedbackFormDynamic({
         }
     }, [subjects, subject, setSubject]);
 
-    // teacher automatikus választása, ha subject változik
     useEffect(() => {
         if (subject) {
             const teachers = teachersBySubject[subject] ?? [];
@@ -274,7 +271,6 @@ export function FeedbackFormDynamic({
                     <CardTitle>Oktatási visszajelzés</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-8">
-                    {/* Tantárgy és tanár kiválasztás */}
                     <section className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
                             <Label htmlFor="subject">Tantárgy</Label>
@@ -305,8 +301,6 @@ export function FeedbackFormDynamic({
                     </section>
                 </CardContent>
             </Card>
-
-            {/* Kérdések – csak akkor jelennek meg, ha van subject és teacher */}
             {
                 subject && teacher && (
                     <Card>
@@ -316,39 +310,51 @@ export function FeedbackFormDynamic({
                         <CardContent className="space-y-6">
                             {currentEvaluation ? (
                                 <section className="space-y-2">
-                                    {visibleQuestions.map((q, idx) => {
-                                        const showCategory = isNewCategory(visibleQuestions, idx);
-                                        return (
-                                            <div key={q.id} className="space-y-2">
-                                                {showCategory && (
-                                                    <div className="pt-6">
-                                                        <h3 className="text-2xl font-semibold">{q.category}</h3>
-                                                        {q.description && (
-                                                            <p className="text-sm text-muted-foreground">{q.description}</p>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                <DynamicQuestion
-                                                    key={q.id}
-                                                    q={q}
-                                                    index={idx + 1}
-                                                    value={answers[q.id] ?? (isMulti(q) ? [] : "")}
-                                                    isInvalid={invalidIds.has(q.id)}
-                                                    onChange={(val) => {
-                                                        setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+                                    {(() => {
+                                        // Itt gyűjtjük, mely description szövegeket írtuk már ki
+                                        const printedDescriptions = new Set<string>();
 
-                                                        setInvalidIds((prev) => {
-                                                            if (!prev.size) return prev;
-                                                            if (!prev.has(q.id)) return prev;
-                                                            const next = new Set(prev);
-                                                            next.delete(q.id as QuestionID);
-                                                            return next;
-                                                        });
-                                                    }}
-                                                />
-                                            </div>
-                                        );
-                                    })}
+                                        return visibleQuestions.map((q, idx) => {
+                                            const showCategory = isNewCategory(visibleQuestions, idx);
+
+                                            // description kezelése: csak egyszer jelenjen meg az első előfordulásnál
+                                            const desc = (q.description ?? "").trim();
+                                            const showDescription = !!desc && !printedDescriptions.has(desc);
+                                            if (showDescription) {
+                                                printedDescriptions.add(desc);
+                                            }
+
+                                            return (
+                                                <div key={q.id} className="space-y-2">
+                                                    {showCategory && (
+                                                        <div className="pt-2">
+                                                            <h3 className="text-2xl font-semibold">{q.category}</h3>
+                                                        </div>
+                                                    )}
+
+                                                    {showDescription && (
+                                                        <p className="text-sm text-muted-foreground">{q.description}</p>
+                                                    )}
+
+                                                    <DynamicQuestion
+                                                        q={q}
+                                                        index={idx + 1}
+                                                        value={answers[q.id] ?? (isMulti(q) ? [] : "")}
+                                                        isInvalid={invalidIds.has(q.id)}
+                                                        onChange={(val) => {
+                                                            setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+                                                            setInvalidIds((prev) => {
+                                                                if (!prev.size || !prev.has(q.id)) return prev;
+                                                                const next = new Set(prev);
+                                                                next.delete(q.id as QuestionID);
+                                                                return next;
+                                                            });
+                                                        }}
+                                                    />
+                                                </div>
+                                            );
+                                        });
+                                    })()}
                                 </section>
                             ) : (
                                 <div className="text-muted-foreground">
