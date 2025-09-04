@@ -116,18 +116,24 @@ namespace Application.Services
                 teacherData[item.Email] = item.Name;
             }
 
-            var studentSetId = surveyMetadata.StudentSets.FirstOrDefault(set => set.StudentEmails.Contains(studentEmail))?.SetId;
-            if (studentSetId == null)
+            var studentSetIds = surveyMetadata.StudentSets
+                .Where(set => set.StudentEmails.Contains(studentEmail))
+                .Select(set => set.SetId)
+                .ToList();
+
+            if (!studentSetIds.Any())
             {
                 return new QuestionnairesDTO();
             }
 
             QuestionnairesDTO response = new QuestionnairesDTO();
-            response.Class = studentSetId;
+            response.Class = string.Join(", ", studentSetIds);
+
             response.Subjects = new List<SubjectDTO>();
             Dictionary<string, List<string>> subjectTeachers = new Dictionary<string, List<string>>();
-
-            var creationParams = surveyMetadata.CreationParams.Where(par => par.StudentSetIds.Any(setId => setId == studentSetId));
+            
+            var creationParams = surveyMetadata.CreationParams
+                .Where(par => par.StudentSetIds.Any(setId => studentSetIds.Contains(setId)));
             foreach (var item in creationParams)
             {
                 if (!subjectTeachers.ContainsKey(item.SubjectName))
