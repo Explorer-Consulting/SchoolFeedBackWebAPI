@@ -189,7 +189,9 @@ namespace Application.Services
                                 Type = template.Type,
                                 AnswerOptions = template.AnswerOptions,
                                 Answer = answer,
-                                Dependency = template.Dependency?.ToDto()
+                                Dependency = template.Dependency?.ToDto(),
+                                Description = template.Description,
+                                Category = template.Category
                             });
                             
                         }

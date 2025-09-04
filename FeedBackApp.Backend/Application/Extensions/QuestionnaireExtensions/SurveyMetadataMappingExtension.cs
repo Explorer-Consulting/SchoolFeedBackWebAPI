@@ -134,7 +134,9 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Question = dto.Question,
                 Type = dto.Type,
                 AnswerOptions = dto.AnswerOptions,
-                Dependency = dto.Dependency?.ToModel()
+                Dependency = dto.Dependency?.ToModel(),
+                Category = dto.Category,
+                Description = dto.Description
             };
 
         public static QuestionTemplateDTO ToDto(this QuestionTemplate model) =>
@@ -143,7 +145,9 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Question = model.Question,
                 Type = model.Type,
                 AnswerOptions = [.. model.AnswerOptions],
-                Dependency = model.Dependency?.ToDto()
+                Dependency = model.Dependency?.ToDto(),
+                Category = model.Category,
+                Description = model.Description
             };
 
         public static GetSurveyMetadataDTO ToGetDto(this SurveyMetadata model) =>

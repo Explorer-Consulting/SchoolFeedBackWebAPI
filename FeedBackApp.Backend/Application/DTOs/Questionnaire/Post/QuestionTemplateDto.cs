@@ -19,5 +19,12 @@ namespace Application.DTOs.Questionnaire
 
         [JsonProperty("dependency")]
         public DependencyDTO? Dependency { get; set; }
+
+        [JsonProperty("category")]
+        public string Category { get; set; } = string.Empty;
+
+        [JsonProperty("description")]
+        public string Description { get; set; } = string.Empty;
+
     }
 }
