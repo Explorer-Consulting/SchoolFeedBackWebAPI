@@ -149,6 +149,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
         if (principal == null)
         {
             var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+            await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
             return unauthorizedResponse;
         }
 
@@ -206,6 +207,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
         if (principal == null)
         {
             var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+            await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
             return unauthorizedResponse;
         }
 

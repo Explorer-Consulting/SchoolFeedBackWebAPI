@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.Model.Enum;
+﻿using Application.DTOs.Questionnaire.Post;
+using FeedBackApp.Core.Model.Enum;
 
 namespace Application.DTOs.Questionnaire
 {
@@ -9,6 +10,8 @@ namespace Application.DTOs.Questionnaire
         public string Question { get; set; } = string.Empty;
 
         public QuestionType Type { get; set; }
+
+        public DependencyDTO? Dependency { get; set; }
 
         public IList<string> AnswerOptions { get; set; } = new List<string>();
 

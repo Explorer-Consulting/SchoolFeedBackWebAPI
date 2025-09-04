@@ -9,6 +9,7 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System.Net;
+using System.Security.Claims;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
 
@@ -51,6 +52,23 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
                 var badResponse = request.CreateResponse(HttpStatusCode.BadRequest);
                 await badResponse.WriteStringAsync("Invalid or empty JSON body.");
                 return badResponse;
+            }
+
+            var principal = request.FunctionContext.Items["User"] as ClaimsPrincipal;
+
+            if (principal == null)
+            {
+                var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
+                return unauthorizedResponse;
+            }
+
+            var email = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (id.Split('_')[0] != email){
+                var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: Questionnaire does not belong to the current user.");
+                return unauthorizedResponse;
             }
 
             var result = await _service.SubmitQuestionnaire(id, dto);
@@ -109,6 +127,24 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
                 var badResponse = request.CreateResponse(HttpStatusCode.BadRequest);
                 await badResponse.WriteStringAsync("Invalid or empty JSON body.");
                 return badResponse;
+            }
+
+            var principal = request.FunctionContext.Items["User"] as ClaimsPrincipal;
+
+            if (principal == null)
+            {
+                var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
+                return unauthorizedResponse;
+            }
+
+            var email = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (id.Split('_')[0] != email)
+            {
+                var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+                await unauthorizedResponse.WriteStringAsync("Unauthorized: Questionnaire does not belong to the current user.");
+                return unauthorizedResponse;
             }
 
             var result = await _service.UpdateQuestionnaire(id, dto);
