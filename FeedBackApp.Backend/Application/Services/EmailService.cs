@@ -14,6 +14,7 @@ public class EmailService : IEmailService
     private readonly ILogger<EmailService> _logger;
     private readonly IEmailRepository _emailRepository;
     private static short DAILY_EMAIL_LIMIT = 500;
+    private static short DNS_PORT = 587;
 
     public EmailService(ILogger<EmailService> logger, IEmailRepository emailRepository)
     {
@@ -47,7 +48,7 @@ public class EmailService : IEmailService
             if (!batch.Any())
                 return false;
 
-            using var smtp = new SmtpClient("smtp.gmail.com", 587)
+            using var smtp = new SmtpClient("smtp.gmail.com", DNS_PORT)
             {
                 Credentials = new NetworkCredential(_fromAddress, _appPassword),
                 EnableSsl = true
