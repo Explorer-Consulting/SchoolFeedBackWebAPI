@@ -141,8 +141,8 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
     }
 
     [RequireStudent]
-    [Function("PerformGetQuestionnaires")]
-    public async Task<HttpResponseData> PerformGetQuestionnaires([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "questionnaires/{id}")] HttpRequestData request, Guid id)
+    [Function("PerformGetSurveyData")]
+    public async Task<HttpResponseData> PerformGetSurveyData([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys/{id}")] HttpRequestData request, Guid id)
     {
         var principal = request.FunctionContext.Items["User"] as ClaimsPrincipal;
 
