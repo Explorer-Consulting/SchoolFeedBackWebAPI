@@ -43,6 +43,32 @@ export function FeedbackForm({
     setSubject(s);
     setTeacher(null);
   };
+  // subject automatikus választása
+  useEffect(() => {
+    if (subjects.length > 0) {
+      if (!subject || !subjects.includes(subject)) {
+        setSubject(subjects[0]);
+      }
+    } else {
+      setSubject(null);
+    }
+  }, [subjects, subject, setSubject]);
+
+  // teacher automatikus választása, ha subject változik
+  useEffect(() => {
+    if (subject) {
+      const teachers = teachersBySubject[subject] ?? [];
+      if (teachers.length > 0) {
+        if (!teacher || !teachers.includes(teacher)) {
+          setTeacher(teachers[0]);
+        }
+      } else {
+        setTeacher(null);
+      }
+    } else {
+      setTeacher(null);
+    }
+  }, [subject, teachersBySubject, teacher, setTeacher]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -102,6 +128,8 @@ export function FeedbackForm({
     if (!subject || !teacher) return;
     applyResponses(currentEvaluation?.responses);
   }, [subject, teacher, currentEvaluation, applyResponses]);
+
+
 
   const id = currentEvaluation?.id;
   const likertValues = ["1", "2", "3", "4", "5"];
@@ -168,7 +196,9 @@ export function FeedbackForm({
   };
 
   const onSaveDraft = () => {
+    console.log(id, teacher, subject);
     if (!id) return;
+
     if (!subject || !teacher) {
       toast("Kérjük, válaszd ki a tantárgyat és a tanárt.");
       return;
@@ -186,6 +216,10 @@ export function FeedbackForm({
       {
         onSuccess: () => {
           toast("Piszkozat sikeresen mentve!");
+          document.getElementById("topList")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
           onAfterChange();
         },
         onError: () => { toast("Hiba történt a piszkozat mentése közben!"); }
@@ -194,9 +228,13 @@ export function FeedbackForm({
   };
 
   const onSubmit = () => {
+    console.log(id, teacher, subject);
     if (!id) return;
-    const err = validate();
 
+    const confirmed = window.confirm("Biztosan be szeretnéd küldeni a kérdőívet?");
+    if (!confirmed) return;
+
+    const err = validate();
     if (err !== null) return;
 
     const data = collectResponses();
@@ -207,6 +245,12 @@ export function FeedbackForm({
       {
         onSuccess: () => {
           toast("Kérdőív beküldve!");
+          document.getElementById("topList")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+          setTeacher(null);
+          setSubject(null);
           onAfterChange();
         },
         onError: () => { toast("Hiba történt a beküldés közben!"); }
@@ -219,74 +263,114 @@ export function FeedbackForm({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Oktatási visszajelzés</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="subject">Tantárgy</Label>
-            <Select value={subject ?? ""} onValueChange={onSubjectChange}>
-              <SelectTrigger id="subject">
-                <SelectValue placeholder="Válassz tantárgyat" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="teacher">Tanár</Label>
-            <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
-              <SelectTrigger id="teacher">
-                <SelectValue placeholder="Válassz tanárt" />
-              </SelectTrigger>
-              <SelectContent>
-                {teachersForSubject.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </section>
+    <div className="space-y-6">
+      {/* Tantárgy és Tanár kiválasztás */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Oktatási visszajelzés – Beállítás</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <section className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="subject">Tantárgy</Label>
+              <Select value={subject ?? ""} onValueChange={onSubjectChange}>
+                <SelectTrigger id="subject">
+                  <SelectValue placeholder="Válassz tantárgyat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <ClassroomSection
-          qValues={qValues}
-          setQValues={setQValues}
-          likertValues={likertValues}
-        />
+            <div className="space-y-2">
+              <Label htmlFor="teacher">Tanár</Label>
+              <Select
+                value={teacher ?? ""}
+                onValueChange={setTeacher}
+                disabled={!subject}
+              >
+                <SelectTrigger id="teacher">
+                  <SelectValue placeholder="Válassz tanárt" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachersForSubject.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </section>
+        </CardContent>
+      </Card>
 
-        <OutsideEducationSection
-          q17={form.q17}
-          setQ17={setField("q17")}
-          q18={form.q18}
-          setQ18={setField("q18")}
-          q19={form.q19}
-          setQ19={setField("q19")}
-          q20={form.q20}
-          setQ20={setField("q20")}
-          q21={form.q21}
-          setQ21={setField("q21")}
-          q22={form.q22}
-          setQ22={setField("q22")}
-          isAttendingOutside={isAttendingOutside}
-          toggleMulti={toggleMulti}
-        />
+      {/* Kérdések – csak akkor jelennek meg, ha van subject és teacher */}
+      {subject && teacher && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Kérdések</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <ClassroomSection
+              qValues={qValues}
+              setQValues={setQValues}
+              likertValues={likertValues}
+            />
 
-        <AttendanceSection
-          q23={form.q23} setQ23={setField("q23")}
-          q24={form.q24} setQ24={setField("q24")}
-          q25={form.q25} setQ25={setField("q25")}
-        />
+            <OutsideEducationSection
+              q17={form.q17}
+              setQ17={setField("q17")}
+              q18={form.q18}
+              setQ18={setField("q18")}
+              q19={form.q19}
+              setQ19={setField("q19")}
+              q20={form.q20}
+              setQ20={setField("q20")}
+              q21={form.q21}
+              setQ21={setField("q21")}
+              q22={form.q22}
+              setQ22={setField("q22")}
+              isAttendingOutside={isAttendingOutside}
+              toggleMulti={toggleMulti}
+            />
 
-        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>Piszkozat mentése</Button>
-          <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireSubmit}>Beküldés</Button>
-        </div>
-      </CardContent>
-    </Card>
+            <AttendanceSection
+              q23={form.q23}
+              setQ23={setField("q23")}
+              q24={form.q24}
+              setQ24={setField("q24")}
+              q25={form.q25}
+              setQ25={setField("q25")}
+            />
+
+            <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Button
+                className="w-full sm:w-auto"
+                variant="secondary"
+                onClick={onSaveDraft}
+                disabled={isPerformQuestionnaireUpdating}
+              >
+                Piszkozat mentése
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                variant="default"
+                onClick={onSubmit}
+                disabled={isPerformQuestionnaireSubmit}
+              >
+                Beküldés
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
+
 }
