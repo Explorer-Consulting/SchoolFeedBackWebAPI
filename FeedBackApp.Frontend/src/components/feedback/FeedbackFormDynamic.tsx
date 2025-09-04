@@ -11,7 +11,6 @@ import { useStudentContextStore } from "@/hooks/useStudentContext";
 import DynamicQuestion from "@/components/feedback/DynamicQuestion"
 
 const isMulti = (q: Question) => q.type === "MultipleChoice";
-const isOpen = (q: Question) => q.type === "OpenEnded";
 
 function ensureInitialAnswers(
     questions: Question[],

@@ -7,10 +7,16 @@ export type QuestionType =
 
 export type QuestionID = `q${number}`;
 
+export type QuestionDependency = {
+  id:QuestionID;
+  answerConditions: string[];
+}
+
 export type Question = {
   id: QuestionID;          
   text: string;        
-  type: QuestionType;  
+  type: QuestionType;
+  dependency?:QuestionDependency
   options?: string[];  
 };
 

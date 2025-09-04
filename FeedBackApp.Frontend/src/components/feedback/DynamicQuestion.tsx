@@ -125,7 +125,6 @@ export default function DynamicQuestion({ q,index, value, onChange,isInvalid }: 
 
         case "OpenEnded": {
             const v = String(value ?? "");
-            const tooShort = v.trim().length < 20;
             return (
                 <div className={wrapper}>
                     <Label>{index}.{q.text}</Label>
