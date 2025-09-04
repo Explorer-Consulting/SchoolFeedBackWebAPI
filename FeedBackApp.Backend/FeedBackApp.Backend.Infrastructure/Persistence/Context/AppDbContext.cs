@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.Model;
+﻿using FeedBackApp.Backend.Infrastructure.Persistence.Helpers;
+using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence
@@ -37,6 +38,40 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
+
+            modelBuilder.Entity<SurveyMetadata>()
+               .ToContainer("mainContainer")
+               .HasPartitionKey(m => m.Id)
+               .HasKey(m => m.Id);
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.Title)
+                .HasConversion(new RecursiveConverter<string>());
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.StartDate)
+                .HasConversion(new RecursiveConverter<DateTime>());
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.EndDate)
+                .HasConversion(new RecursiveConverter<DateTime>());
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.StudentSets)
+                .HasConversion(new RecursiveConverter<IList<StudentSet>>());
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.QuestionTemplates)
+                .HasConversion(new RecursiveConverter<IList<QuestionTemplate>>());
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.Teachers)
+                .HasConversion(new RecursiveConverter<IList<MetaTeacher>>());
+
+            modelBuilder.Entity<SurveyMetadata>()
+                .Property(s => s.CreationParams)
+                .HasConversion(new RecursiveConverter<IList<QuestionnaireCreationParam>>());
+
 
             modelBuilder.Entity<SurveyMetadata>()
                 .HasDiscriminator<string>("DocumentType")
