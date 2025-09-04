@@ -29,6 +29,24 @@ namespace Application.Services
                 return new CreationResponseDTO(false, errors);
             }
             var metadata = dto.ToModel();
+
+            for (int i = 0; i < metadata.QuestionTemplates.Count; i++)
+            {
+                var current = metadata.QuestionTemplates[i];
+
+                if (current.Dependency == null)
+                    continue;
+
+                var depIndex = metadata.QuestionTemplates.ToList()
+                    .FindIndex(q => q.Id == current.Dependency.Id);
+
+                if (depIndex == -1)
+                    return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} not found for question {current.Id}.");
+
+                if (depIndex >= i)
+                    return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} must refer to an earlier question than {current.Id}.");
+            }
+
             try
             {
                 await _questionnaireRepository.CompileAndSaveAsync(metadata);
@@ -160,13 +178,13 @@ namespace Application.Services
                                 Answer = answer,
                                 Dependency = template.Dependency?.ToDto()
                             });
-
-                            teacherDto.Questions = dtoList;
-                            subjectDto.Teachers.Add(teacherDto);
+                            
                         }
-                    }
-                    response.Subjects.Add(subjectDto);
+                        teacherDto.Questions = dtoList;
+                        subjectDto.Teachers.Add(teacherDto);
+                    }   
                 }
+                response.Subjects.Add(subjectDto);
             }
             return response;
         }
