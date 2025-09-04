@@ -160,10 +160,10 @@ namespace Application.Services
                                 Answer = answer,
                                 Dependency = template.Dependency?.ToDto()
                             });
-
-                            teacherDto.Questions = dtoList;
-                            subjectDto.Teachers.Add(teacherDto);
+                            
                         }
+                        teacherDto.Questions = dtoList;
+                        subjectDto.Teachers.Add(teacherDto);
                     }
                     response.Subjects.Add(subjectDto);
                 }
