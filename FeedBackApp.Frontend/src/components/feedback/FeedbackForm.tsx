@@ -11,7 +11,7 @@ import AttendanceSection from "./sections/AttendanceSection";
 import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
-import { initialFeedbackForm, FeedbackFormState } from "../../utils/feedback-form.state";
+import { initialFeedbackForm, FeedbackFormState } from "../../utils/feedbackFormState";
 import { useCallback } from "react";
 
 type FeedbackFormProps = {
@@ -152,12 +152,12 @@ export function FeedbackForm({
       toast("Kérjük, válassz legalább egy lehetőséget a 21. kérdésnél.");
       return;
     }
-    if (form.q21.length < 20) {
-      toast("A 22. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
+    if (form.q21.trim().length < 20) {
+      toast("A 22. kérdésnél a válasznak legalább 20 karakternek kell lennie.");
       return;
     }
-    if (form.q22.length < 20) {
-      toast("A 23. kérdésnél a válasznak legalább 50 karakternek kell lennie.");
+    if (form.q22.trim().length < 20) {
+      toast("A 23. kérdésnél a válasznak legalább 20 karakternek kell lennie.");
       return;
     }
     if (!form.q23 || !form.q24 || !form.q25) {

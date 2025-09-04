@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
@@ -51,14 +51,13 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             }
 
             var result = await _questionnaireService.CompileAndSaveAsync(dto);
-
+            
             if (!result.Success)
             {
                 var error = request.CreateResponse(HttpStatusCode.BadRequest);
                 await error.WriteAsJsonAsync(result);
                 return error;
             }
-
 
             var response = request.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(result);
@@ -137,6 +136,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
         if (principal == null)
         {
             var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+            await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
             return unauthorizedResponse;
         }
 
@@ -194,6 +194,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
         if (principal == null)
         {
             var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
+            await unauthorizedResponse.WriteStringAsync("Unauthorized: No user context found. Please log in.");
             return unauthorizedResponse;
         }
 
