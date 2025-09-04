@@ -46,6 +46,8 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
           return {
             question: row.question,
             type: row.type,
+            category: row.category ? String(row.category) : "",   // kötelező, mindig string
+            ...(row.description ? { description: String(row.description) } : {}), // opcionális
             ...(answerOptions ? { answerOptions } : {}),
             ...(dependency ? { dependency } : {}),
           };
