@@ -1,4 +1,6 @@
 ﻿using Application.Services.Interfaces;
+using FeedBackApp.Core.Repositories;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
 
@@ -9,46 +11,90 @@ public class EmailService : IEmailService
     private readonly string _fromAddress;
     private readonly string _fromName;
     private readonly string _appPassword;
-    public EmailService()
+    private readonly ILogger<EmailService> _logger;
+    private readonly IEmailRepository _emailRepository;
+    private static short DAILY_EMAIL_LIMIT = 500;
+    private static short DNS_PORT = 587;
+
+    public EmailService(ILogger<EmailService> logger, IEmailRepository emailRepository)
     {
-        _fromAddress = Environment.GetEnvironmentVariable("EMAIL_FROM_ADDRESS") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS environment variable is not set.");
-        _fromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? throw new InvalidOperationException("EMAIL_FROM_NAME environment variable is not set.");
-        _appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD environment variable is not set.");
+        _fromAddress = Environment.GetEnvironmentVariable("EMAIL_FROM_ADDRESS") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
+        _fromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
+        _appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
+        _logger = logger;
+        _emailRepository = emailRepository;
     }
 
-    public async Task SendEmailAsync(string toEmail, string toName, string subject, string body, string? attachmentPath = null)
+    public async Task<bool> SendEmailBatchAsync()
     {
-        var from = new MailAddress(_fromAddress, _fromName);
-        var to = new MailAddress(toEmail, toName);
-
-        using var smtp = new SmtpClient("smtp.gmail.com", 587)
+        try
         {
-            Credentials = new NetworkCredential(_fromAddress, _appPassword),
-            EnableSsl = true
-        };
+            var doc = await _emailRepository.GetEmailsDocumentAsync();
+            if (doc == null || !doc.EmailsToSendList.Any())
+                return false;
 
-        using var message = new MailMessage(from, to)
-        {
-            Subject = subject,
-            Body = body,
-            IsBodyHtml = true
-        };
+            var batch = doc.EmailsToSendList
+                .SelectMany(s => s.Emails.Select(e => new
+                {
+                    SurveyId = s.SurveyId,
+                    SurveyName = s.SurveyName,
+                    StartDate = s.StartDate,
+                    EndDate = s.EndDate,
+                    Email = e
+                }))
+                .Take(DAILY_EMAIL_LIMIT)
+                .ToList();
 
-        if (!string.IsNullOrEmpty(attachmentPath))
-        {
-            var attachment = new Attachment(attachmentPath);
-            message.Attachments.Add(attachment);
+            if (!batch.Any())
+                return false;
+
+            using var smtp = new SmtpClient("smtp.gmail.com", DNS_PORT)
+            {
+                Credentials = new NetworkCredential(_fromAddress, _appPassword),
+                EnableSsl = true
+            };
+
+            foreach (var entry in batch)
+            {
+                var from = new MailAddress(_fromAddress, _fromName);
+                var to = new MailAddress(entry.Email);
+
+                var subject = $"Survey Invitation: {entry.SurveyName}";
+                var body = $"Hello,<br/><br/>Please complete the survey <b>{entry.SurveyName}</b> for teacher feedback.<br/><br/>  https://witty-beach-0b0c08903.2.azurestaticapps.net";
+
+                using var message = new MailMessage(from, to)
+                {
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                await smtp.SendMailAsync(message);
+                _logger.LogInformation("Sent email to {Email} for survey {SurveyName}", entry.Email, entry.SurveyName);
+
+            }
+
+            // remove sent emails from the document
+            foreach (var e in batch)
+            {
+                var surveyBatch = doc.EmailsToSendList.FirstOrDefault(s => s.SurveyId == e.SurveyId);
+                if (surveyBatch != null)
+                    surveyBatch.Emails.Remove(e.Email);
+
+                if (!surveyBatch.Emails.Any())
+                {
+                    doc.EmailsToSendList.Remove(surveyBatch);
+                }
+            }
+
+            await _emailRepository.UpdateEmailsDocumentAsync(doc);
+
+            return true;
         }
-
-        await smtp.SendMailAsync(message);
-    }
-
-    public async Task SendBulkEmailAsync(IEnumerable<string> toEmails, string subject, string body, string? attachmentPath = null)
-    {
-        foreach (var email in toEmails)
+        catch (Exception ex)
         {
-            await SendEmailAsync(email, "", subject, body, attachmentPath);
+            _logger.LogError(ex, $"Error sending batch of emails");
+            return false;
         }
     }
-
 }

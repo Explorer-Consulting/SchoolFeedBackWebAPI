@@ -67,5 +67,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             return survey?.EndDate;
         }
+
+        Task<DateTime?> IEvaluationRepository.GetEndDateBySurveyId(string surveyId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

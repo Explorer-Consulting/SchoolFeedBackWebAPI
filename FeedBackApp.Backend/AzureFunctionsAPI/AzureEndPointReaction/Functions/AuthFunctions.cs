@@ -20,7 +20,6 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             _logger = logger;
         }
 
-
         [Function("LoginWithGoogle")]
         [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
         [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]

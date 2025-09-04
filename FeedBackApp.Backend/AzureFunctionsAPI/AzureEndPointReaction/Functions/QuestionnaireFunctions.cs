@@ -14,11 +14,10 @@ using System.Security.Claims;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
 
-public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, IEmailService emailService, ISurveyService surveyService)
+public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, ISurveyService surveyService)
 {
     private readonly IQuestionnaireService _questionnaireService = questionnaireService;
     private readonly ILogger<QuestionnaireFunctions> _logger = logger;
-    private readonly IEmailService _emailService = emailService;
     private readonly ISurveyService _surveyService = surveyService;
 
     [RequireAdmin]
@@ -59,18 +58,6 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
                 await error.WriteAsJsonAsync(result);
                 return error;
             }
-
-            var studentEmails = new List<string>();
-            foreach (var set in dto.StudentSets)
-            {
-                foreach (var email in set.StudentEmails)
-                {
-                    studentEmails.Add(email);
-                }
-            }
-            await _emailService.SendBulkEmailAsync(studentEmails, $"Tanár értékelés: {dto.Title}", $"Kérünk értékeld a tanáraid a következő kérdőíveken {dto.StartDate.ToShortDateString()}-től kezdődően: https://witty-beach-0b0c08903.2.azurestaticapps.net \nHatáridő: {dto.EndDate.Date.ToShortDateString()}");
-
-            
 
             var response = request.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(result);

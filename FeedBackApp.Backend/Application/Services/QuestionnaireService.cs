@@ -28,6 +28,7 @@ namespace Application.Services
                 var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
                 return new CreationResponseDTO(false, errors);
             }
+
             var metadata = dto.ToModel();
 
             for (int i = 0; i < metadata.QuestionTemplates.Count; i++)
