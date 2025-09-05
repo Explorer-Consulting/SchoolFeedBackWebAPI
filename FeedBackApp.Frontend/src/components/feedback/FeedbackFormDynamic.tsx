@@ -159,7 +159,7 @@ export function FeedbackFormDynamic({
                 onError: () => { toast.error("Hiba történt a piszkozat mentése közben!"); }
             }
         )
-    }, [answers, currentEvaluation.questions, id, onAfterChange, performQuestionnaireUpdate, subject, teacher, visibleQuestions]);
+    }, [answers, currentEvaluation, id, onAfterChange, performQuestionnaireUpdate, subject, teacher, visibleQuestions]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
