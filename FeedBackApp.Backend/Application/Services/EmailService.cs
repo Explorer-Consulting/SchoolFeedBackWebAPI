@@ -13,18 +13,16 @@ public class EmailService : IEmailService
     private readonly string _appPassword;
     private readonly ILogger<EmailService> _logger;
     private readonly IEmailRepository _emailRepository;
-    private readonly IWhitelistRepository _whitelistRepository;
     private static short DAILY_EMAIL_LIMIT = 500;
     private static short DNS_PORT = 587;
 
-    public EmailService(ILogger<EmailService> logger, IEmailRepository emailRepository, IWhitelistRepository whitelistRepository)
+    public EmailService(ILogger<EmailService> logger, IEmailRepository emailRepository)
     {
         _fromAddress = Environment.GetEnvironmentVariable("EMAIL_FROM_ADDRESS") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
         _fromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
         _appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
         _logger = logger;
         _emailRepository = emailRepository;
-        _whitelistRepository = whitelistRepository;
     }
 
     public async Task<bool> SendEmailBatchAsync()
@@ -75,17 +73,6 @@ public class EmailService : IEmailService
                 _logger.LogInformation("Sent email to {Email} for survey {SurveyName}", entry.Email, entry.SurveyName);
 
             }
-
-            //add emails to whitelist
-            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-            foreach (var e in batch)
-            {
-                if (!whitelist.StudentEmails.Contains(e.Email))
-                {
-                    whitelist.StudentEmails.Add(e.Email);
-                }
-            }
-            await _whitelistRepository.UpdateStudentWhitelistAsync(whitelist);
 
             // remove sent emails from the document
             foreach (var e in batch)
