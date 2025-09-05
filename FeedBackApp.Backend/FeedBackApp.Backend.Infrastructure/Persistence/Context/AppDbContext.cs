@@ -9,7 +9,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         public DbSet<Questionnaire> Questionnaires { get; set; }
         public DbSet<QuestionnaireTemplate> QuestionnaireTemplates { get; set; }
         public DbSet<EmailsToSend> EmailsToSend { get; set; }
-
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,6 +37,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
+            modelBuilder.Entity<StudentWhitelist>()
+                .ToContainer("surveyContainer")
+                .HasPartitionKey(q => q.Id)
+                .HasKey(e => e.Id);
+
             modelBuilder.Entity<SurveyMetadata>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<SurveyMetadata>("Survey");
@@ -53,6 +57,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
             modelBuilder.Entity<EmailsToSend>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<EmailsToSend>("EmailsToSend");
+
+            modelBuilder.Entity<StudentWhitelist>()
+                .HasDiscriminator<string>("DocumentType")
+                .HasValue<StudentWhitelist>("StudentWhitelist");
 
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using FeedBackApp.Core.Repositories;
 using Google.Apis.Auth;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -14,10 +15,12 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
     public class AuthFunctions
     {
         private readonly ILogger<AuthFunctions> _logger;
+        private readonly IWhitelistRepository _whitelistRepository;
 
-        public AuthFunctions(ILogger<AuthFunctions> logger)
+        public AuthFunctions(ILogger<AuthFunctions> logger,IWhitelistRepository whitelistRepository)
         {
             _logger = logger;
+            _whitelistRepository = whitelistRepository;
         }
 
         [Function("LoginWithGoogle")]
@@ -27,8 +30,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {
             _logger.LogInformation("LoginWithGoogle function triggered.");
-            var studentsEnv = Environment.GetEnvironmentVariable("StudentEmails") ?? "";
-            var students = studentsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist.StudentEmails;
 
             // Get origin
             var origin = req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
