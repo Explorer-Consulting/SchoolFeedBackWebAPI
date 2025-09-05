@@ -31,16 +31,15 @@ export default function AdminDashboard() {
     refetchAdminSurveys,
   } = useReviews();
 
+  useEffect(() => {
+    refetchAdminSurveys();
+  }, [refetchAdminSurveys]);
+  
   const displayedQuestionnaires = adminSurveys;
   const [file, setFile] = useState<File | null>(null);
 
   if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Admin") {
-    return <Navigate to="/no-access" replace />
-  } else {
-    refetchAdminSurveys();
-  }
-
+  if (user.role !== "Admin") return <Navigate to="/no-access" replace />
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
