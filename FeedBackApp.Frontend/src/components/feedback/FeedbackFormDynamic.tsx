@@ -9,7 +9,7 @@ import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
 import DynamicQuestion from "@/components/feedback/DynamicQuestion"
-import {isNewCategory,ensureInitialAnswers,deleteHiddenAnswers,shouldShowQuestion,isMulti} from "@/utils/feedBackFormHelper"
+import { isNewCategory, ensureInitialAnswers, deleteHiddenAnswers, shouldShowQuestion, isMulti } from "@/utils/feedBackFormHelper"
 
 type FeedbackFormDynamicProps = {
     subjects: string[];
@@ -135,7 +135,7 @@ export function FeedbackFormDynamic({
         }
     }, [subject, teachersBySubject, teacher, setTeacher]);
 
-   const onSaveDraft = useCallback(() => {
+    const onSaveDraft = useCallback(() => {
         if (!id) return;
 
         if (!subject || !teacher) {
@@ -170,7 +170,7 @@ export function FeedbackFormDynamic({
         return () => {
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-    }, [onSaveDraft]); 
+    }, [onSaveDraft]);
 
     const onSubmit = () => {
         if (!id) return;
@@ -207,11 +207,12 @@ export function FeedbackFormDynamic({
 
     return (
         <>
-            <Card>
+            {/* Subject & Teacher Selection */}
+            <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>Oktatási visszajelzés</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-8">
+                <CardContent className="space-y-6">
                     <section className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
                             <Label htmlFor="subject">Tantárgy</Label>
@@ -226,6 +227,7 @@ export function FeedbackFormDynamic({
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="teacher">Tanár</Label>
                             <Select value={teacher ?? ""} onValueChange={setTeacher} disabled={!subject}>
@@ -242,79 +244,83 @@ export function FeedbackFormDynamic({
                     </section>
                 </CardContent>
             </Card>
-            {
-                subject && teacher && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Kérdések</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            {currentEvaluation ? (
-                                <section className="space-y-2">
-                                    {(() => {
-                                        // Itt gyűjtjük, mely description szövegeket írtuk már ki
-                                        const printedDescriptions = new Set<string>();
 
-                                        return visibleQuestions.map((q, idx) => {
-                                            const showCategory = isNewCategory(visibleQuestions, idx);
+            {/* Questions */}
+            {subject && teacher && (
+                <Card className="mb-6">
+                    <CardContent className="space-y-6">
+                        {currentEvaluation ? (
+                            <section className="space-y-4">
+                                {(() => {
+                                    const printedDescriptions = new Set<string>();
 
-                                            // description kezelése: csak egyszer jelenjen meg az első előfordulásnál
-                                            const desc = (q.description ?? "").trim();
-                                            const showDescription = !!desc && !printedDescriptions.has(desc);
-                                            if (showDescription) {
-                                                printedDescriptions.add(desc);
-                                            }
+                                    return visibleQuestions.map((q, idx) => {
+                                        const showCategory = isNewCategory(visibleQuestions, idx);
 
-                                            return (
-                                                <div key={q.id} className="space-y-2">
-                                                    {showCategory && (
-                                                        <div className="pt-2">
-                                                            <h3 className="text-2xl font-semibold">{q.category}</h3>
-                                                        </div>
-                                                    )}
+                                        const desc = (q.description ?? "").trim();
+                                        const showDescription = !!desc && !printedDescriptions.has(desc);
+                                        if (showDescription) printedDescriptions.add(desc);
 
-                                                    {showDescription && (
-                                                        <p className="text-sm text-muted-foreground">{q.description}</p>
-                                                    )}
+                                        return (
+                                            <div key={q.id} className="space-y-2">
+                                                {showCategory && (
+                                                    <div className="pt-2">
+                                                        <h3 className="text-xl sm:text-2xl font-semibold">{q.category}</h3>
+                                                    </div>
+                                                )}
 
-                                                    <DynamicQuestion
-                                                        q={q}
-                                                        index={idx + 1}
-                                                        value={answers[q.id] ?? (isMulti(q) ? [] : "")}
-                                                        isInvalid={invalidIds.has(q.id)}
-                                                        onChange={(val) => {
-                                                            setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
-                                                            setInvalidIds((prev) => {
-                                                                if (!prev.size || !prev.has(q.id)) return prev;
-                                                                const next = new Set(prev);
-                                                                next.delete(q.id as QuestionID);
-                                                                return next;
-                                                            });
-                                                        }}
-                                                    />
-                                                </div>
-                                            );
-                                        });
-                                    })()}
-                                </section>
-                            ) : (
-                                <div className="text-muted-foreground">
-                                    Válassz tantárgyat és tanárt a kérdőív megjelenítéséhez.
-                                </div>
-                            )}
+                                                {showDescription && (
+                                                    <p className="text-sm text-muted-foreground">{q.description}</p>
+                                                )}
 
-                            <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                                <Button className="w-full sm:w-auto" variant="secondary" onClick={onSaveDraft} disabled={isPerformQuestionnaireUpdating}>
-                                    Piszkozat mentése
-                                </Button>
-                                <Button className="w-full sm:w-auto" variant="default" onClick={onSubmit} disabled={isPerformQuestionnaireSubmit}>
-                                    Beküldés
-                                </Button>
+                                                <DynamicQuestion
+                                                    q={q}
+                                                    index={idx + 1}
+                                                    value={answers[q.id] ?? (isMulti(q) ? [] : "")}
+                                                    isInvalid={invalidIds.has(q.id)}
+                                                    onChange={(val) => {
+                                                        setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+                                                        setInvalidIds((prev) => {
+                                                            if (!prev.size || !prev.has(q.id)) return prev;
+                                                            const next = new Set(prev);
+                                                            next.delete(q.id as QuestionID);
+                                                            return next;
+                                                        });
+                                                    }}
+                                                />
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </section>
+                        ) : (
+                            <div className="text-muted-foreground">
+                                Válassz tantárgyat és tanárt a kérdőív megjelenítéséhez.
                             </div>
-                        </CardContent>
-                    </Card>
-                )
-            }
+                        )}
+
+                        {/* Buttons */}
+                        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <Button
+                                className="w-full sm:w-auto"
+                                variant="secondary"
+                                onClick={onSaveDraft}
+                                disabled={isPerformQuestionnaireUpdating}
+                            >
+                                Piszkozat mentése
+                            </Button>
+                            <Button
+                                className="w-full sm:w-auto"
+                                variant="default"
+                                onClick={onSubmit}
+                                disabled={isPerformQuestionnaireSubmit}
+                            >
+                                Beküldés
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </>
     );
 }

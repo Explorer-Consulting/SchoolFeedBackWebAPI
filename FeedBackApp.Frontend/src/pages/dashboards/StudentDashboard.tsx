@@ -6,6 +6,7 @@ import { useStudentContextStore } from "@/hooks/useStudentContext";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
+import { getUnansweredCount } from "@/utils/utils.ts"
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -16,7 +17,6 @@ export default function StudentDashboard() {
     context,
     setContext,
   } = useStudentContextStore();
-
 
   const {
     querySurveys,
@@ -42,22 +42,22 @@ export default function StudentDashboard() {
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
   return (
-    <main className="container mx-auto px-6 py-10">
+    <main className="container mx-auto px-6 py-10 space-y-10">
+      {/* Header */}
       <header className="mb-8">
-        <div className="flex items-center justify-between gap-3 md:gap-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-800">
             Üdv, <span className="text-primary">{user.firstName}</span>!
           </h1>
-
           <img
             src="/Image.png"
-            className=" block shrink-0 object-contain h-auto
-            w-[120px]  sm:w-[180px]  md:w-[260px]  lg:w-[320px]  xl:w-[380px]  mr-0 md:mr-10"
+            className="block shrink-0 object-contain h-auto w-[120px] sm:w-[180px] md:w-[260px] lg:w-[320px] xl:w-[380px]"
           />
         </div>
       </header>
 
-      <section className="mb-10 space-y-6">
+      {/* Intro Text */}
+      <section className="space-y-6">
         <Card>
           <CardContent className="space-y-3 text-muted-foreground py-6">
             <p>
@@ -65,22 +65,18 @@ export default function StudentDashboard() {
               A felmérés célja az oktatásra vonatkozó tapasztalatok felmérése, illetve ezekre alapozva a megfelelő
               stratégiák kidolgozása.
             </p>
-
             <p>
               Válaszaid nagyon fontosak számunkra, köszönjük, hogy kitöltöd az alábbi rövid kérdőívet!
               Kérünk, hogy figyelmesen olvasd el a kérdéseket, mielőtt válaszolsz. Fontos, hogy a
               visszajelzések objektívek legyenek, a nyelvezet tisztességes legyen, a kifejtett vélemények pedig
               indokoltak legyenek.
             </p>
-
             <p>
               Ez az űrlap névtelenül és elektronikusan tölthető ki. A válaszokat bizalmasan kezeljük.
             </p>
-
             <p>
               További esetleges kérdésekkel bátran fordulj az osztályotok szülői bizottsági képviselőjéhez.
             </p>
-
             <p>
               Jelen kérdőív a Hivatalos Közlöny 2024. augusztus 12-i, 795. számában megjelent, a 2024. augusztus 1-jei
               5707. számú tanügyminiszteri rendelettel jóváhagyott Tanulók Statútumának 1. számú melléklete alapján készült.
@@ -88,71 +84,83 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
+        {/* Survey List */}
         <Card>
           <CardHeader id="topList">
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
-          <CardContent>
-            {!isLoadingSurveys && !isErrorSurveys && querySurveys && (
+          <CardContent className="space-y-2">
+            {!isLoadingSurveys && !isErrorSurveys && querySurveys ? (
               <ul className="space-y-2">
-                {querySurveys
-                  .map(s => {
-                    const selected = selectedSurveyId === s.id;
-                    return (
-                      <li key={s.id}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedSurveyId(s.id)}
-                          className={
-                            "w-full text-left px-3 py-2 rounded-md transition " +
-                            (selected
-                              ? "bg-primary text-white"
-                              : "bg-muted hover:bg-accent")
-                          }
-                        >
-                          <div className="font-medium">{s.title}</div>
-                          {s.endDate && (
-                            <div className="text-xs opacity-80">
-                              Lejárat: {new Date(s.endDate).toLocaleDateString()}
-                            </div>
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
+                {querySurveys.map(s => {
+                  const selected = selectedSurveyId === s.id;
+                  return (
+                    <li key={s.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSurveyId(s.id)}
+                        className={`w-full text-left px-3 py-2 rounded-md transition ${selected ? "bg-primary text-white" : "bg-muted hover:bg-accent"
+                          }`}
+                      >
+                        <div className="font-medium">{s.title}</div>
+                        {s.endDate && (
+                          <div className="text-xs opacity-80">
+                            Lejárat: {new Date(s.endDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
                 {querySurveys.length === 0 && (
                   <li className="text-sm text-muted-foreground">Jelenleg nincs aktív kérdőív.</li>
                 )}
               </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Betöltés...</p>
             )}
           </CardContent>
         </Card>
       </section>
 
-      <section>
+      {/* Selected Survey / Feedback */}
+      <section className="space-y-6">
         {!selectedSurveyId ? (
           <Card>
             <CardHeader>
               <CardTitle>Nincs kiválasztott kérdőív</CardTitle>
             </CardHeader>
-            <CardContent className="text-muted-foreground">
-              Kérjük, válassz ki egy kérdőívet !
+            <CardContent className="text-muted-foreground py-4">
+              Kérjük, válassz ki egy kérdőívet!
             </CardContent>
           </Card>
         ) : context && !isLoadingQuestionnaire && !isErrorQuestionnaire && context.subjects.length > 0 ? (
-          <FeedbackFormDynamic
-            subjects={context.subjects}
-            teachersBySubject={context.teachersBySubject}
-            evaluations={context.evaluations}
-            onAfterChange={() => {
-              refetchQuestionnaires();
-            }} />
+          <>
+            {/* Unanswered Count */}
+            <Card>
+              <CardContent className="py-4 text-muted-foreground">
+                <p className="text-sm sm:text-base">
+                  Kitöltetlen kérdőívek száma: <b><i>{getUnansweredCount(context)}</i></b>
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Feedback Form */}
+            <FeedbackFormDynamic
+              subjects={context.subjects}
+              teachersBySubject={context.teachersBySubject}
+              evaluations={context.evaluations}
+              onAfterChange={() => {
+                refetchQuestionnaires();
+              }}
+            />
+          </>
         ) : !isLoadingQuestionnaire && (
           <Card>
             <CardHeader>
               <CardTitle>Kérdőív kitöltve</CardTitle>
             </CardHeader>
-            <CardContent className="text-muted-foreground">
+            <CardContent className="text-muted-foreground py-4">
               Ezt a kérdőívet már kitöltötted. Köszönjük a visszajelzést!
             </CardContent>
           </Card>
@@ -160,4 +168,5 @@ export default function StudentDashboard() {
       </section>
     </main>
   );
+
 }
