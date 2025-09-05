@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,55 +9,7 @@ import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
 import DynamicQuestion from "@/components/feedback/DynamicQuestion"
-
-const isMulti = (q: Question) => q.type === "MultipleChoice";
-
-function ensureInitialAnswers(
-    questions: Question[],
-    responses?: EvaluationResponses,
-): EvaluationResponses {
-    const out: EvaluationResponses = {} as EvaluationResponses;
-    for (const q of questions) {
-        const existing = responses?.[q.id];
-        if (existing !== undefined) {
-            out[q.id] = existing;
-        } else {
-            out[q.id] = isMulti(q) ? [] : "";
-        }
-    }
-    return out;
-}
-
-function shouldShowQuestion(q: Question, answers: EvaluationResponses): boolean {
-    if (!q.dependency) return true;
-
-    const { id, answerConditions } = q.dependency;
-    const raw = answers[id];
-
-    const chosen: string[] = Array.isArray(raw)
-        ? raw.map(String)
-        : raw ? [String(raw)] : [];
-    return chosen.some(v => answerConditions.map(String).includes(v));
-}
-
-function deleteHiddenAnswers(all: Question[], vis: Question[], answers: EvaluationResponses) {
-    const visibleIds = new Set(vis.map(q => q.id));
-    const out = { ...answers };
-    for (const q of all) {
-        if (!visibleIds.has(q.id)) {
-            out[q.id] = isMulti(q) ? [] : "";
-        }
-    }
-    return out;
-}
-
-function isNewCategory(list: Question[], idx: number) {
-    const curr = list[idx];
-    if (!curr.category) return false;
-    if (idx === 0) return true;
-    const prev = list[idx - 1];
-    return prev?.category !== curr.category;
-}
+import {isNewCategory,ensureInitialAnswers,deleteHiddenAnswers,shouldShowQuestion,isMulti} from "@/utils/feedBackFormHelper"
 
 type FeedbackFormDynamicProps = {
     subjects: string[];
@@ -183,18 +135,7 @@ export function FeedbackFormDynamic({
         }
     }, [subject, teachersBySubject, teacher, setTeacher]);
 
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            onSaveDraft();
-            e.preventDefault();
-        };
-        window.addEventListener("beforeunload", handleBeforeUnload);
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    });
-
-    const onSaveDraft = () => {
+   const onSaveDraft = useCallback(() => {
         if (!id) return;
 
         if (!subject || !teacher) {
@@ -218,7 +159,18 @@ export function FeedbackFormDynamic({
                 onError: () => { toast.error("Hiba történt a piszkozat mentése közben!"); }
             }
         )
-    };
+    }, [answers, currentEvaluation.questions, id, onAfterChange, performQuestionnaireUpdate, subject, teacher, visibleQuestions]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            onSaveDraft();
+            e.preventDefault();
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [onSaveDraft]); 
 
     const onSubmit = () => {
         if (!id) return;
@@ -252,17 +204,6 @@ export function FeedbackFormDynamic({
             }
         )
     };
-
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            onSaveDraft();
-            e.preventDefault();
-        };
-        window.addEventListener("beforeunload", handleBeforeUnload);
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    });
 
     return (
         <>

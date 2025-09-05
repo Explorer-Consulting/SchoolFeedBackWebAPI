@@ -8,7 +8,7 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
 
-        // --- StudentSets: minden sheet ami nem a fix 3 (template, teachers, qcp)
+        // --- StudentSets: every sheet that is not in the reserved array
         const reserved = ["questionnaireTemplate", "teachers", "questionnaireCreationParams", "sheetList"];
         const studentSets = workbook.SheetNames
           .filter((name) => !reserved.includes(name))
@@ -26,12 +26,12 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
         const rawTemplate = XLSX.utils.sheet_to_json<any>(templateSheet);
 
         const questionnaireTemplate = rawTemplate.map((row) => {
-          // answerOptions feldolgozása
+          // answerOptions
           const answerOptions = row.answerOptions
             ? row.answerOptions.split(";").map((o: string) => o.trim())
             : undefined;
 
-          // dependency feldolgozása: pl. "19={1,2}"
+          // dependency "19={1,2}"
           let dependency;
           if (row.dependency) {
             const match = row.dependency.match(/^(\d+)=\{(.*)\}$/);
@@ -46,8 +46,8 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
           return {
             question: row.question,
             type: row.type,
-            category: row.category ? String(row.category) : "",   // kötelező, mindig string
-            ...(row.description ? { description: String(row.description) } : {}), // opcionális
+            category: row.category ? String(row.category) : "",  
+            ...(row.description ? { description: String(row.description) } : {}),
             ...(answerOptions ? { answerOptions } : {}),
             ...(dependency ? { dependency } : {}),
           };
@@ -66,17 +66,17 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
         const rawQCP = XLSX.utils.sheet_to_json<any[]>(qcpSheet, { header: 1 }); // minden sor tömbként
 
         const questionnaireCreationParams = rawQCP
-          .slice(1) // kihagyjuk a fejlécet
+          .slice(1) 
           .filter((row) => {
-            // legalább az első két oszlopban van érték
+            // in the first 2 cols. has to be a value
             return (row[0] && row[0].toString().trim() !== "") || (row[1] && row[1].toString().trim() !== "") || row.slice(2).some((cell) => cell && cell.toString().trim() !== "");
           })
           .map((row) => ({
             teacherEmail: row[0] || "",
             subjectName: row[1] || "",
             studentSetIds: row
-              .slice(2)                 // 3. oszloptól minden osztály
-              .filter((cell) => cell && cell.toString().trim() !== ""), // csak kitöltött cellák
+              .slice(2)       
+              .filter((cell) => cell && cell.toString().trim() !== ""), 
           }));
 
 
