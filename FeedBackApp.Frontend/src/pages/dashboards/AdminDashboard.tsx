@@ -93,7 +93,6 @@ export default function AdminDashboard() {
         setStartDate(undefined);
         setEndDate(undefined);
         setTitle("");
-        setFile(null);
         toast.success("A kérdőívek létrehozva!");
         refetchAdminSurveys();
       },
