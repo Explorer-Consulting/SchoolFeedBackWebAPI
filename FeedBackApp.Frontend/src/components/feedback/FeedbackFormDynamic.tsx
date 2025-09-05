@@ -269,10 +269,6 @@ export function FeedbackFormDynamic({
                                                     </div>
                                                 )}
 
-                                                {showDescription && (
-                                                    <p className="text-sm text-muted-foreground">{q.description}</p>
-                                                )}
-
                                                 <DynamicQuestion
                                                     q={q}
                                                     index={idx + 1}
@@ -287,6 +283,7 @@ export function FeedbackFormDynamic({
                                                             return next;
                                                         });
                                                     }}
+                                                        description={showDescription ? desc : undefined}
                                                 />
                                             </div>
                                         );

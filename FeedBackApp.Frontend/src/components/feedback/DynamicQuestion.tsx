@@ -11,9 +11,10 @@ type Props = {
     value: string | string[];
     onChange: (val: string | string[]) => void;
     isInvalid?: boolean;
+    description?: string;
 };
 
-export default function DynamicQuestion({ q, index, value, onChange, isInvalid }: Props) {
+export default function DynamicQuestion({ q, index, value, onChange, isInvalid,description }: Props) {
 
    switch (q.type) {
         case "LikertScaleOneToFive": {
@@ -23,7 +24,8 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid }
                     index={index}
                     value={String(value ?? "")}
                     onChange={(val) => onChange(val)}
-                    isInvalid={isInvalid} />
+                    isInvalid={isInvalid}
+                    description={description} />
             );
         }
 
@@ -34,7 +36,8 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid }
                     index={index}
                     value={String(value ?? "")}
                     onChange={(val) => onChange(val)}
-                    isInvalid={isInvalid} />
+                    isInvalid={isInvalid}
+                    description={description} />
             );
         }
 
@@ -45,7 +48,8 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid }
                     index={index}
                     value={String(value ?? "")}
                     onChange={(val) => onChange(val)}
-                    isInvalid={isInvalid} />
+                    isInvalid={isInvalid}
+                    description={description} />
             );
         }
         case "MultipleChoice": {
@@ -55,7 +59,8 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid }
                     index={index}
                     value={Array.isArray(value) ? value : []}
                     onChange={(val) => onChange(val)}
-                    isInvalid={isInvalid} />
+                    isInvalid={isInvalid}
+                    description={description} />
             );
         }
 
@@ -66,7 +71,8 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid }
                     index={index}
                     value={String(value ?? "")}
                     onChange={(val) => onChange(val)}
-                    isInvalid={isInvalid} />
+                    isInvalid={isInvalid}
+                    description={description} />
             );
         }
 
