@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
 import { useAuthStore } from '@/hooks/useAuth'
-import { useEffect } from "react";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 import { getUnansweredCount } from "@/utils/utils.ts"
+import { useEffect } from "react";
+import { celebrateConfettiRed } from "@/utils/celebrate";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -38,12 +39,20 @@ export default function StudentDashboard() {
     refetchSurveys();
   }, [refetchSurveys]);
 
+  useEffect(() => {
+    if (!context) return;
+
+    const unanswered = getUnansweredCount(context);
+    if (unanswered === 0) {
+      celebrateConfettiRed();
+    }
+  }, [context]);
+
   if (!user) return <Navigate to="/" replace />;
   if (user.role !== "Student") return <Navigate to="/no-access" replace />
 
   return (
     <main className="container mx-auto px-6 py-10 space-y-10">
-      {/* Header */}
       <header className="mb-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-zinc-800">
@@ -56,7 +65,6 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Intro Text */}
       <section className="space-y-6">
         <Card>
           <CardContent className="space-y-3 text-muted-foreground py-6">
@@ -84,7 +92,6 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        {/* Survey List */}
         <Card>
           <CardHeader id="topList">
             <CardTitle>Kérdőívek listája</CardTitle>
@@ -123,7 +130,6 @@ export default function StudentDashboard() {
         </Card>
       </section>
 
-      {/* Selected Survey / Feedback */}
       <section className="space-y-6">
         {!selectedSurveyId ? (
           <Card>
@@ -136,7 +142,6 @@ export default function StudentDashboard() {
           </Card>
         ) : context && !isLoadingQuestionnaire && !isErrorQuestionnaire && context.subjects.length > 0 ? (
           <>
-            {/* Unanswered Count */}
             <Card>
               <CardContent className="py-4 text-muted-foreground">
                 <p className="text-sm sm:text-base">
@@ -145,7 +150,6 @@ export default function StudentDashboard() {
               </CardContent>
             </Card>
 
-            {/* Feedback Form */}
             <FeedbackFormDynamic
               subjects={context.subjects}
               teachersBySubject={context.teachersBySubject}
