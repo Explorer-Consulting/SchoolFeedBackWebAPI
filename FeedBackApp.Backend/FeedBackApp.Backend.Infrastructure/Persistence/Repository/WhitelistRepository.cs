@@ -15,7 +15,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         }
         public async Task<StudentWhitelist> GetStudentWhitelistAsync()
         {
-            var whitelist = await _context.Set<StudentWhitelist>()
+            var whitelist = await _context.StudentWhitelist
                 .SingleOrDefaultAsync(s => s.Id == "StudentWhitelist");
 
             if (whitelist == null)
@@ -30,7 +30,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task UpdateStudentWhitelistAsync(StudentWhitelist studentWhitelist)
         {
-            _context.Set<StudentWhitelist>().Update(studentWhitelist);
+            _context.StudentWhitelist.Update(studentWhitelist);
             await _context.SaveChangesAsync();
         }
     }
