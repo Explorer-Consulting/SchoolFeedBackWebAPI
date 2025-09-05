@@ -16,7 +16,7 @@ export const LoginWithGoogle = async (idToken) => {
 };
 
 export const GetQuestionnaires = async (id) => {
-    const { data } = await apiClient.get(`/questionnaires/${id}`);
+    const { data } = await apiClient.get(`/surveys/${id}`);
     return data;
 };
 
@@ -56,6 +56,6 @@ export const PerformQuestionnaireSubmit = async (id, payload) => {
 }
 
 export const GetSurveysAdmin = async () => {
-    const { data } = await apiClient.get(`/surveys/admin`);
+    const { data } = await apiClient.get(`/management/surveys`);
     return data;
 };

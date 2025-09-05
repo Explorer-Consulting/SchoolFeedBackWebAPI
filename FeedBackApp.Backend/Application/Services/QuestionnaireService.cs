@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
@@ -9,11 +9,13 @@ namespace Application.Services
 {
     public class QuestionnaireService : IQuestionnaireService
     {
-        private readonly IQuestionnaireRepository _repository;
+        private readonly IQuestionnaireRepository _questionnaireRepository;
+        private readonly IEvaluationRepository _evaluationRepository;
         private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
-        public QuestionnaireService(IQuestionnaireRepository repository, IValidator<CreateSurveyMetadataDTO> createValidator)
+        public QuestionnaireService(IQuestionnaireRepository questionnaireRepository, IEvaluationRepository evaluationRepository, IValidator<CreateSurveyMetadataDTO> createValidator)
         {
-            _repository = repository;
+            _questionnaireRepository = questionnaireRepository;
+            _evaluationRepository = evaluationRepository;
             _createValidator = createValidator;
         }
 
@@ -29,9 +31,33 @@ namespace Application.Services
 
             var metadata = dto.ToModel();
 
+            for (int i = 0; i < metadata.QuestionTemplates.Count; i++)
+            {
+                var current = metadata.QuestionTemplates[i];
+
+                if (current.Dependency == null)
+                    continue;
+
+                int depIndex = -1;
+                for (int j = 0; j < metadata.QuestionTemplates.Count; j++)
+                {
+                    if ($"q{j}" == current.Dependency.Id)
+                    {
+                        depIndex = j;
+                        break;
+                    }
+                }
+
+                if (depIndex == -1)
+                    return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} not found for question {current.Id}.");
+
+                if (depIndex >= i)
+                    return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} must refer to an earlier question than {current.Id}.");
+            }
+
             try
             {
-                await _repository.CompileAndSaveAsync(metadata);
+                await _questionnaireRepository.CompileAndSaveAsync(metadata);
 
                 return new CreationResponseDTO(true, "Creation successful!");
             }
@@ -46,9 +72,9 @@ namespace Application.Services
         {
             try
             {
-                bool surveyDeleted = await _repository.DeleteSurveyMetadataAsync(id);
-                bool questionnairesDeleted = await _repository.DeleteQuestionnairesBySurveyIdAsync(id);
-                bool questionTemplateDeleted = await _repository.DeleteQuestionTemplateBySurveyIdAsync(id);
+                bool surveyDeleted = await _questionnaireRepository.DeleteSurveyMetadataAsync(id);
+                bool questionnairesDeleted = await _questionnaireRepository.DeleteQuestionnairesBySurveyIdAsync(id);
+                bool questionTemplateDeleted = await _questionnaireRepository.DeleteQuestionTemplateBySurveyIdAsync(id);
 
                 if (surveyDeleted && questionnairesDeleted && questionTemplateDeleted)
                 {
@@ -78,7 +104,7 @@ namespace Application.Services
         }
         public async Task<QuestionnairesDTO> GetQuestionnairesAsync(Guid surveyId, string studentEmail)
         {
-            var surveyMetadata = await _repository.GetSurveyMetadataAsync(surveyId);
+            var surveyMetadata = await _questionnaireRepository.GetSurveyMetadataAsync(surveyId);
             if (surveyMetadata == null)
             {
                 return new QuestionnairesDTO();
@@ -91,18 +117,24 @@ namespace Application.Services
                 teacherData[item.Email] = item.Name;
             }
 
-            var studentSetId = surveyMetadata.StudentSets.FirstOrDefault(set => set.StudentEmails.Contains(studentEmail))?.SetId;
-            if (studentSetId == null)
+            var studentSetIds = surveyMetadata.StudentSets
+                .Where(set => set.StudentEmails.Contains(studentEmail))
+                .Select(set => set.SetId)
+                .ToList();
+
+            if (!studentSetIds.Any())
             {
                 return new QuestionnairesDTO();
             }
 
             QuestionnairesDTO response = new QuestionnairesDTO();
-            response.Class = studentSetId;
+            response.Class = string.Join(", ", studentSetIds);
+
             response.Subjects = new List<SubjectDTO>();
             Dictionary<string, List<string>> subjectTeachers = new Dictionary<string, List<string>>();
 
-            var creationParams = surveyMetadata.CreationParams.Where(par => par.StudentSetIds.Any(setId => setId == studentSetId));
+            var creationParams = surveyMetadata.CreationParams
+                .Where(par => par.StudentSetIds.Any(setId => studentSetIds.Contains(setId)));
             foreach (var item in creationParams)
             {
                 if (!subjectTeachers.ContainsKey(item.SubjectName))
@@ -129,17 +161,45 @@ namespace Application.Services
                     string questionnaireId = $"{studentEmail}_{teacherEmail}_{subject}_{surveyId}";
                     teacherDto.Id = questionnaireId;
 
-                    var questionnaire = await _repository.GetQuestionnaireByIdAsync(questionnaireId);
+                    var questionnaire = await _questionnaireRepository.GetQuestionnaireByIdAsync(questionnaireId);
                     if (questionnaire != null && questionnaire.Status == false)
                     {
-                        List<GetAnswerDTO> answersDto = new List<GetAnswerDTO>();
-
+                        List<QuestionDTO> questionDTOs = new List<QuestionDTO>();
+                        var questionnaireTemplate = await _evaluationRepository.GetQuestionTemplateBySurveyIdAsync(questionnaire.SurveyId);
                         var answers = questionnaire.QuestionnaireResults;
-                        foreach (var item in answers)
+
+                        var dtoList = new List<QuestionDTO>();
+                        if (questionnaireTemplate == null || questionnaireTemplate.QuestionTemplates == null)
                         {
-                            answersDto.Add(new GetAnswerDTO { QuestionID = item.QuestionId, Answer = item.Answer });
+                            continue;
                         }
-                        teacherDto.Answers = answersDto;
+                        foreach (var template in questionnaireTemplate.QuestionTemplates)
+                        {
+                            string answer = string.Empty;
+
+                            foreach (var ans in answers)
+                            {
+                                if (ans.QuestionId == template.Id)
+                                {
+                                    answer = ans.Answer;
+                                    break;
+                                }
+                            }
+
+                            dtoList.Add(new QuestionDTO
+                            {
+                                QuestionID = template.Id,
+                                Question = template.Question,
+                                Type = template.Type,
+                                AnswerOptions = template.AnswerOptions,
+                                Answer = answer,
+                                Dependency = template.Dependency?.ToDto(),
+                                Description = template.Description,
+                                Category = template.Category
+                            });
+
+                        }
+                        teacherDto.Questions = dtoList;
                         subjectDto.Teachers.Add(teacherDto);
                     }
                 }

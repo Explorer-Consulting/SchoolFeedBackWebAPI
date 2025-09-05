@@ -11,31 +11,38 @@ namespace Application.Validation.SubmitValidation
             RuleForEach(dto => dto.QuestionnaireResult)
                 .SetValidator(new QuestionSubmitValidator(templates));
 
-            RuleFor(x => x)
+            RuleFor(dto => dto)
                 .Custom((dto, context) =>
                 {
-                    var q19 = dto.QuestionnaireResult.FirstOrDefault(r => r.QuestionId == "q18");
-                    var q20 = dto.QuestionnaireResult.FirstOrDefault(r => r.QuestionId == "q19");
-
-                    if (q19 == null)
+                    foreach (var result in dto.QuestionnaireResult)
                     {
-                        if (q20 == null || string.IsNullOrWhiteSpace(q20.Answer))
+                        var template = templates.FirstOrDefault(t => t.Id == result.QuestionId);
+                        if (template == null)
+                            continue;
+
+                        if (template.Dependency == null)
                         {
-                            context.AddFailure("QuestionnaireResult",
-                                "Question 20 must be answered unless Question 19 is answered with option 3.");
+                            if (string.IsNullOrWhiteSpace(result.Answer))
+                            {
+                                context.AddFailure($"Answer for '{template.Question}-{template.Id}' cannot be empty.");
+                            }
+                            continue;
                         }
-                        return;
-                    }
 
-                    if (q19.Answer == "3")
-                    {
-                        return;
-                    }
+                        var parent = dto.QuestionnaireResult
+                            .FirstOrDefault(r => r.QuestionId == template.Dependency.Id);
 
-                    if (q20 == null || string.IsNullOrWhiteSpace(q20.Answer))
-                    {
-                        context.AddFailure("QuestionnaireResult",
-                            "Question 20 must be answered unless Question 19 is answered with option 3.");
+                        if (parent == null)
+                            continue;
+
+                        if (int.TryParse(parent.Answer, out int parentValue) &&
+                            template.Dependency.AnswerConditions.Contains(parentValue))
+                        {
+                            if (string.IsNullOrWhiteSpace(result.Answer))
+                            {
+                                context.AddFailure($"Answer for '{template.Question}-{template.Id}' is required because dependency '{template.Dependency.Id}' was satisfied.");
+                            }
+                        }
                     }
                 });
         }

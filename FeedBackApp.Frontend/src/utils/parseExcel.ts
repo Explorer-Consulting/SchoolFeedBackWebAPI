@@ -8,8 +8,8 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
 
-        // --- StudentSets: minden sheet ami nem a fix 3 (template, teachers, qcp)
-        const reserved = ["questionnaireTemplate", "teachers", "questionnaireCreationParams"];
+        // --- StudentSets: every sheet that is not in the reserved array
+        const reserved = ["questionnaireTemplate", "teachers", "questionnaireCreationParams", "sheetList"];
         const studentSets = workbook.SheetNames
           .filter((name) => !reserved.includes(name))
           .map((setId) => {
@@ -24,13 +24,34 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
         // --- questionnaireTemplate
         const templateSheet = workbook.Sheets["questionnaireTemplate"];
         const rawTemplate = XLSX.utils.sheet_to_json<any>(templateSheet);
-        const questionnaireTemplate = rawTemplate.map((row) => ({
-          question: row.question,
-          type: row.type,
-          ...(row.answerOptions
-            ? { answerOptions: row.answerOptions.split(";").map((o: string) => o.trim()) }
-            : {}),
-        }));
+
+        const questionnaireTemplate = rawTemplate.map((row) => {
+          // answerOptions
+          const answerOptions = row.answerOptions
+            ? row.answerOptions.split(";").map((o: string) => o.trim())
+            : undefined;
+
+          // dependency "19={1,2}"
+          let dependency;
+          if (row.dependency) {
+            const match = row.dependency.match(/^(\d+)=\{(.*)\}$/);
+            if (match) {
+              dependency = {
+                id: `q${match[1] - 1}`,
+                answerConditions: match[2].split(";").map((o: string) => o.trim()),
+              };
+            }
+          }
+
+          return {
+            question: row.question,
+            type: row.type,
+            category: row.category ? String(row.category) : "",  
+            ...(row.description ? { description: String(row.description) } : {}),
+            ...(answerOptions ? { answerOptions } : {}),
+            ...(dependency ? { dependency } : {}),
+          };
+        });
 
         // --- teachers
         const teachersSheet = workbook.Sheets["teachers"];
@@ -42,12 +63,22 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
 
         // --- questionnaireCreationParams
         const qcpSheet = workbook.Sheets["questionnaireCreationParams"];
-        const rawQCP = XLSX.utils.sheet_to_json<any>(qcpSheet);
-        const questionnaireCreationParams = rawQCP.map((row) => ({
-          teacherEmail: row.teacherEmail,
-          subjectName: row.subjectName,
-          studentSetIds: row.studentSetIds.split(";").map((s: string) => s.trim()),
-        }));
+        const rawQCP = XLSX.utils.sheet_to_json<any[]>(qcpSheet, { header: 1 }); // minden sor tömbként
+
+        const questionnaireCreationParams = rawQCP
+          .slice(1) 
+          .filter((row) => {
+            // in the first 2 cols. has to be a value
+            return (row[0] && row[0].toString().trim() !== "") || (row[1] && row[1].toString().trim() !== "") || row.slice(2).some((cell) => cell && cell.toString().trim() !== "");
+          })
+          .map((row) => ({
+            teacherEmail: row[0] || "",
+            subjectName: row[1] || "",
+            studentSetIds: row
+              .slice(2)       
+              .filter((cell) => cell && cell.toString().trim() !== ""), 
+          }));
+
 
         const payload = {
           startDate,

@@ -1,4 +1,3 @@
-import { FeedbackForm } from "@/components/feedback/FeedbackForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useReviews } from "../../hooks/useReviews";
 import { useAuthStore } from '@/hooks/useAuth'
@@ -6,17 +5,18 @@ import { useEffect } from "react";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
 import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
-
+import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
 
-  const { 
+  const {
     selectedSurveyId,
     setSelectedSurveyId,
     context,
     setContext,
-     } = useStudentContextStore();
+  } = useStudentContextStore();
+
 
   const {
     querySurveys,
@@ -36,7 +36,6 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     refetchSurveys();
-   
   }, [refetchSurveys]);
 
   if (!user) return <Navigate to="/" replace />;
@@ -62,14 +61,14 @@ export default function StudentDashboard() {
         <Card>
           <CardContent className="space-y-3 text-muted-foreground py-6">
             <p>
-              Kérünk, válaszoljatok néhány kérdésre a Tamási Áron Gimnázium oktatási tevékenységére vonatkozóan.
+              Kérünk, válaszolj néhány kérdésre a Tamási Áron Gimnázium oktatási tevékenységére vonatkozóan.
               A felmérés célja az oktatásra vonatkozó tapasztalatok felmérése, illetve ezekre alapozva a megfelelő
               stratégiák kidolgozása.
             </p>
 
             <p>
-              Válaszaitok nagyon fontosak számunkra, köszönjük, hogy kitöltitek az alábbi rövid kérdőívet!
-              Kérünk, hogy figyelmesen olvassátok el a kérdéseket, mielőtt válaszolnátok. Fontos, hogy a
+              Válaszaid nagyon fontosak számunkra, köszönjük, hogy kitöltöd az alábbi rövid kérdőívet!
+              Kérünk, hogy figyelmesen olvasd el a kérdéseket, mielőtt válaszolsz. Fontos, hogy a
               visszajelzések objektívek legyenek, a nyelvezet tisztességes legyen, a kifejtett vélemények pedig
               indokoltak legyenek.
             </p>
@@ -79,7 +78,7 @@ export default function StudentDashboard() {
             </p>
 
             <p>
-              További esetleges kérdésekkel bátran forduljatok az osztályotok szülői bizottsági képviselőjéhez.
+              További esetleges kérdésekkel bátran fordulj az osztályotok szülői bizottsági képviselőjéhez.
             </p>
 
             <p>
@@ -90,7 +89,7 @@ export default function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader id="topList">
             <CardTitle>Kérdőívek listája</CardTitle>
           </CardHeader>
           <CardContent>
@@ -141,14 +140,14 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
         ) : context && !isLoadingQuestionnaire && !isErrorQuestionnaire && context.subjects.length > 0 ? (
-          <FeedbackForm
+          <FeedbackFormDynamic
             subjects={context.subjects}
             teachersBySubject={context.teachersBySubject}
             evaluations={context.evaluations}
             onAfterChange={() => {
               refetchQuestionnaires();
             }} />
-        ) : (
+        ) : !isLoadingQuestionnaire && (
           <Card>
             <CardHeader>
               <CardTitle>Kérdőív kitöltve</CardTitle>

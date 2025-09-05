@@ -128,8 +128,8 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
     }
 
     [RequireStudent]
-    [Function("PerformGetQuestionnaires")]
-    public async Task<HttpResponseData> PerformGetQuestionnaires([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "questionnaires/{id}")] HttpRequestData request, Guid id)
+    [Function("PerformGetSurveyData")]
+    public async Task<HttpResponseData> PerformGetSurveyData([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys/{id}")] HttpRequestData request, Guid id)
     {
         var principal = request.FunctionContext.Items["User"] as ClaimsPrincipal;
 
@@ -171,7 +171,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             contentType: "application/json",
             bodyType: typeof(object)
         )]
-    public async Task<HttpResponseData> PerformGetSurveysAdmin([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys/admin")] HttpRequestData request)
+    public async Task<HttpResponseData> PerformGetSurveysAdmin([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "management/surveys")] HttpRequestData request)
     {
         var surveyDtoList = await _surveyService.GetAllSurveyMetadata();
         var ok = request.CreateResponse(HttpStatusCode.OK);
