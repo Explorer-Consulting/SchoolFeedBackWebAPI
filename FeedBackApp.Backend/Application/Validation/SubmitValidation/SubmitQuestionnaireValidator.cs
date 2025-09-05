@@ -1,48 +1,50 @@
 ﻿using Application.DTOs.Evaluation;
-using Application.Validation.SubmitValidation;
 using FeedBackApp.Core.Model;
 using FluentValidation;
 
-public class SubmitQuestionnaireValidator : AbstractValidator<SubmitQuestionnaireDTO>
+namespace Application.Validation.SubmitValidation
 {
-    public SubmitQuestionnaireValidator(IList<QuestionTemplate> templates)
+    public class SubmitQuestionnaireValidator : AbstractValidator<SubmitQuestionnaireDTO>
     {
-        RuleForEach(dto => dto.QuestionnaireResult)
-            .SetValidator(new QuestionSubmitValidator(templates));
+        public SubmitQuestionnaireValidator(IList<QuestionTemplate> templates)
+        {
+            RuleForEach(dto => dto.QuestionnaireResult)
+                .SetValidator(new QuestionSubmitValidator(templates));
 
-        RuleFor(dto => dto)
-            .Custom((dto, context) =>
-            {
-                foreach (var result in dto.QuestionnaireResult)
+            RuleFor(dto => dto)
+                .Custom((dto, context) =>
                 {
-                    var template = templates.FirstOrDefault(t => t.Id == result.QuestionId);
-                    if (template == null)
-                        continue;
-
-                    if (template.Dependency == null)
+                    foreach (var result in dto.QuestionnaireResult)
                     {
-                        if (string.IsNullOrWhiteSpace(result.Answer))
+                        var template = templates.FirstOrDefault(t => t.Id == result.QuestionId);
+                        if (template == null)
+                            continue;
+
+                        if (template.Dependency == null)
                         {
-                            context.AddFailure($"Answer for '{template.Question}-{template.Id}' cannot be empty.");
+                            if (string.IsNullOrWhiteSpace(result.Answer))
+                            {
+                                context.AddFailure($"Answer for '{template.Question}-{template.Id}' cannot be empty.");
+                            }
+                            continue;
                         }
-                        continue;
-                    }
 
-                    var parent = dto.QuestionnaireResult
-                        .FirstOrDefault(r => r.QuestionId == template.Dependency.Id);
+                        var parent = dto.QuestionnaireResult
+                            .FirstOrDefault(r => r.QuestionId == template.Dependency.Id);
 
-                    if (parent == null)
-                        continue;
+                        if (parent == null)
+                            continue;
 
-                    if (int.TryParse(parent.Answer, out int parentValue) &&
-                        template.Dependency.AnswerConditions.Contains(parentValue))
-                    {
-                        if (string.IsNullOrWhiteSpace(result.Answer))
+                        if (int.TryParse(parent.Answer, out int parentValue) &&
+                            template.Dependency.AnswerConditions.Contains(parentValue))
                         {
-                            context.AddFailure($"Answer for '{template.Question}-{template.Id}' is required because dependency '{template.Dependency.Id}' was satisfied.");
+                            if (string.IsNullOrWhiteSpace(result.Answer))
+                            {
+                                context.AddFailure($"Answer for '{template.Question}-{template.Id}' is required because dependency '{template.Dependency.Id}' was satisfied.");
+                            }
                         }
                     }
-                }
-            });
+                });
+        }
     }
 }

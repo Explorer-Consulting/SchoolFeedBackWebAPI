@@ -132,7 +132,7 @@ namespace Application.Services
 
             response.Subjects = new List<SubjectDTO>();
             Dictionary<string, List<string>> subjectTeachers = new Dictionary<string, List<string>>();
-            
+
             var creationParams = surveyMetadata.CreationParams
                 .Where(par => par.StudentSetIds.Any(setId => studentSetIds.Contains(setId)));
             foreach (var item in creationParams)
@@ -169,7 +169,10 @@ namespace Application.Services
                         var answers = questionnaire.QuestionnaireResults;
 
                         var dtoList = new List<QuestionDTO>();
-
+                        if (questionnaireTemplate == null || questionnaireTemplate.QuestionTemplates == null)
+                        {
+                            continue;
+                        }
                         foreach (var template in questionnaireTemplate.QuestionTemplates)
                         {
                             string answer = string.Empty;
@@ -194,11 +197,11 @@ namespace Application.Services
                                 Description = template.Description,
                                 Category = template.Category
                             });
-                            
+
                         }
                         teacherDto.Questions = dtoList;
                         subjectDto.Teachers.Add(teacherDto);
-                    }   
+                    }
                 }
                 response.Subjects.Add(subjectDto);
             }
