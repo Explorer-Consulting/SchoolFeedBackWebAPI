@@ -9,7 +9,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         public DbSet<Questionnaire> Questionnaires { get; set; }
         public DbSet<QuestionnaireTemplate> QuestionnaireTemplates { get; set; }
         public DbSet<EmailsToSend> EmailsToSend { get; set; }
-
         public DbSet<StudentWhitelist> StudentWhitelist { get; set; }
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 
