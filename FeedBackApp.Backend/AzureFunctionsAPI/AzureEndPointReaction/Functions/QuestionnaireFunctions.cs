@@ -171,7 +171,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             contentType: "application/json",
             bodyType: typeof(object)
         )]
-    public async Task<HttpResponseData> PerformGetSurveysAdmin([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys/admin")] HttpRequestData request)
+    public async Task<HttpResponseData> PerformGetSurveysAdmin([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "management/surveys")] HttpRequestData request)
     {
         var surveyDtoList = await _surveyService.GetAllSurveyMetadata();
         var ok = request.CreateResponse(HttpStatusCode.OK);
