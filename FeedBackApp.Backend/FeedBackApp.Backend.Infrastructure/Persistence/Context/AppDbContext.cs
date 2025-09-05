@@ -19,6 +19,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
 
             modelBuilder.HasDefaultContainer("mainContainer");
 
+            // basic setup
             modelBuilder.Entity<SurveyMetadata>()
                 .ToContainer("mainContainer")
                 .HasPartitionKey(m => m.Id)
@@ -44,6 +45,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                .HasPartitionKey(m => m.Id)
                .HasKey(m => m.Id);
 
+            // encrypting
             modelBuilder.Entity<SurveyMetadata>()
                 .Property(s => s.Title)
                 .HasConversion(new RecursiveConverter<string>());
@@ -72,7 +74,19 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .Property(s => s.CreationParams)
                 .HasConversion(new RecursiveConverter<IList<QuestionnaireCreationParam>>());
 
+            modelBuilder.Entity<QuestionnaireTemplate>()
+                .Property(q => q.QuestionTemplates)
+                .HasConversion(new RecursiveConverter<IList<QuestionTemplate>>());
 
+            modelBuilder.Entity<Questionnaire>()
+                .Property(q => q.Status)
+                .HasConversion(new RecursiveConverter<bool>());
+
+            modelBuilder.Entity<Questionnaire>()
+                .Property(q => q.QuestionnaireResults)
+                .HasConversion(new RecursiveConverter<IList<QuestionAnswer>>());
+
+            // discriminators
             modelBuilder.Entity<SurveyMetadata>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<SurveyMetadata>("Survey");
