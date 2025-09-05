@@ -55,6 +55,7 @@ var host = new HostBuilder()
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
         services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+        services.AddScoped<IWhitelistRepository, WhitelistRepository>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailRepository, EmailRepository>();

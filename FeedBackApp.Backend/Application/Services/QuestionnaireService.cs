@@ -12,11 +12,13 @@ namespace Application.Services
         private readonly IQuestionnaireRepository _questionnaireRepository;
         private readonly IEvaluationRepository _evaluationRepository;
         private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
-        public QuestionnaireService(IQuestionnaireRepository questionnaireRepository, IEvaluationRepository evaluationRepository, IValidator<CreateSurveyMetadataDTO> createValidator)
+        private readonly IWhitelistRepository _whitelistRepository;
+        public QuestionnaireService(IQuestionnaireRepository questionnaireRepository, IEvaluationRepository evaluationRepository, IValidator<CreateSurveyMetadataDTO> createValidator, IWhitelistRepository whitelistRepository)
         {
             _questionnaireRepository = questionnaireRepository;
             _evaluationRepository = evaluationRepository;
             _createValidator = createValidator;
+            _whitelistRepository = whitelistRepository;
         }
 
         public async Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDTO dto)
@@ -47,6 +49,19 @@ namespace Application.Services
                         break;
                     }
                 }
+                var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+                foreach (var set in metadata.StudentSets)
+                {
+                    foreach (var email in set.StudentEmails)
+                    {
+                        if (!whitelist.StudentEmails.Contains(email))
+                        {
+                            whitelist.StudentEmails.Add(email);
+                        }
+
+                    }
+                }
+                await _whitelistRepository.UpdateStudentWhitelistAsync(whitelist);
 
                 if (depIndex == -1)
                     return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} not found for question {current.Id}.");
