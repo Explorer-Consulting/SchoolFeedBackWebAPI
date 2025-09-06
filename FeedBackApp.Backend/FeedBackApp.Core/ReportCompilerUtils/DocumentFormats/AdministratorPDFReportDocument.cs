@@ -10,7 +10,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             throw new NotImplementedException();
         }
 
-        public override Task<byte[]> RenderDocument()
+        public override byte[] RenderDocument()
         {
             throw new NotImplementedException();
         }

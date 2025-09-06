@@ -1,5 +1,4 @@
 ﻿using FeedBackApp.Core.Model;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.UtilityClasses;
 using FeedBackApp.Core.Repositories;
@@ -62,41 +61,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 // I. mentjuk a metadatat;
                 // II. mentjuk a BLOB-ba
             }
-        }
-
-
-        public async Task DeleteAllEvaluationReports()
-        {
-            /*
-             ugyanaz mind mashol csak maskepp
-             */
-            throw new NotImplementedException();
-        }
-
-        public async Task DeleteEvaluationReport(string id)
-        {
-            /*
-             I. megkeressuk a megfelelo id-ju DocumentMetadata objektumot
-            II. megkeressuk a BLOB-t....blablabla
-             */
-            throw new NotImplementedException();
-        }
-
-        // ide nem byte[] lesz hanem egy abstract dokumentum tipus (byte[] tombot terit vissza)
-        /*
-        public async IAsyncEnumerable<ReportDocument> RetrieveAllEvaluationReports()
-        {
-            
-            throw new NotImplementedException();
-        }
-        */
-        public async Task<ReportDocument> RetrieveEvaluationReport(string id)
-        {
-            /*
-            I.  eloszor a CosmosDB-ben megkeressuk a megfelelo azonositoju DocumentMetadata objektumot
-            II. a kinyert id alapjan megkeressuk a megfelelo BLOB-t.
-             */
-            throw new NotImplementedException();
         }
     }
 }

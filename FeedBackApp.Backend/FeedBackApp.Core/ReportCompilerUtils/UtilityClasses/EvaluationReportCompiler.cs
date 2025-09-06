@@ -8,226 +8,202 @@ using System.Collections.Immutable;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 {
-    /*
-     Itt ezt meg ki kell egesziteni azzal, hogy egy tanar lassa, hogy a sajat tantargyabol o hany ertekelest kapott es a tobbi hanyat,
-     egyebb statisztikai mutatokkal kell kiegesziteni
-     */
     public static class EvaluationReportCompiler
     {
-        private static ImmutableArray<int> CollectLikertScaleData(string id, ImmutableArray<QuestionAnswer> answers)
+        // arra gondoltam hogy minden 
+        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers)
         {
-            ImmutableArray<int> data = [.. answers
-                .Where(a => a.QuestionId == id)
-                .Select(a => int.Parse(a.Answer))];
-            return data;
+            return answers
+                        .GroupBy(a => a.QuestionId)
+                        .ToDictionary(g => g.Key, g => g.ToImmutableArray());
         }
-        private static ImmutableArray<int> CollectSingleChoiceData(string id, ImmutableArray<QuestionAnswer> answers)
-        {
-            ImmutableArray<int> data = [.. answers
-                .Where(a => a.QuestionId == id)
-                .Select(a => int.Parse(a.Answer))];
-            return data;
-        }
-        private static ImmutableArray<string> CollectCustomSingleChoiceData(string id, ImmutableArray<QuestionAnswer> answers)
-        {
-            ImmutableArray<string> data = [.. answers
-                .Where(a => a.QuestionId == id)
-                .Select(a => a.Answer)];
-            return data;
-        }
-        private static ImmutableArray<int> CollectMultipleChoiceData(string id, ImmutableArray<QuestionAnswer> answers)
-        {
-            var data = answers
-                .Where(a => a.QuestionId == id && !string.IsNullOrWhiteSpace(a.Answer))
-                .SelectMany(a => a.Answer
-                    .Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Select(int.Parse))
-                .ToImmutableArray();
 
-            return data;
-        }
-        private static ImmutableArray<string> CollectOpenEndedData(string id, ImmutableArray<QuestionAnswer> answers)
+        
+        private static ImmutableArray<int> CollectLikertScaleData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
-            ImmutableArray<string> data = [.. answers
-                .Where(a => a.QuestionId == id)
-                .Select(a => a.Answer)];
-            return data;
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var b = ImmutableArray.CreateBuilder<int>(list.Length);
+            foreach (var a in list)
+                if (int.TryParse(a.Answer, out var v)) b.Add(v);
+            return b.MoveToImmutable();
         }
-        private static ReportDocument CompileRawAnswersData(ReportDocument document, ImmutableArray<QuestionTemplate> questions, ImmutableArray<QuestionAnswer> answers)
+
+        private static ImmutableArray<int> CollectSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
-            foreach (var x in questions)
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var b = ImmutableArray.CreateBuilder<int>(list.Length);
+            foreach (var a in list)
+                if (int.TryParse(a.Answer, out var v)) b.Add(v);
+            return b.MoveToImmutable();
+        }
+
+        private static ImmutableArray<string> CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var b = ImmutableArray.CreateBuilder<string>(list.Length);
+            foreach (var a in list)
+                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
+            return b.MoveToImmutable();
+        }
+
+        private static ImmutableArray<int> CollectMultipleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var buf = new List<int>(list.Length * 3);
+            foreach (var a in list)
             {
-                // itt majd leroviditem
-                switch (x.Type)
+                if (string.IsNullOrWhiteSpace(a.Answer)) continue;
+                foreach (var token in a.Answer.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    if (int.TryParse(token, out var v)) buf.Add(v);
+            }
+            return [.. buf];
+        }
+
+        private static ImmutableArray<string> CollectOpenEndedData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var b = ImmutableArray.CreateBuilder<string>(list.Length);
+            foreach (var a in list)
+                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
+            return b.MoveToImmutable();
+        }
+
+        private static ReportDocument CompileRawAnswersData(ReportDocument document, ImmutableArray<QuestionTemplate> questions, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            foreach (var q in questions)
+            {
+                switch (q.Type)
                 {
-                    case QuestionType.LikertScaleOneToFive: // itt gyujtjuk ossze a LikertSkalas kerdesekhez szukseges adatokat
-                        string likertID = x.Id;
-                        string likertStatement = x.Question;
-                        // itt lesz egy Likert Decription property, amelyel majd frissitjuk amit kell.
-                        string likertMeanings = null;
-                        var likertData = CollectLikertScaleData(likertID, answers);
-                        LikertScaleEvaluationData a = new(likertStatement, likertData, likertMeanings, 1, 5);
-                        document.ReportComponents.Add(a.CompileComponent());
-                        //ez eccer kesz.
+                    case QuestionType.LikertScaleOneToFive:
+                        document.ReportComponents.Add(new LikertScaleEvaluationData(q.Question, CollectLikertScaleData(q.Id, index), q.Description, 1, 5).CompileComponent());
                         break;
-                    case QuestionType.MultinomialSingleChoice: // ez a sima 
-                        string multiID = x.Id;
-                        string multiStatement = x.Question;
-                        ImmutableArray<string> answerOptions = [.. x.AnswerOptions];
-                        var singleChoiceData = CollectSingleChoiceData(multiID, answers);
-                        SingleChoiceEvaluationData b = new(multiStatement, answerOptions, SingleChoice.REGULAR, singleChoiceData, []);
-                        document.ReportComponents.Add(b.CompileComponent());
+
+                    case QuestionType.MultinomialSingleChoice:
+                        document.ReportComponents.Add(new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, CollectSingleChoiceData(q.Id, index), []).CompileComponent());
                         break;
-                    case QuestionType.MultiNomialSingleChoiceOther: // ez a szabad feleletes
-                        string multiOtherID = x.Id;
-                        string multiOtherStatement = x.Question;
-                        var singleChoiceOtherData = CollectCustomSingleChoiceData(multiOtherID, answers);
-                        SingleChoiceEvaluationData c = new(multiOtherStatement, [], SingleChoice.CUSTOM, [], singleChoiceOtherData);
-                        document.ReportComponents.Add(c.CompileComponent());
+
+                    case QuestionType.MultiNomialSingleChoiceOther:
+                        document.ReportComponents.Add(new SingleChoiceEvaluationData(q.Question, [], SingleChoice.CUSTOM, [], CollectCustomSingleChoiceData(q.Id, index)).CompileComponent());
                         break;
+
                     case QuestionType.MultipleChoice:
-                        string multiChoiceID = x.Id;
-                        string multiChoiceStatement = x.Question;
-                        ImmutableArray<string> multiChoiceOptions = [.. x.AnswerOptions];
-                        var multiChoiceData = CollectMultipleChoiceData(multiChoiceID, answers);
-                        MultipleChoiceEvaluationData d = new(multiChoiceStatement, multiChoiceOptions, multiChoiceData);
-                        document.ReportComponents.Add(d.CompileComponent());
+                        document.ReportComponents.Add(new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], CollectMultipleChoiceData(q.Id, index)).CompileComponent());
                         break;
+
                     case QuestionType.OpenEnded:
-                        string openEndedID = x.Id;
-                        string openEndedStatement = x.Question;
-                        var openEndedData = CollectOpenEndedData(openEndedID, answers);
-                        OpenEndedEvaluationData e = new(openEndedStatement, openEndedData);
-                        document.ReportComponents.Add(e.CompileComponent());
+                        document.ReportComponents.Add(new OpenEndedEvaluationData(q.Question, CollectOpenEndedData(q.Id, index)).CompileComponent());
                         break;
+
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(x.Type), x.Type, "Ismeretlen kérdéstípus.");
+                        throw new ArgumentOutOfRangeException(nameof(q.Type), q.Type, "Ismeretlen kérdéstípus.");
                 }
             }
             return document;
         }
-        // egy adott tanarhoz tartozo osszes kerdest dolgozzuk fel
-        private static ReportDocument CompileDocumentData(ReportDocument document, ImmutableArray<QuestionTemplate> questions, ImmutableArray<QuestionAnswer> answers)
+
+        private static ReportDocument CompileDocumentData(ReportDocument document, ImmutableArray<QuestionTemplate> questions, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
-            foreach(var x in questions)
+            foreach (var q in questions)
             {
-                switch (x.Type)
+                switch (q.Type)
                 {
-                    case QuestionType.LikertScaleOneToFive: // itt gyujtjuk ossze a LikertSkalas kerdesekhez szukseges adatokat
-                        string likertID = x.Id;
-                        string likertStatement = x.Question;
-                        // itt is szinten ugyanazt
-                        string likertMeanings = null;
-                        var likertData = CollectLikertScaleData(likertID, answers);
-                        LikertScaleEvaluationData a = new(likertStatement, likertData, likertMeanings, 1, 5);
-                        var d1 = a.EvaluateData();
-                        document.ReportComponents.Add(d1.CompileComponent());
-                        // ez eccer kesz.
+                    case QuestionType.LikertScaleOneToFive:
+                        document.ReportComponents.Add(new LikertScaleEvaluationData(q.Question, CollectLikertScaleData(q.Id, index), q.Description, 1, 5).EvaluateData().CompileComponent());
                         break;
-                    case QuestionType.MultinomialSingleChoice: // ez a sima 
-                        string multiID = x.Id;
-                        string multiStatement = x.Question;
-                        ImmutableArray<string> answerOptions = [.. x.AnswerOptions];
-                        var singleChoiceData = CollectSingleChoiceData(multiID, answers);
-                        SingleChoiceEvaluationData b = new(multiStatement, answerOptions, SingleChoice.REGULAR, singleChoiceData, []);
-                        var d2 = b.EvaluateData();
-                        document.ReportComponents.Add(d2.CompileComponent());
+
+                    case QuestionType.MultinomialSingleChoice:
+                        document.ReportComponents.Add(new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, CollectSingleChoiceData(q.Id, index), []).EvaluateData().CompileComponent());
                         break;
-                    case QuestionType.MultiNomialSingleChoiceOther: // ez a szabad feleletes
-                        string multiOtherID = x.Id;
-                        string multiOtherStatement = x.Question;
-                        var singleChoiceOtherData = CollectCustomSingleChoiceData(multiOtherID, answers);
-                        SingleChoiceEvaluationData c = new(multiOtherStatement, [], SingleChoice.CUSTOM, [], singleChoiceOtherData);
-                        var d3 = c.EvaluateData();
-                        document.ReportComponents.Add(d3.CompileComponent());
+
+                    case QuestionType.MultiNomialSingleChoiceOther:
+                        document.ReportComponents.Add(new SingleChoiceEvaluationData(q.Question, [], SingleChoice.CUSTOM, [], CollectCustomSingleChoiceData(q.Id, index)).EvaluateData().CompileComponent());
                         break;
+
                     case QuestionType.MultipleChoice:
-                        string multiChoiceID = x.Id;
-                        string multiChoiceStatement = x.Question;
-                        ImmutableArray<string> multiChoiceOptions = [.. x.AnswerOptions];
-                        var multiChoiceData = CollectMultipleChoiceData(multiChoiceID, answers);
-                        MultipleChoiceEvaluationData d = new(multiChoiceStatement, multiChoiceOptions, multiChoiceData);
-                        var d4 = d.EvaluateData();
-                        document.ReportComponents.Add(d4.CompileComponent());
+                        document.ReportComponents.Add(new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], CollectMultipleChoiceData(q.Id, index)).EvaluateData().CompileComponent());
                         break;
+
                     case QuestionType.OpenEnded:
-                        string openEndedID = x.Id;
-                        string openEndedStatement = x.Question;
-                        var openEndedData = CollectOpenEndedData(openEndedID, answers);
-                        OpenEndedEvaluationData e = new(openEndedStatement, openEndedData);
-                        var d5 = e.EvaluateData();
-                        document.ReportComponents.Add(d5.CompileComponent());
+                        document.ReportComponents.Add(new OpenEndedEvaluationData(q.Question, CollectOpenEndedData(q.Id, index)).EvaluateData().CompileComponent());
                         break;
+
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(x.Type), x.Type, "Ismeretlen kérdéstípus.");
+                        throw new ArgumentOutOfRangeException(nameof(q.Type), q.Type, "Ismeretlen kérdéstípus.");
                 }
             }
             return document;
         }
+
         public static async IAsyncEnumerable<ReportDocument> CompileReports(ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData, ImmutableArray<QuestionTemplate> rawQuestions, ImmutableArray<Administrator> adminEmails)
         {
             ArgumentNullException.ThrowIfNull(rawData);
             ArgumentNullException.ThrowIfNull(rawQuestions);
             ArgumentNullException.ThrowIfNull(adminEmails);
 
-            // interating through the the teachers
-            foreach(var recipientData in rawData)
+            // 1) Tanáronkénti riport
+            foreach (var entry in rawData)
             {
-                Teacher recipient = recipientData.Key; // the actual teacher
-                ImmutableArray<QuestionAnswer> answers = recipientData.Value; // all answers related to the given teacher
+                var teacher = entry.Key;
+                var answers = entry.Value;
+                var idx = BuildAnswersIndex(answers);
 
-                string fileName = $"{recipient.EmailAddress}_{recipient.SubjectName}_report.pdf"; //the document's filename
-                ReportMetadata metadata = new() // metadata for the given document → may be customized later
+                string fileName = $"{teacher.EmailAddress}_{teacher.SubjectName}_report.pdf";
+                var metadata = new ReportMetadata
                 {
                     MimeType = "application/pdf",
                     FileName = fileName,
-                    Author = "Valaki",
+                    Author = "FeedBackApp",
                     BLOB_URI = $"/{fileName}"
                 };
-                TeacherPDFReportDocument reportDocument = new(metadata, recipient); // creating a new document prototype.
 
-                var doc = CompileDocumentData(reportDocument, rawQuestions, answers); // providing and processing data for a given ReportDocument object
-                await doc.RenderDocument(); // rendering the actual PDF report for teacher
-                yield return doc; // returning the document
+                var doc = new TeacherPDFReportDocument(metadata, teacher);
+                var compiled = CompileDocumentData(doc, rawQuestions, idx);
+
+                compiled.RenderDocument();
+                yield return compiled;
             }
-            foreach(var recipientData in adminEmails)
-            {
-                Administrator recipient = recipientData;
-                ImmutableArray<QuestionAnswer> allData = [.. rawData.Values.SelectMany(answers => answers)];
 
-                #region itt generaljuk az adminok szamara a PDF-eket
-                string pdfFileName = $"{recipient.EmailAddress}_global_report.pdf";
-                ReportMetadata metadataPDF = new()
+            if (!adminEmails.IsDefaultOrEmpty && adminEmails.Length > 0)
+            {
+                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var globalIndex = BuildAnswersIndex(allData);
+
+                // PDF
+                var pdfMeta = new ReportMetadata
                 {
                     MimeType = "application/pdf",
-                    FileName = pdfFileName,
-                    Author = "Valaki",
-                    BLOB_URI = $"/{pdfFileName}"
+                    FileName = "global_report.pdf",
+                    Author = "FeedBackApp",
+                    BLOB_URI = "/global_report.pdf"
                 };
-                AdministratorPDFReportDocument adminReportPDF = new(metadataPDF, recipient);
-                var reportDocument = CompileDocumentData(adminReportPDF, rawQuestions, allData);
-                await reportDocument.RenderDocument();
-                #endregion
-                // itt majd lesz egy await ami kigeneralja a vegleges dokumentumot, addig is...
-                yield return reportDocument;
+                var adminPdf = new AdministratorPDFReportDocument(pdfMeta, adminEmails[0]);
+                var compiledPdf = CompileDocumentData(adminPdf, rawQuestions, globalIndex);
+                compiledPdf.RenderDocument();
+                yield return compiledPdf;
 
-                #region itt generaljuk a adminok szamara a EXCEL-eket
-                string excelFileName = $"{recipient.EmailAddress}_global_report.xlsx";
-                ReportMetadata metadataEXCEL = new()
+                // Excel
+                var excelMeta = new ReportMetadata
                 {
                     MimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    FileName = pdfFileName,
-                    Author = "Valaki",
-                    BLOB_URI = $"/{pdfFileName}"
+                    FileName = "global_report.xlsx",
+                    Author = "FeedBackApp",
+                    BLOB_URI = "/global_report.xlsx"
                 };
-                AdministratorExcelReportDocument adminReportExcel = new(metadataEXCEL, recipient);
-                var reportDocumentExcel = CompileRawAnswersData(adminReportExcel, rawQuestions, allData);
-                await reportDocumentExcel.RenderDocument();
-                #endregion
-                //itt maj dlesz egy await ami kigenerlaja a vegleges dokumentumot, addig is...
-                yield return reportDocumentExcel;
+                var adminExcel = new AdministratorExcelReportDocument(excelMeta, adminEmails[0]);
+                var compiledExcel = CompileRawAnswersData(adminExcel, rawQuestions, globalIndex);
+                compiledExcel.RenderDocument();
+                yield return compiledExcel;
             }
-
         }
     }
 }

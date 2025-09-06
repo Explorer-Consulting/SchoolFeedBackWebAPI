@@ -18,6 +18,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         public List<IComponent> ReportComponents { get; set; } = [];
 
         //function to render the document
-        public abstract Task<byte[]> RenderDocument();
+        public abstract byte[] RenderDocument();
     }
 }
