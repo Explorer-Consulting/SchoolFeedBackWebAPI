@@ -7,18 +7,42 @@ using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 {
+    /// <summary>
+    /// Likert-skálás kérdéshez tartozó riportkomponens.
+    /// <para>
+    /// Megjeleníti a kérdés szövegét, a mintanagyságot, alapvető leíró statisztikákat
+    /// (átlag, medián, szórás), az értékek eloszlását mini sávdiagrammal és táblázattal,
+    /// továbbá részletes mutatókat (minimum, maximum, módusz, elégedettségi index, egyetértési arány).
+    /// </para>
+    /// </summary>
+    /// <remarks>
+    /// Használat:
+    /// <list type="number">
+    /// <item>Példányosítsd a komponenst egy <see cref="LikertScaleEvaluationData"/> adattal.</item>
+    /// <item>Add a komponenst egy dokumentum <c>ReportComponents</c> listájához.</item>
+    /// <item>A dokumentum generálásakor a komponens a tartalom megfelelő részébe renderelődik.</item>
+    /// </list>
+    /// </remarks>
     public sealed class LikertScaleReportComponent(LikertScaleEvaluationData dataSource)
         : ReportComponent<LikertScaleEvaluationData>(dataSource)
     {
-        // design tokenek
+        // --- Design tokenek (elrendezés és tipográfia) ---
+        /// <summary>Vízszintes külső belső margó.</summary>
         private const float OuterPaddingH = 28f;
+        /// <summary>Függőleges külső belső margó.</summary>
         private const float OuterPaddingV = 18f;
+        /// <summary>Címsor betűméret.</summary>
         private const float TitleSize = 18f;
+        /// <summary>Meta-szövegek (leírások, feliratok) betűméret.</summary>
         private const float MetaSize = 10f;
+        /// <summary>Törzsszöveg betűméret.</summary>
         private const float TextSize = 11.5f;
+        /// <summary>Mini sávdiagram magassága.</summary>
         private const float BarHeight = 8f;
+        /// <summary>Mini sávdiagram szélessége.</summary>
         private const float BarWidth = 180f;
 
+        // --- Szín tokenek ---
         private static readonly string TextBlack = Colors.Grey.Darken4;
         private static readonly string MetaGrey = Colors.Grey.Darken2;
         private static readonly string SubtleGrey = Colors.Grey.Lighten3;
@@ -26,6 +50,19 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private static readonly string AccentBlue = Colors.Blue.Medium;
         private static readonly string PageWhite = Colors.White;
 
+        /// <summary>
+        /// A komponens megjelenítésének leírása.
+        /// <para>
+        /// Szekciók:
+        /// 1) Címsor (kérdés szövege),
+        /// 2) Üres állapot (ha nincs érvényes válasz),
+        /// 3) Meta (mintanagyság, átlag, medián, szórás),
+        /// 4) Eloszlás táblázat mini sávdiagramokkal,
+        /// 5) Részletes statisztikák (min, max, módusz, indexek),
+        /// 6) Értelmező megjegyzés (ha van).
+        /// </para>
+        /// </summary>
+        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
         public override void Compose(IContainer container)
         {
             var data = DataSource;
@@ -39,12 +76,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                 {
                     col.Spacing(10);
 
-                    // cím
+                    // 1) Címsor
                     col.Item().Text(data.QuestionStatement)
                         .FontSize(TitleSize).SemiBold()
                         .FontColor(TextBlack)
                         .LineHeight(1.35f);
 
+                    // 2) Üres állapot
                     if (n == 0)
                     {
                         col.Item()
@@ -56,7 +94,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         return;
                     }
 
-                    // meta
+                    // 3) Meta (N, Átlag, Medián, Szórás)
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
@@ -75,17 +113,17 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                     col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                    // eloszlás tábla
+                    // 4) Eloszlás táblázat mini sávdiagrammal
                     col.Item().Table(table =>
                     {
                         table.ColumnsDefinition(c =>
                         {
-                            c.ConstantColumn(30);    // érték
-                            c.RelativeColumn();      // mini-sáv + %
-                            c.ConstantColumn(50);    // darab
+                            c.ConstantColumn(30);    // skálaérték
+                            c.RelativeColumn();      // mini sáv + %
+                            c.ConstantColumn(50);    // darabszám
                         });
 
-                        // fejléc
+                        // Fejléc
                         table.Cell().PaddingBottom(4).Text("Ért.").FontSize(MetaSize).FontColor(MetaGrey);
                         table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
                         table.Cell().PaddingBottom(4).AlignRight().Text("Db").FontSize(MetaSize).FontColor(MetaGrey);
@@ -93,7 +131,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         int min = data.MinimumScale;
                         int max = data.MaximumScale;
 
-                        // gyakoriságok
+                        // Abszolút gyakoriságok
                         var freq = new int[max - min + 1];
                         foreach (var v in answers)
                             if (v >= min && v <= max) freq[v - min]++;
@@ -105,28 +143,27 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             double pct = n > 0 ? (double)count / n * 100.0 : 0.0;
                             float filled = (float)(BarWidth * (pct / 100.0));
 
-                            // 1: skálaérték
+                            // 4.1 Skálaérték
                             table.Cell().PaddingVertical(6)
                                 .Text(value.ToString(CultureInfo.InvariantCulture))
                                 .FontSize(TextSize).FontColor(TextBlack);
 
-                            // 2: mini-sáv + százalék
+                            // 4.2 Mini sáv + százalék
                             table.Cell().PaddingVertical(6).Row(row =>
                             {
-                                // track + filled
                                 row.AutoItem()
-                               .Width(BarWidth)
-                               .Height(BarHeight)
-                               .Background(TrackGrey)
-                               .Border(0.5f).BorderColor(SubtleGrey)
-                               .Column(col =>                 
-                               {
-                                   col.Spacing(0);
-                                   col.Item()                 
-                                      .Width(filled)
-                                      .Height(BarHeight)
-                                      .Background(AccentBlue);
-                               });
+                                   .Width(BarWidth)
+                                   .Height(BarHeight)
+                                   .Background(TrackGrey)
+                                   .Border(0.5f).BorderColor(SubtleGrey)
+                                   .Column(c2 =>
+                                   {
+                                       c2.Spacing(0);
+                                       c2.Item()
+                                          .Width(filled)
+                                          .Height(BarHeight)
+                                          .Background(AccentBlue);
+                                   });
 
                                 row.AutoItem().PaddingLeft(8)
                                    .Text(pct.ToString("0.#", CultureInfo.InvariantCulture) + "%")
@@ -134,7 +171,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                        .FontColor(MetaGrey);
                             });
 
-                            // 3: darab
+                            // 4.3 Darabszám
                             table.Cell().PaddingVertical(6).AlignRight()
                                 .Text(count.ToString(CultureInfo.InvariantCulture))
                                 .FontSize(TextSize).FontColor(TextBlack);
@@ -143,7 +180,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                     col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                    // részletes statok
+                    // 5) Részletes statisztikák
                     col.Item().Table(t =>
                     {
                         t.ColumnsDefinition(c =>
@@ -167,9 +204,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         StatCell("Módusz", data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture));
                         StatCell("Elégedettségi index", data.SatisfactionIndex.ToString("0.0", CultureInfo.InvariantCulture));
                         StatCell("Egyetértési arány", data.AgreementRate.ToString("0.0", CultureInfo.InvariantCulture) + "%");
-                        t.Cell();
+                        t.Cell(); // üres helykitöltő a rugalmas 3 oszlopos elrendezéshez
                     });
 
+                    // 6) Értelmező megjegyzés
                     if (!string.IsNullOrWhiteSpace(data.ValueMeanings))
                     {
                         col.Item().PaddingTop(6).Text(data.ValueMeanings)

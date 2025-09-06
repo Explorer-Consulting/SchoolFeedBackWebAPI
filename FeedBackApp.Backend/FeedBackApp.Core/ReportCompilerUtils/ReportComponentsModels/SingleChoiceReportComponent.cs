@@ -8,8 +8,36 @@ using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 {
-    public sealed class SingleChoiceReportComponent(SingleChoiceEvaluationData dataSource) : ReportComponent<SingleChoiceEvaluationData>(dataSource)
+    /// <summary>
+    /// Egyválasztós (Single Choice) kérdések riportkomponense.
+    /// <para>
+    /// Két megjelenítési ágat támogat:
+    /// <list type="bullet">
+    /// <item><see cref="SingleChoice.REGULAR"/>: opciók eloszlása mini sávdiagrammal (% és db), statisztikákkal (N, átlag, medián, módusz).</item>
+    /// <item><c>OTHER</c> (szöveges „Egyéb” válaszok): a beírt szöveges válaszok listázása kártyákban.</item>
+    /// </list>
+    /// </para>
+    /// </summary>
+    /// <remarks>
+    /// Elvárt adatok:
+    /// <list type="bullet">
+    /// <item><see cref="SingleChoiceEvaluationData.QuestionStatement"/> – a kérdés szövege.</item>
+    /// <item><see cref="SingleChoiceEvaluationData.QuestionOptions"/> – az opciók (eredeti sorrendben).</item>
+    /// <item><see cref="SingleChoiceEvaluationData.QuestionOptionAnswers"/> – a válaszok indexei (REGULAR eset).</item>
+    /// <item><see cref="SingleChoiceEvaluationData.Frequencies"/> és <see cref="SingleChoiceEvaluationData.RelativeFrequencies"/> – eloszlási mutatók.</item>
+    /// <item><see cref="SingleChoiceEvaluationData.QuestionOpenAnswers"/> – szabad szöveges „Egyéb” válaszok (OTHER eset).</item>
+    /// </list>
+    /// Használat:
+    /// <list type="number">
+    /// <item>Példányosítsd a komponenst egy <see cref="SingleChoiceEvaluationData"/> adattal.</item>
+    /// <item>Add a dokumentum <c>ReportComponents</c> listájához.</item>
+    /// <item>Rendereléskor a komponens a típusnak megfelelő elrendezést jeleníti meg.</item>
+    /// </list>
+    /// </remarks>
+    public sealed class SingleChoiceReportComponent(SingleChoiceEvaluationData dataSource)
+        : ReportComponent<SingleChoiceEvaluationData>(dataSource)
     {
+        // --- Design tokenek (elrendezés és tipográfia) ---
         private const float OuterPaddingH = 28f;
         private const float OuterPaddingV = 18f;
         private const float TitleSize = 18f;
@@ -18,6 +46,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private const float BarHeight = 8f;
         private const float BarWidth = 180f;
 
+        // --- Szín tokenek ---
         private static readonly string TextBlack = Colors.Grey.Darken4;
         private static readonly string MetaGrey = Colors.Grey.Darken2;
         private static readonly string SubtleGrey = Colors.Grey.Lighten3;
@@ -25,6 +54,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private static readonly string AccentBlue = Colors.Blue.Medium;
         private static readonly string PageWhite = Colors.White;
 
+        /// <summary>
+        /// A komponens megjelenítésének leírása.
+        /// <para>
+        /// Ágak:
+        /// <list type="number">
+        /// <item><b>REGULAR</b>: üres állapot ellenőrzések → meta (N, átlag, medián, módusz) → eloszlás táblázat
+        /// (opció szöveg, mini sáv + %, darab), az opciók eredeti sorrendjét megtartva.</item>
+        /// <item><b>OTHER</b>: üres állapot ellenőrzés → válaszok egyszerű dobozokban (szöveges lista).</item>
+        /// </list>
+        /// </para>
+        /// </summary>
+        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
         public override void Compose(IContainer container)
         {
             var data = DataSource;
@@ -50,7 +91,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         .FontColor(TextBlack)
                         .LineHeight(1.35f);
 
-                    // Elágazás a típus alapján
+                    // --- REGULAR ág: diszkrét opciók százalékkal és darabszámmal ---
                     if (data.Type is SingleChoice.REGULAR)
                     {
                         // Üres állapotok
@@ -76,7 +117,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             return;
                         }
 
-                        // Meta – N, statok
+                        // Meta – N, alapsztat
                         col.Item().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
@@ -95,7 +136,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                         col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                        // Eloszlás tábla (opció, mini sáv + %, darab)
+                        // Eloszlás tábla
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
@@ -113,7 +154,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             var freq = data.Frequencies ?? [];
                             var rel = data.RelativeFrequencies ?? [];
 
-                            // Megjelenítés az opciók eredeti sorrendjében:
+                            // Megjelenítés az opciók eredeti sorrendjében
                             foreach (var option in options)
                             {
                                 freq.TryGetValue(option, out var count);
@@ -126,12 +167,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                                 float filled = (float)(BarWidth * (pct / 100.0));
 
-                                // 1) Opció szöveg
+                                // 1) Opció
                                 table.Cell().PaddingVertical(6)
                                     .Text(option)
                                     .FontSize(TextSize).FontColor(TextBlack);
 
-                                // 2) Mini-sáv + százalék
+                                // 2) Mini sáv + %
                                 table.Cell().PaddingVertical(6).Row(row =>
                                 {
                                     row.AutoItem()
@@ -160,9 +201,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             }
                         });
                     }
+                    // --- OTHER ág: szabad szöveges „Egyéb” válaszok ---
                     else
                     {
-                        
                         if (openAnswers.Length == 0)
                         {
                             col.Item()
@@ -174,6 +215,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             return;
                         }
 
+                        // Meta – N
                         col.Item().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
@@ -183,7 +225,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                         col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                        // Egyszerű felsorolás, dobozokban
+                        // Felsorolás dobozokban
                         foreach (var ans in openAnswers)
                         {
                             col.Item()

@@ -45,6 +45,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     .ToListAsync())
                 .ToImmutableArray();
 
+            /*
             // 4) Administrator lista → ImmutableList<Administrator>
             var administratorData = Environment.GetEnvironmentVariable("AdminEmails");
             ArgumentNullException.ThrowIfNull(administratorData);
@@ -53,9 +54,9 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(email => new Administrator(email))
                 .ToImmutableArray();
-
+            */
             // 5) Jelentések generálása
-            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, administrators))
+            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions))
             {
                 ReportMetadata metaData = document.Metadata;
                 // I. mentjuk a metadatat;

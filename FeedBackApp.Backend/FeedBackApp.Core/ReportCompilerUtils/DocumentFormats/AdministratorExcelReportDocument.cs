@@ -2,7 +2,7 @@
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 {
-    public sealed class AdministratorExcelReportDocument(ReportMetadata metadata, Recipient recipient) : ReportDocument(metadata, recipient)
+    public sealed class AdministratorExcelReportDocument(ReportMetadata metadata, Recipient? recipient = null) : ReportDocument(metadata, recipient)
     {
         public override byte[] RenderDocument()
         {
