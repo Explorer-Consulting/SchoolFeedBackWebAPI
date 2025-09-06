@@ -1,0 +1,1 @@
+ez nem a vegleges mappaszerkezet.
