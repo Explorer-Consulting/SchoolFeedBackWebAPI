@@ -29,7 +29,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         /// <summary>
         /// Az adott komponenshez tartozó adattípus (pl. Likert-skála adatok, nyílt végű válaszok).
         /// </summary>
-        protected T DataSource { get; } = dataSource;
+        public T DataSource { get; } = dataSource;
 
         /// <summary>
         /// A komponens megjelenítésének leírása.
