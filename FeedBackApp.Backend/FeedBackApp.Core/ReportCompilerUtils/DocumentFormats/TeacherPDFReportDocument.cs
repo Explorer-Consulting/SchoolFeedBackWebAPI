@@ -74,13 +74,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         /// </para>
         /// </summary>
         /// <returns>A kész PDF dokumentum tartalma bájt tömbként.</returns>
-        public override byte[] RenderDocument()
+        public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();
             this.GeneratePdf(ms);
 
             Data = ms.ToArray();
-            return Data;
+            return Task.FromResult(Data);
         }
     }
 }

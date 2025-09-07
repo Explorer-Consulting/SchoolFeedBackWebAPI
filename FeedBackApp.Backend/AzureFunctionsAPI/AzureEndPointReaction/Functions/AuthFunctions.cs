@@ -1,7 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using FeedBackApp.Core.Repositories;
+﻿using FeedBackApp.Core.Repositories;
 using Google.Apis.Auth;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -9,6 +6,9 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
@@ -17,7 +17,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         private readonly ILogger<AuthFunctions> _logger;
         private readonly IWhitelistRepository _whitelistRepository;
 
-        public AuthFunctions(ILogger<AuthFunctions> logger,IWhitelistRepository whitelistRepository)
+        public AuthFunctions(ILogger<AuthFunctions> logger, IWhitelistRepository whitelistRepository)
         {
             _logger = logger;
             _whitelistRepository = whitelistRepository;

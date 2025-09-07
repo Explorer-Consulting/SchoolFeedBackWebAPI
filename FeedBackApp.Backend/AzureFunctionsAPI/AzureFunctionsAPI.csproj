@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
      <PackageReference Include="AzureExtensions.Swashbuckle" Version="4.0.4" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />

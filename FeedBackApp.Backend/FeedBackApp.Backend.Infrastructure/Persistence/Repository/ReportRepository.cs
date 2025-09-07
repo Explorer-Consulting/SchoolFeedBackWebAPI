@@ -1,4 +1,6 @@
-﻿using FeedBackApp.Core.Model;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.UtilityClasses;
 using FeedBackApp.Core.Repositories;
@@ -7,28 +9,52 @@ using System.Collections.Immutable;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
-    public sealed class ReportRepository(AppDBContext context) : IReportRepository
+    /// <summary>
+    /// Riportok generálása és feltöltése Azure Blob Storage-ba.
+    /// Nem tárol metaadatot adatbázisban – a riportok elérhetősége a blob útvonalból/URL-ből nyerhető ki.
+    /// </summary>
+    public sealed class ReportRepository(AppDBContext context, BlobServiceClient blob) : IReportRepository
     {
         private readonly AppDBContext _context = context;
-        public async Task CompileAndStoreEvaluationReports()
+        private readonly BlobServiceClient _blob = blob;
+
+        /// <summary>
+        /// A megadott sablon-azonosítóhoz tartozó (questiontemplates_{guid}) aktív válaszokból riportokat generál,
+        /// majd a kész dokumentumokat feltölti a Blob Storage-ba.
+        /// </summary>
+        /// <param name="fullTemplateId">A sablon dokumentum teljes Cosmos ID-ja (pl. <c>questiontemplates_d382f858-...</c>).</param>
+        /// <exception cref="ArgumentException">Érvénytelen ID-formátum esetén.</exception>
+        /// <exception cref="InvalidOperationException">Hiányzó környezeti változók esetén.</exception>
+        public async Task CompileAndStoreEvaluationReports(string fullTemplateId)
         {
-            // 1) Kérdőívek lekérdezése és Teacher rekordokba csomagolás
+            const string prefix = "questiontemplates_";
+            if (!fullTemplateId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Invalid template ID format.", nameof(fullTemplateId));
+
+            var guidPart = fullTemplateId[prefix.Length..];
+            if (!Guid.TryParse(guidPart, out var surveyGuid))
+                throw new ArgumentException("Invalid GUID in template ID.", nameof(fullTemplateId));
+
+            var surveyId = surveyGuid.ToString("D");
+            var templateDocId = fullTemplateId;
+
             var rows = await _context.Questionnaires
                 .AsNoTracking()
-                .Where(q => q.Status)
+                .Where(q => q.Status && q.SurveyId == surveyId)
                 .Select(q => new
                 {
                     Teacher = new Teacher(q.TeacherEmail, q.SubjectName),
-                    Results = q.QuestionnaireResults
-                        .Select(r => new QuestionAnswer
-                        {
-                            QuestionId = r.QuestionId,
-                            Answer = r.Answer
-                        })
+                    Results = q.QuestionnaireResults.Select(r => new QuestionAnswer
+                    {
+                        QuestionId = r.QuestionId,
+                        Answer = r.Answer
+                    })
                 })
                 .ToListAsync();
 
-            // 2) ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>>
+            if (rows.Count == 0)
+                return;
+
             var answerCollection = rows
                 .GroupBy(x => x.Teacher)
                 .ToImmutableDictionary(
@@ -36,32 +62,68 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     g => g.SelectMany(x => x.Results).ToImmutableArray()
                 );
 
-            // 3) Kérdés-sablonok
-            string surveyID = "questiontemplates_8daeb772-15d1-4e0a-a75b-4c033d1dc319";
             var questions = (await _context.QuestionnaireTemplates
                     .AsNoTracking()
-                    .Where(qt => qt.Id == surveyID)
+                    .Where(qt => qt.Id == templateDocId)
                     .SelectMany(qt => qt.QuestionTemplates)
                     .ToListAsync())
                 .ToImmutableArray();
 
-            /*
-            // 4) Administrator lista → ImmutableList<Administrator>
-            var administratorData = Environment.GetEnvironmentVariable("AdminEmails");
-            ArgumentNullException.ThrowIfNull(administratorData);
+            if (questions.IsDefaultOrEmpty)
+                return;
 
-            var administrators = administratorData
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(email => new Administrator(email))
-                .ToImmutableArray();
-            */
-            // 5) Jelentések generálása
-            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions))
+            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER")
+                ?? throw new InvalidOperationException("AZURE_REPORTS_CONTAINER environment variable is not set.");
+
+            var container = _blob.GetBlobContainerClient(containerName);
+            await container.CreateIfNotExistsAsync(PublicAccessType.None);
+
+            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId))
             {
-                ReportMetadata metaData = document.Metadata;
-                // I. mentjuk a metadatat;
-                // II. mentjuk a BLOB-ba
+                var blobPath = BuildBlobPath(document.Metadata.FileName, document.Recipient);
+                var blob = container.GetBlobClient(blobPath);
+
+                // ha már létezik, töröljük (felülírás logika)
+                await blob.DeleteIfExistsAsync();
+
+                using var ms = new MemoryStream(document.Data, writable: false);
+                await blob.UploadAsync(
+                    ms,
+                    new BlobUploadOptions
+                    {
+                        HttpHeaders = new BlobHttpHeaders
+                        {
+                            ContentType = document.Metadata.MimeType
+                        }
+                    }
+                );
+
             }
+        }
+
+        /// <summary>
+        /// Admin riportot az „admin/” alá, tanári riportot e-mail szerinti alkönyvtárba helyez.
+        /// </summary>
+        private static string BuildBlobPath(string fileName, Recipient? recipient)
+        {
+            if (recipient is null)
+                return $"admin/{fileName}";
+
+            var safeEmail = San(recipient.EmailAddress);
+            return $"teachers/{safeEmail}/{fileName}";
+        }
+
+        /// <summary>
+        /// Tiltott útvonal-karakterek cseréje kötőjelre.
+        /// </summary>
+        private static string San(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            Span<char> invalid = ['/', '\\', '?', '#', '%', '+', '\t', '\r', '\n', ':'];
+            var sb = new System.Text.StringBuilder(input.Length);
+            foreach (var ch in input)
+                sb.Append(invalid.Contains(ch) ? '-' : ch);
+            return sb.ToString().Trim();
         }
     }
 }

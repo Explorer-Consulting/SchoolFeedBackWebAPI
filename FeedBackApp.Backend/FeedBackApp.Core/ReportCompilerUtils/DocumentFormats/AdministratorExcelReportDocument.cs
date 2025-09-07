@@ -41,7 +41,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         /// 4) Munkalapok létrehozása egységes szélességű sorokkal.
         /// 5) Workbook mentése és a byte[] visszaadása.
         /// </remarks>
-        public override byte[] RenderDocument()
+        public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();
             using (var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true))
@@ -163,7 +163,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 
                     CreateSheet(
                         wbPart, sheets, "Empty",
-                        header: new[] { "Question" },
+                        header: ["Question"],
                         blocks: emptyBlocks,
                         explicitSheetId: null,
                         maxAns: 0, maxOpts: 0
@@ -227,7 +227,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             }
 
             Data = ms.ToArray();
-            return Data;
+            return Task.FromResult(Data);
         }
 
         /// <summary>

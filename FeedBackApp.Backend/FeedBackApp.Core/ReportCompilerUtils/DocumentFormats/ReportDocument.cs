@@ -54,6 +54,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         /// </para>
         /// </summary>
         /// <returns>A kész dokumentum tartalma bájt tömbként.</returns>
-        public abstract byte[] RenderDocument();
+        public abstract Task<byte[]> RenderDocument();
     }
 }

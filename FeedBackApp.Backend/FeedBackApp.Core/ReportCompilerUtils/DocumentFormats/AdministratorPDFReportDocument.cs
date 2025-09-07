@@ -57,13 +57,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         /// A PDF dokumentum renderelése memóriába és a bájt tömb visszaadása.
         /// </summary>
         /// <returns>A legenerált PDF tartalma bájt tömbként.</returns>
-        public override byte[] RenderDocument()
+        public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();
             this.GeneratePdf(ms);
 
             Data = ms.ToArray();
-            return Data;
+            return Task.FromResult(Data);
         }
     }
 }

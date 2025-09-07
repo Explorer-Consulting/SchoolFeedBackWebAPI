@@ -188,64 +188,88 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// <param name="rawQuestions">A kitöltött kérdések sablonjai (szöveg, opciók, típusok).</param>
         /// <returns><see cref="IAsyncEnumerable{ReportDocument}"/> a legenerált dokumentumokkal.</returns>
         public static async IAsyncEnumerable<ReportDocument> CompileReports(
-            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
-            ImmutableArray<QuestionTemplate> rawQuestions)
+        ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
+        ImmutableArray<QuestionTemplate> rawQuestions,
+        string surveyId) // maradhat, fájlnévhez hasznos
         {
             ArgumentNullException.ThrowIfNull(rawData);
             ArgumentNullException.ThrowIfNull(rawQuestions);
+            ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
-            // 1) Tanáronkénti riportok (PDF, értékelt)
+            // 1) Tanáronkénti PDF-ek
             foreach (var entry in rawData)
             {
                 var teacher = entry.Key;
                 var answers = entry.Value;
                 var idx = BuildAnswersIndex(answers);
 
-                string fileName = $"{teacher.EmailAddress}_{teacher.SubjectName}_report.pdf";
+                var safeTeacher = San(teacher.EmailAddress);
+                var safeSubject = San(teacher.SubjectName);
+
+                string fileName = $"{safeTeacher}_{safeSubject}_report.pdf";
+
                 var metadata = new ReportMetadata
                 {
                     MimeType = "application/pdf",
                     FileName = fileName,
-                    Author = "FeedBackApp",
-                    BLOB_URI = $"/{fileName}"
+                    Author = "Explorer Consulting",
+                    BLOB_URI = string.Empty
                 };
 
                 var doc = new TeacherPDFReportDocument(metadata, teacher);
                 var compiled = CompileQuestions(doc, rawQuestions, idx, evaluate: true);
-
-                compiled.RenderDocument();
+                await compiled.RenderDocument();
                 yield return compiled;
             }
 
-            // 2) Globális riportok
-            var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
-            var globalIndex = BuildAnswersIndex(allData);
-
-            // 2/a) PDF (értékelt)
-            var pdfMeta = new ReportMetadata
+            // 2/a) Globális PDF
             {
-                MimeType = "application/pdf",
-                FileName = "global_report.pdf",
-                Author = "FeedBackApp",
-                BLOB_URI = "/global_report.pdf"
-            };
-            var adminPdf = new AdministratorPDFReportDocument(pdfMeta);
-            var compiledPdf = CompileQuestions(adminPdf, rawQuestions, globalIndex, evaluate: true);
-            compiledPdf.RenderDocument();
-            yield return compiledPdf;
+                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var globalIndex = BuildAnswersIndex(allData);
 
-            // 2/b) Excel (nyers)
-            var excelMeta = new ReportMetadata
+                const string fileName = "global_report.pdf";
+                var metadata = new ReportMetadata
+                {
+                    MimeType = "application/pdf",
+                    FileName = fileName,
+                    Author = "Explorer Consulting",
+                    BLOB_URI = string.Empty
+                };
+
+                var adminPdf = new AdministratorPDFReportDocument(metadata);
+                var compiledPdf = CompileQuestions(adminPdf, rawQuestions, globalIndex, evaluate: true);
+                await compiledPdf.RenderDocument();
+                yield return compiledPdf;
+            }
+
+            // 2/b) Globális Excel (nyers)
             {
-                MimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                FileName = "global_report.xlsx",
-                Author = "FeedBackApp",
-                BLOB_URI = "/global_report.xlsx"
-            };
-            var adminExcel = new AdministratorExcelReportDocument(excelMeta);
-            var compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
-            compiledExcel.RenderDocument();
-            yield return compiledExcel;
+                const string fileName = "global_report.xlsx";
+                var metadata = new ReportMetadata
+                {
+                    MimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    FileName = fileName,
+                    Author = "Explorer Consulting",
+                    BLOB_URI = string.Empty
+                };
+
+                var adminExcel = new AdministratorExcelReportDocument(metadata);
+                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var globalIndex = BuildAnswersIndex(allData);
+                var compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
+                await compiledExcel.RenderDocument();
+                yield return compiledExcel;
+            }
+        }
+
+        private static string San(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            Span<char> invalid = stackalloc[] { '/', '\\', '?', '#', '%', '+', '\t', '\r', '\n', ':' };
+            var sb = new System.Text.StringBuilder(input.Length);
+            foreach (var ch in input)
+                sb.Append(invalid.Contains(ch) ? '-' : ch);
+            return sb.ToString().Trim();
         }
     }
 }
