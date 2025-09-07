@@ -40,7 +40,7 @@ var host = new HostBuilder()
                 });
         });
 
-        // EF Core Cosmos konfiguráció
+        // EF Core Cosmos
         services.AddDbContext<AppDBContext>(options =>
         {
             var connectionString = Environment.GetEnvironmentVariable("ConnectionString")
@@ -52,24 +52,16 @@ var host = new HostBuilder()
             );
         });
 
-        // BlobServiceClient regisztráció
+        // BlobContainerClient a két env alapján
         services.AddSingleton(sp =>
         {
-            var blobConnectionString = Environment.GetEnvironmentVariable("AZURE_REPORT_BLOB_STORAGE")
-                ?? throw new InvalidOperationException("AZURE_REPORT_BLOB_STORAGE environment variable is not set.");
-
-            return new BlobServiceClient(blobConnectionString);
+            var conn = Environment.GetEnvironmentVariable("AZURE_REPORT_BLOB_STORAGE")!;
+            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER")!;
+            var svc = new BlobServiceClient(conn);
+            return svc.GetBlobContainerClient(containerName);
         });
 
-        // BlobContainerClient regisztráció (pl. "reports" konténer)
-        services.AddSingleton(sp =>
-        {
-            var blobService = sp.GetRequiredService<BlobServiceClient>();
-            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER") ?? "reports";
-            return blobService.GetBlobContainerClient(containerName);
-        });
-
-        // Applikációs szolgáltatások
+        // --- App services ---
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
@@ -79,15 +71,14 @@ var host = new HostBuilder()
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailRepository, EmailRepository>();
 
-        // Riport repository/service
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<IReportService, ReportService>();
 
-        // Function osztályok
+        // Functions
         services.AddScoped<QuestionnaireFunctions>();
         services.AddScoped<EvaluationFunctions>();
 
-        // Validátorok
+        // Validators
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
         services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
         services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
@@ -95,7 +86,7 @@ var host = new HostBuilder()
         services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
         services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
 
-        // Middleware-ek
+        // Middleware
         services.AddSingleton<AdminOnlyMiddleware>();
         services.AddSingleton<StudentOnlyMiddleware>();
         services.AddSingleton<MiddlewareSelector>();
@@ -106,7 +97,7 @@ var host = new HostBuilder()
     })
     .Build();
 
-// Inicializáció: DB + Blob konténer
+// Inicializáció: DB + Blob konténer (itt, a host felépítése után)
 using (var scope = host.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDBContext>();

@@ -265,7 +265,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         private static string San(string? input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
-            Span<char> invalid = stackalloc[] { '/', '\\', '?', '#', '%', '+', '\t', '\r', '\n', ':' };
+            Span<char> invalid = ['/', '\\', '?', '#', '%', '+', '\t', '\r', '\n', ':'];
             var sb = new System.Text.StringBuilder(input.Length);
             foreach (var ch in input)
                 sb.Append(invalid.Contains(ch) ? '-' : ch);
