@@ -10,9 +10,12 @@ public class RecursiveConverter<T> : ValueConverter<T, string>
         v => DecryptEntity(v))
     { }
 
-    private static string EncryptEntity(T entity)
+    private static string EncryptEntity(T? entity)
     {
-        if (entity == null) return null;
+        if (entity == null)
+        {
+            throw new ArgumentNullException(nameof(entity), "Entity cannot be null when encrypting.");
+        }
 
         var json = JsonConvert.SerializeObject(entity);
         var token = JToken.Parse(json);
@@ -24,14 +27,23 @@ public class RecursiveConverter<T> : ValueConverter<T, string>
 
     private static T DecryptEntity(string encryptedJson)
     {
-        if (string.IsNullOrEmpty(encryptedJson)) return default;
+        if (string.IsNullOrEmpty(encryptedJson))
+        {
+            throw new ArgumentNullException(nameof(encryptedJson), "Encrypted JSON cannot be null or empty.");
+        }
 
         var token = JToken.Parse(encryptedJson);
         var decryptedToken = DecryptValuesRecursively(token);
 
         // serialize decrypted token to JSON and deserialize back to T
         var plainJson = JsonConvert.SerializeObject(decryptedToken);
-        return JsonConvert.DeserializeObject<T>(plainJson);
+        var result = JsonConvert.DeserializeObject<T>(plainJson);
+        if (result is null)
+        {
+            throw new InvalidOperationException($"Failed to deserialize JSON into type {typeof(T).FullName}.");
+        }
+
+        return result;
     }
 
     private static JToken EncryptValuesRecursively(JToken token)
@@ -45,7 +57,10 @@ public class RecursiveConverter<T> : ValueConverter<T, string>
 
             JTokenType.Null => JValue.CreateNull(),
 
-            _ => new JValue(CryptoHelper.Encrypt(token.Value<string>()))
+            JTokenType.String => new JValue(
+                CryptoHelper.Encrypt(token.Value<string>() ?? string.Empty)),
+
+            _ => token.DeepClone()
         };
     }
 
@@ -60,7 +75,10 @@ public class RecursiveConverter<T> : ValueConverter<T, string>
 
             JTokenType.Null => JValue.CreateNull(),
 
-            _ => new JValue(CryptoHelper.Decrypt(token.Value<string>()))
+            JTokenType.String => new JValue(
+                CryptoHelper.Decrypt(token.Value<string>() ?? string.Empty)),
+
+            _ => token.DeepClone()
         };
     }
 }

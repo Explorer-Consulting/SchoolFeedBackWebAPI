@@ -9,6 +9,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Helpers
     {
         private static readonly byte[] Key = Encoding.UTF8.GetBytes(
             Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? throw new InvalidOperationException("ENCRYPTION_KEY not set"));
+        private static readonly CipherMode Mode = CipherMode.ECB;
+        private static readonly PaddingMode Padding = PaddingMode.PKCS7;
 
         public static string Encrypt(string plainText)
         {
@@ -16,8 +18,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Helpers
 
             using var aes = Aes.Create();
             aes.Key = Key;
-            aes.Mode = CipherMode.ECB;
-            aes.Padding = PaddingMode.PKCS7;
+            aes.Mode = Mode;
+            aes.Padding = Padding;
 
             using var encryptor = aes.CreateEncryptor();
             var bytes = Encoding.UTF8.GetBytes(plainText);
@@ -31,8 +33,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Helpers
 
             using var aes = Aes.Create();
             aes.Key = Key;
-            aes.Mode = CipherMode.ECB;
-            aes.Padding = PaddingMode.PKCS7;
+            aes.Mode = Mode;
+            aes.Padding = Padding;
 
             using var decryptor = aes.CreateDecryptor();
             var bytes = Convert.FromBase64String(cipherText);
