@@ -1,17 +1,18 @@
 ﻿using Application.Services.Interfaces;
+using FeedBackApp.Core.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Services
 {
-    public class ReportService : IReportService
+    public class ReportService(IReportRepository repository, ILogger<ReportService> logger) : IReportService
     {
-        public Task Deliver(string EmailAddress)
-        {
-            throw new NotImplementedException();
-        }
+        private readonly IReportRepository _repository = repository;
+        private readonly ILogger<ReportService> _logger = logger;
 
-        public Task Deliver()
+        public async Task CompileAndStore(string id)
         {
-            throw new NotImplementedException();
+            await _repository.CompileAndStoreEvaluationReports(id);
+            _logger.LogInformation("Compilation of reports in ReportService.....");
         }
     }
 }
