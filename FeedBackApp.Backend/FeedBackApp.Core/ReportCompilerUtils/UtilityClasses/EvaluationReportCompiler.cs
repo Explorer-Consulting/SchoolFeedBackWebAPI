@@ -31,12 +31,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// </summary>
         /// <param name="answers">A kitöltőktől érkezett válaszok.</param>
         /// <returns>Szótár, ahol kulcs a kérdés ID, érték a kapcsolódó válaszok listája.</returns>
-        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers)
-        {
-            return answers
+        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers) => answers
                 .GroupBy(a => a.QuestionId)
                 .ToDictionary(g => g.Key, g => g.ToImmutableArray());
-        }
 
         /// <summary>
         /// Likert-skálás válaszok (egész értékek) összegyűjtése egy kérdéshez.
