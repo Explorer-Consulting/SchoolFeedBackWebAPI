@@ -61,19 +61,26 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var templateDocId = fullTemplateId;
 
             // 1) Aktív kérdőívek + válaszaik betöltése (csak a tárgyalt survey-hez).
-            var rows = await _context.Questionnaires
-                .AsNoTracking()
-                .Where(q => q.Status && q.SurveyId == surveyId)
-                .Select(q => new
-                {
-                    Teacher = new Teacher(q.TeacherEmail, q.SubjectName),
-                    Results = q.QuestionnaireResults.Select(r => new QuestionAnswer
+            var questionnaires = await _context.Questionnaires
+        .AsNoTracking()
+        .Where(q => q.Status == true && q.SurveyId == surveyId)
+        .ToListAsync();
+
+            if (questionnaires.Count == 0)
+                return;
+
+            // 2) Projekció memóriában + null-koaleszcencia
+            var rows = questionnaires.Select(q => new
+            {
+                Teacher = new Teacher(q.TeacherEmail ?? string.Empty, q.SubjectName ?? string.Empty),
+                Results = (q.QuestionnaireResults ?? Enumerable.Empty<QuestionAnswer>())
+                    .Select(r => new QuestionAnswer
                     {
                         QuestionId = r.QuestionId,
                         Answer = r.Answer
                     })
-                })
-                .ToListAsync();
+                    .ToImmutableArray()
+            }).ToList();
 
             // Nincs adat → nincs teendő.
             if (rows.Count == 0)
@@ -88,11 +95,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 );
 
             // 3) A sablonhoz tartozó kérdések betöltése.
-            var questions = (await _context.QuestionnaireTemplates
-                    .AsNoTracking()
-                    .Where(qt => qt.Id == templateDocId)
-                    .SelectMany(qt => qt.QuestionTemplates)
-                    .ToListAsync())
+            var template = await _context.QuestionnaireTemplates
+    .AsNoTracking()
+    .SingleOrDefaultAsync(qt => qt.Id == templateDocId);
+
+            var questions = (template?.QuestionTemplates ?? new List<QuestionTemplate>())
                 .ToImmutableArray();
 
             // Ha nincs kérdés, nincs mit riportálni.

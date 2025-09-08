@@ -169,27 +169,33 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// Abszolút gyakoriságok számítása (opció → darab).
         /// </summary>
         protected virtual Dictionary<string, int> CalculateFrequency(
-            ImmutableArray<string> answerOptions,
-            ImmutableArray<int> data)
+    ImmutableArray<string> answerOptions,
+    ImmutableArray<int> data)
         {
             if (answerOptions.IsDefaultOrEmpty)
-                throw new ArgumentException("ImmutableArray<string> from CalculateFrequency() is empty or in default state");
-            if (data.IsDefaultOrEmpty)
-                throw new ArgumentException("ImmutableArray<int> from CalculateFrequency() is empty or in default state");
+                throw new ArgumentException("answerOptions is empty/default");
 
+            // Ha nincs adat, adj vissza 0-kat inkább kivétel helyett:
             var frequencies = new Dictionary<string, int>(answerOptions.Length);
-            foreach (var option in answerOptions)
-                frequencies[option] = 0;
+            foreach (var option in answerOptions) frequencies[option] = 0;
+            if (data.IsDefaultOrEmpty) return frequencies;
 
-            foreach (var answerIndex in data)
+            foreach (var raw in data)
             {
-                if (answerIndex < 0 || answerIndex >= answerOptions.Length)
-                    throw new ArgumentOutOfRangeException(
-                        nameof(data),
-                        $"Érvénytelen opció index: {answerIndex}. Engedélyezett: 0..{answerOptions.Length - 1}");
+                var idx = raw;
 
-                var key = answerOptions[answerIndex];
-                frequencies[key]++;
+                // 1-alapú → 0-alapú normalizáció (toleráns)
+                if (idx >= 1 && idx <= answerOptions.Length) idx--;
+
+                if ((uint)idx < (uint)answerOptions.Length)
+                {
+                    frequencies[answerOptions[idx]]++;
+                }
+                else
+                {
+                    // invalid index → kihagyjuk (opcionálisan: log)
+                    // TODO: log warn with question id/context
+                }
             }
 
             return frequencies;
