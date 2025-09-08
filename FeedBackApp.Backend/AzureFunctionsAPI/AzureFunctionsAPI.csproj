@@ -26,4 +26,7 @@
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+  </ItemGroup>
 </Project>
