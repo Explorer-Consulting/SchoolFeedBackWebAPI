@@ -17,38 +17,33 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.HasDefaultContainer("surveyContainer");
+            modelBuilder.HasDefaultContainer("mainContainer");
 
             // basic setup
             modelBuilder.Entity<SurveyMetadata>()
-                .ToContainer("surveyContainer")
+                .ToContainer("mainContainer")
                 .HasPartitionKey(m => m.Id)
                 .HasKey(m => m.Id);
 
             modelBuilder.Entity<Questionnaire>()
-                .ToContainer("surveyContainer")
+                .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
 
             modelBuilder.Entity<QuestionnaireTemplate>()
-                .ToContainer("surveyContainer")
+                .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
 
             modelBuilder.Entity<EmailsToSend>()
-                .ToContainer("surveyContainer")
+                .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
             modelBuilder.Entity<StudentWhitelist>()
-                .ToContainer("surveyContainer")
+                .ToContainer("mainContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
-
-            modelBuilder.Entity<SurveyMetadata>()
-               .ToContainer("mainContainer")
-               .HasPartitionKey(m => m.Id)
-               .HasKey(m => m.Id);
 
             // encrypting
             modelBuilder.Entity<SurveyMetadata>()
@@ -90,6 +85,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
             modelBuilder.Entity<Questionnaire>()
                 .Property(q => q.QuestionnaireResults)
                 .HasConversion(new RecursiveConverter<IList<QuestionAnswer>>());
+
+            modelBuilder.Entity<StudentWhitelist>()
+                .Property(w => w.StudentEmails)
+                .HasConversion(new RecursiveConverter<List<string>>());
 
             // discriminators
             modelBuilder.Entity<SurveyMetadata>()
