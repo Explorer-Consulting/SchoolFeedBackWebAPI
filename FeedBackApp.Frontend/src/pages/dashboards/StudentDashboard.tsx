@@ -48,9 +48,14 @@ export default function StudentDashboard() {
     }
   }, [context]);
 
-  if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Student") return <Navigate to="/no-access" replace />
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
 
+  if (user.role !== "Student") {
+    return <Navigate to="/no-access" replace />
+  }
+  
   return (
     <main className="container mx-auto px-6 py-10 space-y-10">
       <header className="mb-8">
