@@ -65,7 +65,8 @@ public sealed class EvaluationFunctions(IEvaluationService service, ILogger<Eval
 
             var email = principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (id.Split('_')[0] != email){
+            if (id.Split('_')[0] != email)
+            {
                 var unauthorizedResponse = request.CreateResponse(HttpStatusCode.Unauthorized);
                 await unauthorizedResponse.WriteStringAsync("Unauthorized: Questionnaire does not belong to the current user.");
                 return unauthorizedResponse;

@@ -12,7 +12,7 @@ namespace Application.Services
         public async Task CompileAndStore(string id)
         {
             await _repository.CompileAndStoreEvaluationReports(id);
-            _logger.LogInformation("Compilation of reports in ReportService.....");
+            _logger.LogInformation("Compilation of reports in ReportService.....",id);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Application.Services.Interfaces;
+using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.Repositories;
 using Microsoft.Extensions.Logging;
 using System.Net;
@@ -33,7 +34,14 @@ public class EmailService : IEmailService
             if (doc == null || !doc.EmailsToSendList.Any())
                 return false;
 
-            var batch = doc.EmailsToSendList
+            var activeSurveys = doc.EmailsToSendList
+                .Where(s => s.StartDate <= DateTime.UtcNow && s.EndDate >= DateTime.UtcNow)
+                .ToList();
+
+            if (!activeSurveys.Any())
+                return false;
+
+            var batch = activeSurveys
                 .SelectMany(s => s.Emails.Select(e => new
                 {
                     SurveyId = s.SurveyId,
@@ -85,6 +93,17 @@ public class EmailService : IEmailService
                 {
                     doc.EmailsToSendList.Remove(surveyBatch);
                 }
+            }
+
+            // clean up expired surveys if any remain
+            var expired = doc.EmailsToSendList
+                .Where(s => s.EndDate < DateTime.UtcNow)
+                .ToList();
+
+            foreach (var survey in expired)
+            {
+                doc.EmailsToSendList.Remove(survey);
+                _logger.LogInformation("Removed expired survey {SurveyName} ({SurveyId})", survey.SurveyName, survey.SurveyId);
             }
 
             await _emailRepository.UpdateEmailsDocumentAsync(doc);

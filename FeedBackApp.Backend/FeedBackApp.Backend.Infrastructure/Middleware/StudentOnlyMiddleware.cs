@@ -1,6 +1,6 @@
-﻿using Microsoft.Azure.Functions.Worker;
+﻿using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
-using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 
 namespace FeedBackApp.Backend.Infrastructure.Middleware
 {
