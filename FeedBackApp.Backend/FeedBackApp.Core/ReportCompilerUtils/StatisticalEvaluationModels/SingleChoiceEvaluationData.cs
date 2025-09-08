@@ -11,7 +11,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// Kétféle kérdéstípus támogatott:
     /// <list type="bullet">
     /// <item><see cref="SingleChoice.REGULAR"/> – előre definiált opciók közül választás (számított statisztikákkal).</item>
-    /// <item><see cref="SingleChoice.CUSTOM"/> – szabad szöveges válaszok („Egyéb” opciók) statisztika nélkül.</item>
+    /// <item><see cref="SingleChoice.CUSTOM"/> – vegyes: a számként értelmezhető válaszokból statisztikák készülnek,
+    /// a nem-szám válaszok külön listában jelennek meg (statisztika nélkül).</item>
     /// </list>
     /// </para>
     /// </summary>
@@ -31,28 +32,34 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// <summary>Előre definiált opciók listája.</summary>
         public ImmutableArray<string> QuestionOptions = questionOptions;
 
-        /// <summary>A kitöltők által megadott válaszok indexei az <see cref="QuestionOptions"/> tömbben.</summary>
+        /// <summary>
+        /// Válaszok számosított reprezentációja.
+        /// REGULAR esetben: az <see cref="QuestionOptions"/> indexei.
+        /// CUSTOM esetben: a beérkezett numerikus értékek (nem indexek!), pl. 1..5.
+        /// </summary>
         public ImmutableArray<int> QuestionOptionAnswers = questionOptionAnswers;
 
-        /// <summary>Szabad szöveges válaszok listája („Egyéb” opciók).</summary>
+        /// <summary>Nem-szám (szabad szöveges) válaszok listája.</summary>
         public ImmutableArray<string> QuestionOpenAnswers = questionOpenAnswers;
 
         /// <summary>A kérdés típusa: <see cref="SingleChoice.REGULAR"/> vagy <see cref="SingleChoice.CUSTOM"/>.</summary>
         public SingleChoice Type = type;
 
-        /// <summary>Átlag (REGULAR esetben).</summary>
+        /// <summary>Átlag (REGULAR és CUSTOM numerikus válaszok esetén).</summary>
         public double MeanValue { get; private set; }
 
-        /// <summary>Medián (REGULAR esetben).</summary>
+        /// <summary>Medián (REGULAR és CUSTOM numerikus válaszok esetén).</summary>
         public double MedianValue { get; private set; }
 
-        /// <summary>Módusz (REGULAR esetben).</summary>
+        /// <summary>Módusz (REGULAR és CUSTOM numerikus válaszok esetén).</summary>
         public double ModeValue { get; private set; }
 
-        /// <summary>Abszolút gyakoriság (REGULAR esetben).</summary>
+        /// <summary>Abszolút gyakoriság.
+        /// REGULAR: opció-nevekre aggregálva.
+        /// CUSTOM: konkrét numerikus értékekre (pl. "1","2","3"...).</summary>
         public Dictionary<string, int> Frequencies { get; private set; } = [];
 
-        /// <summary>Relatív gyakoriság % (REGULAR esetben).</summary>
+        /// <summary>Relatív gyakoriság % (REGULAR és CUSTOM numerikus válaszokra).</summary>
         public Dictionary<string, double> RelativeFrequencies { get; private set; } = [];
 
         #endregion
@@ -60,24 +67,37 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// <summary>
         /// Kiértékelés futtatása.
         /// <para>
-        /// Ha a típus <see cref="SingleChoice.REGULAR"/>, akkor számítja az átlagot,
-        /// mediánt, móduszt, valamint az abszolút és relatív gyakoriságokat.
-        /// Ha <see cref="SingleChoice.CUSTOM"/>, akkor nem számol statisztikát,
-        /// csak a szöveges válaszok érhetők el.
+        /// REGULAR: átlag/medián/módusz + gyakoriságok az opciók szerint.
+        /// CUSTOM: ha vannak numerikus válaszok, akkor ezekből átlag/medián/módusz + gyakoriságok készülnek,
+        /// a nem-szám válaszok pedig változatlanul megjelennek.
         /// </para>
         /// </summary>
         public override EvaluationData EvaluateData()
         {
-            if (Type != SingleChoice.REGULAR)
+            if (Type == SingleChoice.REGULAR)
             {
+                if (QuestionOptionAnswers.Length == 0)
+                    return this;
+
+                MeanValue = CalculateMeanValue(QuestionOptionAnswers);
+                MedianValue = CalculateMedianValue(QuestionOptionAnswers);
+                ModeValue = CalculateModeValue(QuestionOptionAnswers);
+                Frequencies = CalculateFrequency(QuestionOptions, QuestionOptionAnswers);
+                RelativeFrequencies = CalculateRelativeFrequencyPercent(Frequencies, QuestionOptionAnswers.Length);
                 return this;
             }
 
-            MeanValue = CalculateMeanValue(QuestionOptionAnswers);
-            MedianValue = CalculateMedianValue(QuestionOptionAnswers);
-            ModeValue = CalculateModeValue(QuestionOptionAnswers);
-            Frequencies = CalculateFrequency(QuestionOptions, QuestionOptionAnswers);
-            RelativeFrequencies = CalculateRelativeFrequencyPercent(Frequencies, QuestionOptionAnswers.Length);
+            // CUSTOM
+            if (QuestionOptionAnswers.Length > 0)
+            {
+                // Itt a QuestionOptionAnswers NEM opcióindex, hanem maga a numerikus érték (pl. 1..5)
+                MeanValue = CalculateMeanValue(QuestionOptionAnswers);
+                MedianValue = CalculateMedianValue(QuestionOptionAnswers);
+                ModeValue = CalculateModeValue(QuestionOptionAnswers);
+                RelativeFrequencies = CalculateRelativeFrequencyPercent(Frequencies, QuestionOptionAnswers.Length);
+            }
+            // Ha nincsenek numerikus válaszok, akkor a stat mezők 0/üres maradnak, 
+            // és csak a QuestionOpenAnswers lesz releváns a riportban.
 
             return this;
         }

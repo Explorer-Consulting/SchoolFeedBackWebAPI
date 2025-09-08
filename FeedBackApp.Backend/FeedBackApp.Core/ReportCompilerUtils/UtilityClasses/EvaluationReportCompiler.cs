@@ -69,16 +69,28 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// <summary>
         /// Egyéni/szabad szöveges „Egyéb” válaszok összegyűjtése (whitespace szűréssel).
         /// </summary>
-        private static ImmutableArray<string> CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static (ImmutableArray<int> Numbers, ImmutableArray<string> Texts) CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
-                return [];
+                return ([], []);
 
-            var b = ImmutableArray.CreateBuilder<string>(list.Length);
+            var nums = ImmutableArray.CreateBuilder<int>(list.Length);
+            var texts = ImmutableArray.CreateBuilder<string>(list.Length);
+
             foreach (var a in list)
-                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
-            return b.MoveToImmutable();
+            {
+                if (string.IsNullOrWhiteSpace(a.Answer))
+                    continue;
+
+                if (int.TryParse(a.Answer, out var v))
+                    nums.Add(v);
+                else
+                    texts.Add(a.Answer);
+            }
+
+            return (nums.MoveToImmutable(), texts.MoveToImmutable());
         }
+
 
         /// <summary>
         /// Többválasztós válaszok összegyűjtése (több index egy mezőben, kötőjellel elválasztva).
@@ -143,6 +155,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                     case QuestionType.MultinomialSingleChoice:
                         {
+
                             var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, CollectSingleChoiceData(q.Id, index), []);
                             document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
@@ -150,7 +163,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                     case QuestionType.MultiNomialSingleChoiceOther:
                         {
-                            var ed = new SingleChoiceEvaluationData(q.Question, [], SingleChoice.CUSTOM, [], CollectCustomSingleChoiceData(q.Id, index));
+                            var (nums, texts) = CollectCustomSingleChoiceData(q.Id, index);
+
+                            var ed = new SingleChoiceEvaluationData(
+                                q.Question,
+                                [], // nincs előre definiált opció
+                                SingleChoice.CUSTOM,
+                                nums,   // ide mennek a számok
+                                texts   // ide mennek a stringek
+                            );
+
                             document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
