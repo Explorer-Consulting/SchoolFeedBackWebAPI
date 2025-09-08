@@ -8,6 +8,7 @@ namespace Application.Validation.CreateValidation
     {
         public QuestionTemplateValidator()
         {
+            RuleFor(dto => dto.Category).NotEmpty().WithMessage("Category can not be empty");
             RuleFor(dto => dto.Question).NotEmpty().WithMessage("Question text can not be empty")
                 .MaximumLength(500).WithMessage("Question can not be longer than 500 characters: {PropertyValue}");
             RuleFor(dto => dto.Type)

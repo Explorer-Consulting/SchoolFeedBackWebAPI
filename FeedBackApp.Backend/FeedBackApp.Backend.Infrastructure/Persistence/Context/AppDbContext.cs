@@ -10,33 +10,38 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         public DbSet<Questionnaire> Questionnaires { get; set; }
         public DbSet<QuestionnaireTemplate> QuestionnaireTemplates { get; set; }
         public DbSet<EmailsToSend> EmailsToSend { get; set; }
-
+        public DbSet<StudentWhitelist> StudentWhitelist { get; set; }
         public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.HasDefaultContainer("mainContainer");
+            modelBuilder.HasDefaultContainer("surveyContainer");
 
             // basic setup
             modelBuilder.Entity<SurveyMetadata>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(m => m.Id)
                 .HasKey(m => m.Id);
 
             modelBuilder.Entity<Questionnaire>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
 
             modelBuilder.Entity<QuestionnaireTemplate>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
 
             modelBuilder.Entity<EmailsToSend>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
+                .HasPartitionKey(q => q.Id)
+                .HasKey(e => e.Id);
+
+            modelBuilder.Entity<StudentWhitelist>()
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
@@ -102,6 +107,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
             modelBuilder.Entity<EmailsToSend>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<EmailsToSend>("EmailsToSend");
+
+            modelBuilder.Entity<StudentWhitelist>()
+                .HasDiscriminator<string>("DocumentType")
+                .HasValue<StudentWhitelist>("StudentWhitelist");
 
         }
     }

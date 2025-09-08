@@ -1,61 +1,136 @@
-import type { StudentContext, EvaluationResponses } from "@/models/StudentContext";
+import type {
+    StudentContext,
+    Evaluation,
+    EvaluationResponses,
+    Question,
+    QuestionID,
+    QuestionType,
+} from "@/models/StudentContext";
 
-const multiQuestions = new Set(["q19", "q20"]);
+const type_map: Record<number, QuestionType> = {
+    1: "LikertScaleOneToFive",
+    2: "MultinomialSingleChoice",
+    3: "MultinomialSingleChoiceOther",
+    4: "MultipleChoice",
+    5: "OpenEnded",
+};
 
-export function toStudentContext(raw: any): StudentContext {
-    const subjects: string[] = [];
-    const teachersBySubject: Record<string, string[]> = {};
-    const evaluations: StudentContext["evaluations"] = [];
+type RawDependency = {
+    id: QuestionID;
+    answerConditions: Array<number>;
+}
 
-    if (!raw || !Array.isArray(raw.subjects)) {
-        return {
-            class: String(raw?.class ?? ""),
-            subjects: [],
-            teachersBySubject: {},
-            evaluations: []
-        };
-    }
+type RawQuestion = {
+    questionID: QuestionID;
+    question: string;
+    type: number;
+    answerOptions: string[];
+    dependency?: RawDependency;
+    answer: string;
+    category: string;
+    description?: string;
+};
 
-    for (const subj of raw.subjects) {
+type RawTeacher = {
+    name: string;
+    id: string;
+    questions: RawQuestion[];
+};
+
+type RawSubject = {
+    name: string;
+    teachers: RawTeacher[];
+};
+
+type RawPayload = {
+    class: string;
+    subjects: RawSubject[];
+};
+
+export function toStudentContext(raw: RawPayload): StudentContext {
+    const evaluations: Evaluation[] = [];
+
+    const subjectToTeachers = new Map<string, Set<string>>();
+
+    const subjectList: RawSubject[] = Array.isArray(raw?.subjects) ? raw.subjects : [];
+
+    for (const subj of subjectList) {
         const subjectName = typeof subj?.name === "string" ? subj.name : "";
         if (!subjectName) continue;
 
-        const teacherList = Array.isArray(subj?.teachers) ? subj.teachers : [];
-        const teacherNamesForSubject: string[] = [];
+        const teacherSet = subjectToTeachers.get(subjectName) ?? new Set<string>();
+        const teacherList: RawTeacher[] = Array.isArray(subj?.teachers) ? subj.teachers : [];
 
-        for (const teacher of teacherList) {
-            const teacherName = typeof teacher?.name === "string" ? teacher.name : "";
+        for (const t of teacherList) {
+            const teacherName = typeof t?.name === "string" ? t.name : "";
             if (!teacherName) continue;
 
-            teacherNamesForSubject.push(teacherName);
+            teacherSet.add(teacherName);
 
-            const responses: Record<string, string | string[]> = {};
-            const answers = Array.isArray(teacher?.answers) ? teacher.answers : [];
+            const rawQs: RawQuestion[] = Array.isArray(t?.questions) ? t.questions : [];
 
-            for (const answer of answers) {
-                const qid = typeof answer?.questionID === "string" ? answer.questionID : "";
-                if (!qid) continue;
-                const ans = typeof answer?.answer === "string" ? answer.answer : "";
+            const questions: Question[] = [];
+            const responses: EvaluationResponses = {};
 
-                responses[qid] = multiQuestions.has(qid)
-                    ? (ans ? ans.split("-").map(s => s) : [])
-                    : ans;
-            }
+            rawQs.forEach((rq) => {
+                const id = rq?.questionID;
+                const tpe = type_map[rq?.type as number];
+                const dependency = rq?.dependency
+                    ? {
+                        id: rq.dependency.id,
+                        answerConditions: (rq.dependency.answerConditions ?? []).map(String),
+                    }
+                    : undefined;
+
+                const text = typeof rq?.question === "string" ? rq.question : "";
+                const category = typeof rq?.category === "string" ? rq.category : "";
+                const description =typeof rq?.description === "string" ? rq.description : "";
+
+                if (!id || !tpe || !text) return;
+
+                questions.push({
+                    id,
+                    text,
+                    type: tpe,
+                    options:
+                        tpe === "MultinomialSingleChoice" ||
+                            tpe === "MultinomialSingleChoiceOther" ||
+                            tpe === "MultipleChoice"
+                            ? (Array.isArray(rq?.answerOptions) ? rq.answerOptions : [])
+                            : undefined,
+                    dependency,
+                    category,
+                    description
+                });
+
+                const ansRaw = typeof rq?.answer === "string" ? rq.answer : "";
+                responses[id] =
+                    tpe === "MultipleChoice"
+                        ? (ansRaw ? ansRaw.split("-").filter(Boolean) : [])
+                        : ansRaw;
+            });
+
             evaluations.push({
-                id: String(teacher?.id ?? ""),
+                id: String(t?.id ?? ""),
                 subject: subjectName,
                 teacher: teacherName,
-                responses: responses as EvaluationResponses
+                questions,
+                responses,
             });
         }
-        if (teacherNamesForSubject.length > 0) {
-            subjects.push(subjectName);
-            teachersBySubject[subjectName] = teacherNamesForSubject;
+
+        if (teacherSet.size > 0) {
+            subjectToTeachers.set(subjectName, teacherSet);
         }
     }
 
+    const subjects = Array.from(subjectToTeachers.keys());
+    const teachersBySubject = Object.fromEntries(
+        Array.from(subjectToTeachers.entries()).map(([subj, set]) => [subj, Array.from(set)])
+    );
+
     return {
-        class: String(raw.class ?? ""),
+        class: String(raw?.class ?? ""),
         subjects,
         teachersBySubject,
         evaluations,

@@ -23,12 +23,9 @@ namespace Application.Validation.SubmitValidation
                     if (template == null)
                         return;
 
-                    if (dtoInstance.QuestionId == "q19")
-                        return;
-
                     if (answer == string.Empty)
                     {
-                        context.AddFailure($"Answer cannot be empty '{template.Question}-{template.Id}'");
+                        return;
                     }
 
                     switch (template.Type)
