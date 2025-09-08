@@ -17,31 +17,31 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.HasDefaultContainer("mainContainer");
+            modelBuilder.HasDefaultContainer("surveyContainer");
 
             // basic setup
             modelBuilder.Entity<SurveyMetadata>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(m => m.Id)
                 .HasKey(m => m.Id);
 
             modelBuilder.Entity<Questionnaire>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
 
             modelBuilder.Entity<QuestionnaireTemplate>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(q => q.Id);
 
             modelBuilder.Entity<EmailsToSend>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
             modelBuilder.Entity<StudentWhitelist>()
-                .ToContainer("mainContainer")
+                .ToContainer("surveyContainer")
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
