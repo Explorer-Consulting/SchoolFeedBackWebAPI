@@ -160,16 +160,17 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
         public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
         {
-        
             var allSurveys = await _context.Surveys
                 .AsNoTracking()
                 .ToListAsync();
 
-            return allSurveys
+            var activeSurveys = allSurveys
                 .Where(s => s.StudentSets.Any(set =>
-                    set.StudentEmails.Contains(studentEmail)))
+                    set.StudentEmails.Contains(studentEmail, StringComparer.OrdinalIgnoreCase)))
                 .ToList();
+            return activeSurveys;
         }
+
 
     }
 }
