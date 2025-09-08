@@ -51,7 +51,7 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             }
 
             var result = await _questionnaireService.CompileAndSaveAsync(dto);
-            
+
             if (!result.Success)
             {
                 var error = request.CreateResponse(HttpStatusCode.BadRequest);
