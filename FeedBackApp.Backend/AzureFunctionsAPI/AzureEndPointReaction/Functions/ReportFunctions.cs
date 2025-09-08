@@ -96,6 +96,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         }
 
         // ezt kellene implementalni, vagyis kellene meg egy service a BLOB-oknak
+        [Function("DeliverEvaluationReports")]
         public async Task<HttpResponseData> DeliverEvaluationReports(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reports/send/{templateID}")] HttpRequestData request, string templateID)
         {

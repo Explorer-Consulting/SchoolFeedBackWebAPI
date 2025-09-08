@@ -109,20 +109,44 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         case SingleChoiceEvaluationData s:
                             {
                                 var main = new List<string> { s.QuestionStatement };
-                                main.AddRange(s.QuestionOpenAnswers);
+                                if (s.QuestionOptionAnswers.Length > 0)
+                                    main.AddRange(s.QuestionOptionAnswers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
 
-                                List<string>? opts = null;
-                                if (!s.QuestionOptions.IsDefaultOrEmpty)
+                                // Elsődleges blokk: mindig legyen egy Main sor
+                                var blocks = new List<(List<string> Main, List<string> Opts)>
                                 {
-                                    opts = new List<string> { "Options" };
-                                    for (int i = 0; i < s.QuestionOptions.Length; i++)
-                                        opts.Add($"{i + 1} = {s.QuestionOptions[i]}");
+                                    (main, new List<string>()) // itt az Opts üres
+                                };
 
-                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", s.QuestionOptions.Length);
+                                // Szöveges válaszok külön sorokban
+                                if (!s.QuestionOpenAnswers.IsDefaultOrEmpty && s.QuestionOpenAnswers.Length > 0)
+                                {
+                                    foreach (var ans in s.QuestionOpenAnswers)
+                                    {
+                                        blocks.Add((new List<string>(), new List<string> { "TextAnswer", ans }));
+                                    }
+                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", 2); // 2 oszlop: címke + válasz
                                 }
 
-                                AddBlock("SingleChoice+Other", main, opts);
-                                UpdateMax(maxAnsBySheet, "SingleChoice+Other", s.QuestionOpenAnswers.Length);
+                                // Előre definiált opciók külön sorokban
+                                if (!s.QuestionOptions.IsDefaultOrEmpty && s.QuestionOptions.Length > 0)
+                                {
+                                    int idx = 1;
+                                    foreach (var opt in s.QuestionOptions)
+                                    {
+                                        blocks.Add((new List<string>(), new List<string> { "Option", $"{idx++} = {opt}" }));
+                                    }
+                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", 2); // 2 oszlop: címke + opció
+                                }
+
+                                // Felvétel a laphoz
+                                if (!blocksBySheet.TryGetValue("SingleChoice+Other", out var list))
+                                    blocksBySheet["SingleChoice+Other"] = list = new();
+                                list.AddRange(blocks);
+
+                                // Numerikus oszlopok max száma
+                                UpdateMax(maxAnsBySheet, "SingleChoice+Other", s.QuestionOptionAnswers.Length);
+
                                 break;
                             }
 
