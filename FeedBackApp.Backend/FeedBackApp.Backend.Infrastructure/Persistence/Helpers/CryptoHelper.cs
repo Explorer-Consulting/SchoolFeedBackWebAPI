@@ -7,7 +7,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Helpers
     // helper class for encrypt/decrypt plaintext (deterministic)
     public static class CryptoHelper
     {
-        private static readonly byte[] Key = Encoding.UTF8.GetBytes("01234567890123456789012345678901");
+        private static readonly byte[] Key = Encoding.UTF8.GetBytes(
+            Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? throw new InvalidOperationException("ENCRYPTION_KEY not set"));
 
         public static string Encrypt(string plainText)
         {
