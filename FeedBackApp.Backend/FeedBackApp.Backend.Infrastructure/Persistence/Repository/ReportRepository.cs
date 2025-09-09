@@ -84,33 +84,51 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var surveyId = surveyGuid.ToString("D");
             var templateDocId = fullTemplateId;
 
-            // 1) Aktív kérdőívek + válaszaik betöltése (csak a tárgyalt survey-hez).
-            var questionnaires = await _context.Questionnaires
+            // 1) Minden kérdőív betöltése CSAK SurveyId szerint (Status nélkül!).
+            //    Csak a szükséges mezőket projektáljuk, hogy vékony maradjon az adat.
+            // 1) Kérdőívek felhúzása CSAK SurveyId szerint (Status NÉLKÜL), egyszerű projekcióval.
+            //    FONTOS: belső kollekción itt nincs .Select(...), azt csak memóriában csináljuk!
+            var questionnairesRaw = await _context.Questionnaires
                 .AsNoTracking()
-                .Where(q => q.Status == true && q.SurveyId == surveyId)
+                .Where(q => q.SurveyId == surveyId)
+                .Select(q => new
+                {
+                    q.Status,
+                    q.TeacherEmail,
+                    q.SubjectName,
+                    q.QuestionnaireResults
+                })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+            if (questionnairesRaw.Count == 0)
+                return;
+
+            // 2) In-memory Status-szűrés
+            var questionnaires = questionnairesRaw.Where(q => q.Status == true).ToList();
             if (questionnaires.Count == 0)
                 return;
 
-            var rows = questionnaires.Select(q => new
-            {
-                Teacher = new Teacher(q.TeacherEmail ?? string.Empty, q.SubjectName ?? string.Empty),
-                Results = (q.QuestionnaireResults ?? Enumerable.Empty<QuestionAnswer>())
-                    .Select(r => new QuestionAnswer
-                    {
-                        QuestionId = r.QuestionId,
-                        Answer = r.Answer
-                    })
-                    .ToImmutableArray()
-            }).ToList();
+            // 3) Normalizálás tanár–tantárgy kulcs alá + belső kollekció projekciója immáron memóriában
+            var rows = questionnaires
+                .Select(q => new
+                {
+                    Teacher = new Teacher(q.TeacherEmail ?? string.Empty, q.SubjectName ?? string.Empty),
 
-            // Nincs adat → nincs teendő.
+                    // Ha a belső elemek már QuestionAnswer típusúak, elég közvetlenül immutábilissá tenni:
+                    Results = (q.QuestionnaireResults ?? Enumerable.Empty<QuestionAnswer>()).ToImmutableArray()
+
+                    // Ha tényleg új példány kellene:
+                    // Results = (q.QuestionnaireResults ?? Enumerable.Empty<QuestionAnswer>())
+                    //     .Select(r => new QuestionAnswer { QuestionId = r.QuestionId, Answer = r.Answer })
+                    //     .ToImmutableArray()
+                })
+                .ToList();
+
             if (rows.Count == 0)
                 return;
 
-            // 3) Tanár–tantárgy kulcs alá aggregáljuk az összes választ.
+            // 4) Aggregálás tanár–tantárgy kulcs alá
             var answerCollection = rows
                 .GroupBy(x => x.Teacher)
                 .ToImmutableDictionary(
@@ -118,18 +136,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     g => g.SelectMany(x => x.Results).ToImmutableArray()
                 );
 
-            // 4) A sablonhoz tartozó kérdések betöltése.
+            // 5) A sablonhoz tartozó kérdések betöltése
             var template = await _context.QuestionnaireTemplates
                 .AsNoTracking()
                 .SingleOrDefaultAsync(qt => qt.Id == templateDocId)
                 .ConfigureAwait(false);
 
-            var questions = (template?.QuestionTemplates ?? [])
-                .ToImmutableArray();
-
-            // Ha nincs kérdés, nincs mit riportálni.
+            var questions = (template?.QuestionTemplates ?? []).ToImmutableArray();
             if (questions.IsDefaultOrEmpty)
                 return;
+
 
             // 5) Riportok generálása és feltöltése.
             await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId))
