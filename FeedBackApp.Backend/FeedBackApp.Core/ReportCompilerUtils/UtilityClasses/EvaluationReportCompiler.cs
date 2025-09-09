@@ -10,19 +10,19 @@ using System.Globalization;
 namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 {
     /// <summary>
-    /// Riportok összeállítása a beérkezett kérdőív-válaszokból.
+    /// Compiler for reports based on collected questionnaire responses.
     /// <para>
-    /// Tanáronkénti és globális (adminisztrátori) riportokat állít elő PDF/Excel formátumban.
-    /// A kérdések típusai alapján a megfelelő kiértékelési modelleket és komponenseket illeszti be.
+    /// Produces teacher-specific and global (administrator) reports in PDF/Excel formats.  
+    /// Depending on the question type, the appropriate evaluation models and report components are instantiated.
     /// </para>
     /// </summary>
     /// <remarks>
-    /// Fő lépések:
+    /// Main steps:
     /// <list type="number">
-    /// <item>Válaszok indexelése kérdés-azonosító szerint.</item>
-    /// <item>Adatgyűjtés kérdéstípusonként (Likert, single/multi choice, open-ended).</item>
-    /// <item>Komponensek összeállítása és (opcionálisan) kiértékelése.</item>
-    /// <item>Dokumentumok renderelése és <see cref="IAsyncEnumerable{ReportDocument}"/> formában streamelése.</item>
+    /// <item>Index responses by question ID.</item>
+    /// <item>Aggregate data per question type (Likert, single choice, multiple choice, open-ended).</item>
+    /// <item>Assemble components and optionally evaluate statistics.</item>
+    /// <item>Render documents and stream them as <see cref="IAsyncEnumerable{ReportDocument}"/>.</item>
     /// </list>
     /// </remarks>
     public static class EvaluationReportCompiler
@@ -31,14 +31,14 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         private static bool HasData<T>(ImmutableArray<T> data) => !data.IsDefault && data.Length > 0;
 
         /// <summary>
-        /// Válaszok indexelése kérdésazonosító (<see cref="QuestionAnswer.QuestionId"/>) szerint.
+        /// Indexes responses by question ID (<see cref="QuestionAnswer.QuestionId"/>).
         /// </summary>
         private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers) => answers
             .GroupBy(a => a.QuestionId)
             .ToDictionary(g => g.Key, g => g.ToImmutableArray());
 
         /// <summary>
-        /// Likert-skálás válaszok (egész értékek) összegyűjtése egy kérdéshez.
+        /// Collects Likert-scale responses (integers) for a given question.
         /// </summary>
         private static ImmutableArray<int> CollectLikertScaleData(
             string id,
@@ -47,7 +47,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var b = ImmutableArray.CreateBuilder<int>(); // nincs fix kapacitás, mert szűrünk
+            var b = ImmutableArray.CreateBuilder<int>();
             foreach (var a in list)
                 if (int.TryParse(a.Answer, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
                     b.Add(v);
@@ -56,7 +56,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Egyválasztós (index alapú) válaszok összegyűjtése.
+        /// Collects single-choice responses (index-based).
         /// </summary>
         private static ImmutableArray<int> CollectSingleChoiceData(
             string id,
@@ -74,7 +74,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Nyílt végű (szöveges) válaszok összegyűjtése (whitespace szűréssel).
+        /// Collects open-ended (textual) responses (filters out whitespace).
         /// </summary>
         private static ImmutableArray<string> CollectOpenEndedData(
             string id,
@@ -92,7 +92,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Egyéni/szabad szöveges „Egyéb” válaszok összegyűjtése (whitespace szűréssel).
+        /// Collects custom free-text “Other” responses (filters out whitespace).  
+        /// Separates numeric answers from non-numeric text.
         /// </summary>
         private static (ImmutableArray<int> Numbers, ImmutableArray<string> Texts)
         CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
@@ -108,7 +109,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 var s = a.Answer?.Trim();
                 if (string.IsNullOrEmpty(s)) continue;
 
-                // KIZÁRÓLAG egész számokat tekintünk "numeric" válasznak
                 if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
                     nums.Add(v);
                 else
@@ -119,7 +119,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Többválasztós válaszok összegyűjtése (több index egy mezőben, kötőjellel elválasztva).
+        /// Collects multiple-choice responses (multiple indices encoded in a single field, separated by hyphens).
         /// </summary>
         private static ImmutableArray<int> CollectMultipleChoiceData(
             string id,
@@ -140,7 +140,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Kérdések komponenseinek összeállítása és opcionális kiértékelése.
+        /// Compiles components for questions and optionally evaluates statistics.
         /// </summary>
         private static ReportDocument CompileQuestions(
             ReportDocument document,
@@ -204,7 +204,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                         }
 
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(q.Type), q.Type, "Ismeretlen kérdéstípus.");
+                        throw new ArgumentOutOfRangeException(nameof(q.Type), q.Type, "Unknown question type.");
                 }
             }
 
@@ -212,18 +212,23 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Teljes riportkészítés streamelve: tanáronkénti PDF-ek, globális PDF és globális Excel.
+        /// Full report compilation streamed as an async sequence:
+        /// <list type="bullet">
+        /// <item>Teacher-specific PDFs</item>
+        /// <item>Global PDF</item>
+        /// <item>Global Excel (raw data)</item>
+        /// </list>
         /// </summary>
         public static async IAsyncEnumerable<ReportDocument> CompileReports(
             ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
             ImmutableArray<QuestionTemplate> rawQuestions,
-            string surveyId) // maradhat, fájlnévhez hasznos
+            string surveyId)
         {
             ArgumentNullException.ThrowIfNull(rawData);
             ArgumentNullException.ThrowIfNull(rawQuestions);
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
-            // 1) Tanáronkénti PDF-ek
+            // 1) Teacher-specific PDFs
             foreach (var entry in rawData)
             {
                 var teacher = entry.Key;
@@ -249,7 +254,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 yield return compiled;
             }
 
-            // 2/a) Globális PDF
+            // 2/a) Global PDF
             {
                 var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
                 var globalIndex = BuildAnswersIndex(allData);
@@ -269,7 +274,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 yield return compiledPdf;
             }
 
-            // 2/b) Globális Excel (nyers)
+            // 2/b) Global Excel (raw data)
             {
                 const string fileName = "global_report.xlsx";
                 var metadata = new ReportMetadata

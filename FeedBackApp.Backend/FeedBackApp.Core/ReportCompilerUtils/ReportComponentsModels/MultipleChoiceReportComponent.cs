@@ -7,31 +7,31 @@ using System.Globalization;
 namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 {
     /// <summary>
-    /// Többválasztós (Multiple Choice) kérdésekhez tartozó riportkomponens.
+    /// Report component for Multiple Choice questions.
     /// <para>
-    /// Megjeleníti a kérdés szövegét, az összes válasz számát, az opciók eloszlását
-    /// mini sávdiagrammal és táblázattal, továbbá – ha rendelkezésre áll – a leggyakoribb
-    /// együtt-előfordulásokat (opció-párok).
+    /// Displays the question text, total number of responses, option distribution
+    /// with a mini bar chart and table, and—if available—the most frequent
+    /// co-occurrences (option pairs).
     /// </para>
     /// </summary>
     /// <remarks>
-    /// Használat:
+    /// Usage:
     /// <list type="number">
-    /// <item>Példányosítsd a komponenst <see cref="MultipleChoiceEvaluationData"/> adattal.</item>
-    /// <item>Add hozzá a dokumentum <c>ReportComponents</c> listájához.</item>
-    /// <item>A dokumentum generálásakor a komponens a tartalom megfelelő részébe renderelődik.</item>
+    /// <item>Instantiate the component with <see cref="MultipleChoiceEvaluationData"/>.</item>
+    /// <item>Add it to the document’s <c>ReportComponents</c> list.</item>
+    /// <item>During document generation, the component renders into the appropriate content section.</item>
     /// </list>
-    /// Előfeltételek:
+    /// Preconditions:
     /// <list type="bullet">
-    /// <item><see cref="MultipleChoiceEvaluationData.AnswerOptions"/> az opciók listája (szöveg).</item>
-    /// <item><see cref="MultipleChoiceEvaluationData.Frequencies"/> az abszolút gyakoriságok (opció → db).</item>
-    /// <item><see cref="MultipleChoiceEvaluationData.RelativeFrequenciesPercent"/> opcionális relatív százalékok.</item>
+    /// <item><see cref="MultipleChoiceEvaluationData.AnswerOptions"/> contains the list of options (text).</item>
+    /// <item><see cref="MultipleChoiceEvaluationData.Frequencies"/> contains absolute counts (option → count).</item>
+    /// <item><see cref="MultipleChoiceEvaluationData.RelativeFrequenciesPercent"/> optional relative percentages.</item>
     /// </list>
     /// </remarks>
     public sealed class MultipleChoiceReportComponent(MultipleChoiceEvaluationData dataSource)
         : ReportComponent<MultipleChoiceEvaluationData>(dataSource)
     {
-        // --- Design tokenek ---
+        // --- Design tokens ---
         private const float OuterPaddingH = 28f;
         private const float OuterPaddingV = 18f;
         private const float TitleSize = 18f;
@@ -40,7 +40,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private const float BarHeight = 8f;
         private const float BarWidth = 180f;
 
-        // --- Színek ---
+        // --- Colors ---
         private static readonly string TextBlack = Colors.Grey.Darken4;
         private static readonly string MetaGrey = Colors.Grey.Darken2;
         private static readonly string SubtleGrey = Colors.Grey.Lighten3;
@@ -49,26 +49,26 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private static readonly string PageWhite = Colors.White;
 
         /// <summary>
-        /// A komponens megjelenítésének leírása.
+        /// Describes how the component is rendered.
         /// <para>
-        /// Szekciók:
-        /// 1) Címsor (kérdés),
-        /// 2) Üres állapot (hiányzó opciók vagy válaszok),
-        /// 3) Meta (összes válasz),
-        /// 4) Eloszlás táblázat mini sávdiagramokkal,
-        /// 5) Opcionális: top együtt-előfordulások (A–B párok).
+        /// Sections:
+        /// 1) Title (question),  
+        /// 2) Empty state (missing options or responses),  
+        /// 3) Meta (total responses),  
+        /// 4) Distribution table with mini bar charts,  
+        /// 5) Optional: top co-occurrences (A–B pairs).  
         /// </para>
         /// </summary>
-        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
+        /// <param name="container">The QuestPDF container into which the component renders.</param>
         public override void Compose(IContainer container)
         {
             var data = DataSource;
 
-            // Bemenetek biztonságos kezelése
+            // Safely handle inputs
             var options = data.AnswerOptions.IsDefaultOrEmpty ? [] : data.AnswerOptions;
             var answers = data.Answers.IsDefaultOrEmpty ? [] : data.Answers;
 
-            int n = answers.Length; // összes szavazat (rekord)
+            int n = answers.Length; // total votes (records)
 
             container
                 .PaddingHorizontal(OuterPaddingH)
@@ -77,20 +77,20 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                 {
                     col.Spacing(10);
 
-                    // Cím
+                    // Title
                     col.Item().Text(data.QuestionStatement)
                         .FontSize(TitleSize).SemiBold()
                         .FontColor(TextBlack)
                         .LineHeight(1.35f);
 
-                    // Üres állapotok
+                    // Empty states
                     if (options.Length == 0)
                     {
                         col.Item()
                            .Background(PageWhite)
                            .Border(1).BorderColor(AccentBlue)
                            .Padding(12)
-                           .Text("Ehhez a kérdéshez nincsenek opciók megadva.")
+                           .Text("No options are defined for this question.")
                                .FontSize(TextSize).FontColor(MetaGrey);
                         return;
                     }
@@ -101,37 +101,37 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                            .Background(PageWhite)
                            .Border(1).BorderColor(AccentBlue)
                            .Padding(12)
-                           .Text("Ehhez a kérdéshez nem érkezett érvényes válasz.")
+                           .Text("No valid responses were received for this question.")
                                .FontSize(TextSize).FontColor(MetaGrey);
                         return;
                     }
 
-                    // Meta – összes válasz
+                    // Meta – total responses
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                        t.Span("Válaszok száma: ");
+                        t.Span("Number of responses: ");
                         t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
                     });
 
                     col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                    // Eloszlás tábla
+                    // Distribution table
                     col.Item().Table(table =>
                     {
                         table.ColumnsDefinition(c =>
                         {
-                            c.RelativeColumn(2);     // opció szöveg
-                            c.RelativeColumn(4);     // mini-sáv + %
-                            c.ConstantColumn(50);    // darab
+                            c.RelativeColumn(2);     // option text
+                            c.RelativeColumn(4);     // mini bar + %
+                            c.ConstantColumn(50);    // count
                         });
 
-                        // Fejléc
-                        table.Cell().PaddingBottom(4).Text("Opció").FontSize(MetaSize).FontColor(MetaGrey);
-                        table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
-                        table.Cell().PaddingBottom(4).AlignRight().Text("Db").FontSize(MetaSize).FontColor(MetaGrey);
+                        // Header
+                        table.Cell().PaddingBottom(4).Text("Option").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).Text("Distribution").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
-                        // Sorok – gyakoriság szerint csökkenő
+                        // Rows — sorted by decreasing frequency
                         var freq = data.Frequencies;
                         var rel = data.RelativeFrequenciesPercent;
 
@@ -145,12 +145,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                             float filled = (float)(BarWidth * (pct / 100.0));
 
-                            // 1) Opció szöveg
+                            // 1) Option text
                             table.Cell().PaddingVertical(6)
                                 .Text(option)
                                 .FontSize(TextSize).FontColor(TextBlack);
 
-                            // 2) Mini-sáv + százalék
+                            // 2) Mini bar + percentage
                             table.Cell().PaddingVertical(6).Row(row =>
                             {
                                 row.AutoItem()
@@ -172,7 +172,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                        .FontColor(MetaGrey);
                             });
 
-                            // 3) Darabszám
+                            // 3) Count
                             table.Cell().PaddingVertical(6).AlignRight()
                                 .Text(count.ToString(CultureInfo.InvariantCulture))
                                 .FontSize(TextSize).FontColor(TextBlack);
@@ -181,7 +181,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                     col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                    // Top együtt-előfordulások (opcionális)
+                    // Top co-occurrences (optional)
                     if (data.Cooccurrences is not null && data.Cooccurrences.Count > 0)
                     {
                         var topPairs = data.Cooccurrences
@@ -189,7 +189,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             .Take(5)
                             .ToList();
 
-                        col.Item().Text("Leggyakoribb együtt-előfordulások")
+                        col.Item().Text("Most frequent co-occurrences")
                             .FontSize(MetaSize).FontColor(MetaGrey);
 
                         col.Item().Table(t =>
@@ -203,7 +203,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                             t.Cell().PaddingBottom(4).Text("A").FontSize(MetaSize).FontColor(MetaGrey);
                             t.Cell().PaddingBottom(4).Text("B").FontSize(MetaSize).FontColor(MetaGrey);
-                            t.Cell().PaddingBottom(4).AlignRight().Text("Db").FontSize(MetaSize).FontColor(MetaGrey);
+                            t.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
                             foreach (var ((A, B), cnt) in topPairs)
                             {

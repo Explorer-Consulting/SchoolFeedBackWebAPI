@@ -6,34 +6,35 @@ using QuestPDF.Infrastructure;
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 {
     /// <summary>
-    /// Tanári riport dokumentum (PDF formátumban).
+    /// Teacher report document (in PDF format).
     /// <para>
-    /// Ez az osztály felelős egy adott tanárhoz tartozó PDF-riport
-    /// összeállításáért. A dokumentum fejlécében megjelennek a tanár alapadatai
-    /// (email cím és tantárgy), a tartalomban pedig a <see cref="ReportComponents"/>
-    /// listában definiált riportkomponensek.
+    /// This class is responsible for assembling a PDF report
+    /// for a specific teacher. The header of the document displays
+    /// the teacher’s basic information (email address and subject),
+    /// while the content is composed of the report components
+    /// defined in <see cref="ReportComponents"/>.
     /// </para>
     /// <para>
-    /// A QuestPDF könyvtár <see cref="IDocument"/> interfészét implementálja.
+    /// Implements the <see cref="IDocument"/> interface from the QuestPDF library.
     /// </para>
     /// </summary>
     /// <remarks>
-    /// Használat:
+    /// Usage:
     /// <list type="number">
-    /// <item>Hozz létre egy <see cref="TeacherPDFReportDocument"/> példányt a
-    /// szükséges <see cref="ReportMetadata"/> és <see cref="Recipient"/> adatokkal.</item>
-    /// <item>Add hozzá a kívánt riportkomponenseket a <see cref="ReportComponents"/> listához.</item>
-    /// <item>Hívd meg a <see cref="RenderDocument"/> metódust a PDF generálásához.</item>
+    /// <item>Create a <see cref="TeacherPDFReportDocument"/> instance with the required
+    /// <see cref="ReportMetadata"/> and <see cref="Recipient"/> data.</item>
+    /// <item>Add the desired report components to the <see cref="ReportComponents"/> list.</item>
+    /// <item>Call <see cref="RenderDocument"/> to generate the PDF.</item>
     /// </list>
     /// </remarks>
     public sealed class TeacherPDFReportDocument(ReportMetadata metadata, Recipient recipient)
         : ReportDocument(metadata, recipient), IDocument
     {
         /// <summary>
-        /// A PDF dokumentum tartalmának összeállítása.
+        /// Composes the content of the PDF document.
         /// <para>
-        /// Az oldal mérete A4, margó 28 pont. A fejlécben megjelenik a tanár email címe
-        /// és a tantárgy neve, a tartalomban pedig a hozzáadott riportkomponensek.
+        /// The page size is A4 with a 28pt margin. The header displays the teacher’s
+        /// email address and subject name, and the content includes the added report components.
         /// </para>
         /// </summary>
         public void Compose(IDocumentContainer container)
@@ -49,10 +50,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     {
                         col.Spacing(4);
 
-                        col.Item().Text($"Tanár (Email): {teacher.EmailAddress}")
+                        col.Item().Text($"Teacher (Email): {teacher.EmailAddress}")
                             .FontSize(12).Bold();
 
-                        col.Item().Text($"Tantárgy: {teacher.SubjectName}")
+                        col.Item().Text($"Subject: {teacher.SubjectName}")
                             .FontSize(11).FontColor(Colors.Grey.Darken2);
                     });
                 }
@@ -67,13 +68,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         }
 
         /// <summary>
-        /// A PDF dokumentum legenerálása és bináris formátumban való visszaadása.
+        /// Generates the PDF document and returns it in binary format.
         /// <para>
-        /// A metódus a dokumentumot memóriába rendereli, majd a kész bájt tömböt
-        /// eltárolja a <see cref="ReportDocument.Data"/> property-ben és visszaadja.
+        /// The method renders the document into memory, then stores the resulting byte array
+        /// in <see cref="ReportDocument.Data"/> and returns it.
         /// </para>
         /// </summary>
-        /// <returns>A kész PDF dokumentum tartalma bájt tömbként.</returns>
+        /// <returns>The generated PDF document as a byte array.</returns>
         public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();

@@ -5,10 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Services
 {
-    public class ReportService(IReportRepository repository, ILogger<ReportService> logger) : IReportService
+    public class ReportService(IReportRepository repository, ILogger<ReportService> reportLogger) : IReportService
     {
         private readonly IReportRepository _repository = repository;
-        private readonly ILogger<ReportService> _logger = logger;
+        private readonly ILogger<ReportService> _logger = reportLogger;
 
         public async Task CompileAndStore(string id)
         {
@@ -22,7 +22,6 @@ namespace Application.Services
             {
                 _logger.LogError(ex, "Error during report compilation for templateId={Id}", id);
                 throw new ReportCompilationException(
-                    id,
                     $"Report compilation failed for templateId={id}. See inner exception.",
                     ex
                 );

@@ -5,11 +5,11 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 {
     /// <summary>
-    /// Többválasztós (Multiple Choice) kérdés kiértékelési adatmodellje.
+    /// Statistical evaluation data model for Multiple Choice questions.
     /// <para>
-    /// Bemenetként az opciók listáját és a beérkezett válaszokat (opcióindexek) kapja,
-    /// kimenetként abszolút és relatív gyakoriságokat számol, valamint (opcionálisan)
-    /// együtt-előfordulásokat is tárolhat.
+    /// Takes the list of answer options and the received responses (option indexes) as input,
+    /// and produces absolute and relative frequencies as output.  
+    /// Optionally, it can also store co-occurrence counts.
     /// </para>
     /// </summary>
     public sealed class MultipleChoiceEvaluationData(
@@ -20,16 +20,20 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     {
         #region Inputs
 
-        /// <summary>A kérdés szövege.</summary>
+        /// <summary>
+        /// The text of the question.
+        /// </summary>
         public string QuestionStatement { get; init; } = questionStatement;
 
-        /// <summary>Válaszopciók listája (indexek ezekre hivatkoznak).</summary>
+        /// <summary>
+        /// The list of available answer options (indices in <see cref="Answers"/> refer to these).
+        /// </summary>
         public ImmutableArray<string> AnswerOptions { get; init; } = answerOptions;
 
         /// <summary>
-        /// Beérkezett válaszok opcióindexei.
+        /// The received responses as option indices.
         /// <para>
-        /// Minden elem egy kiválasztott opció indexe az <see cref="AnswerOptions"/> tömbben.
+        /// Each element represents the index of a selected option in the <see cref="AnswerOptions"/> array.
         /// </para>
         /// </summary>
         public ImmutableArray<int> Answers { get; init; } = answers;
@@ -38,17 +42,21 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 
         #region Outputs
 
-        /// <summary>Abszolút gyakoriság opciónév szerint.</summary>
+        /// <summary>
+        /// Absolute frequencies by option name.
+        /// </summary>
         public Dictionary<string, int> Frequencies { get; private set; } = [];
 
-        /// <summary>Relatív gyakoriság százalékban opciónév szerint.</summary>
+        /// <summary>
+        /// Relative frequencies (percentage) by option name.
+        /// </summary>
         public Dictionary<string, double> RelativeFrequenciesPercent { get; private set; } = [];
 
         /// <summary>
-        /// Együtt-előfordulási számláló: (A,B) → hányszor szerepeltek együtt.
+        /// Co-occurrence counts: (A, B) → number of times they appeared together.
         /// <para>
-        /// Megjegyzés: valódi együtt-előforduláshoz per-kitöltő <b>válaszhalmazokra</b> van szükség.
-        /// Ha csak lapos indexlista áll rendelkezésre, ezt nem lehet helyesen számolni.
+        /// Note: proper co-occurrence requires per-respondent <b>sets of answers</b>.  
+        /// If only a flat index list is available, true co-occurrence cannot be computed.
         /// </para>
         /// </summary>
         public Dictionary<(string A, string B), int> Cooccurrences { get; private set; } = [];
@@ -56,25 +64,28 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         #endregion
 
         /// <summary>
-        /// Kiértékelés futtatása: abszolút és relatív gyakoriságok számítása.
+        /// Runs the evaluation: calculates absolute and relative frequencies.
         /// </summary>
         public override EvaluationData EvaluateData()
         {
-            // 1) Abszolút gyakoriság (opciónév → db)
+            // 1) Absolute frequency (option name → count)
             Frequencies = CalculateFrequency(AnswerOptions, Answers);
 
-            // 2) Relatív gyakoriság (%) – összes db alapján
+            // 2) Relative frequency (%) – based on total count
             RelativeFrequenciesPercent = CalculateRelativeFrequencyPercent(Frequencies);
 
-            // 3) Együtt-előfordulások:
-            // FIGYELEM: ehhez per-kitöltő válaszhalmazokra lenne szükség (pl. IEnumerable<int[]>).
-            // Jelen bemenet (lapos indexlista) nem tartalmazza ezt az információt, ezért itt nem számolunk.
+            // 3) Co-occurrences:
+            // NOTE: This would require per-respondent sets of answers (e.g., IEnumerable<int[]>).
+            // With the current flat index list, this information is not available,
+            // so no co-occurrence calculation is performed here.
             // Cooccurrences = ...
 
             return this;
         }
 
-        /// <summary>A hozzá tartozó riportkomponens (PDF) előállítása.</summary>
+        /// <summary>
+        /// Creates the corresponding report component (for embedding into a PDF).
+        /// </summary>
         public override IComponent CompileComponent()
         {
             return new MultipleChoiceReportComponent(this);

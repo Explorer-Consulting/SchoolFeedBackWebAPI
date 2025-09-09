@@ -9,10 +9,10 @@ using Microsoft.OpenApi.Models;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
-    public sealed class ReportFunctions(IReportService reportService, ILogger<ReportFunctions> logger)
+    public sealed class ReportFunctions(IReportService reportService, ILogger<ReportFunctions> reportLogger)
     {
         private readonly IReportService _reportService = reportService;
-        private readonly ILogger<ReportFunctions> _reportLogger = logger;
+        private readonly ILogger<ReportFunctions> _reportLogger = reportLogger;
 
         [Function("PerformReportCompilation")]
         [OpenApiOperation(
@@ -103,13 +103,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (string.IsNullOrWhiteSpace(templateID))
             {
-                logger.LogWarning("Empty templateID received in DeliverEvaluationReports.");
+                _reportLogger.LogWarning("Empty templateID received in DeliverEvaluationReports.");
                 var bad = request.CreateResponse(HttpStatusCode.BadRequest);
                 await bad.WriteAsJsonAsync(new { error = "Invalid templateID. The value cannot be null or whitespace." });
                 return bad;
             }
 
-            logger.LogInformation("DeliverEvaluationReports triggered. templateID={TemplateId}", templateID);
+            _reportLogger.LogInformation("DeliverEvaluationReports triggered. templateID={TemplateId}", templateID);
 
             var response = request.CreateResponse(HttpStatusCode.Accepted);
             await response.WriteAsJsonAsync(new

@@ -5,13 +5,13 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 {
     /// <summary>
-    /// Likert-skálás kérdéshez tartozó statisztikai kiértékelési adatmodell.
+    /// Statistical evaluation data model for Likert-scale questions.
     /// <para>
-    /// Tartalmazza a nyers válaszokat, a skála paramétereit, valamint a
-    /// kiértékelt mutatókat (átlag, medián, módusz, szórás, min/max, elégedettségi index, egyetértési arány).
+    /// Contains the raw responses, the scale parameters, and the calculated indicators 
+    /// (mean, median, mode, standard deviation, min/max, satisfaction index, agreement rate).
     /// </para>
-    /// A <see cref="EvaluateData"/> hívása után minden számított érték feltöltésre kerül.
-    /// A <see cref="CompileComponent"/> metódus a hozzá tartozó QuestPDF komponenssel tér vissza.
+    /// After calling <see cref="EvaluateData"/>, all computed values are populated.  
+    /// The <see cref="CompileComponent"/> method returns the corresponding QuestPDF component.
     /// </summary>
     public sealed class LikertScaleEvaluationData(
         string questionStatement,
@@ -24,63 +24,63 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         #region Question-specific properties
 
         /// <summary>
-        /// A kérdés szövege (pl. „A tanár érthetően magyarázott”).
+        /// The question text (e.g., "The teacher explained clearly").
         /// </summary>
         public string QuestionStatement { get; init; } = questionStatement;
 
         /// <summary>
-        /// A beérkezett válaszok listája (skálaértékek).
+        /// The list of received responses (scale values).
         /// </summary>
         public ImmutableArray<int> Answers = answers;
 
         /// <summary>
-        /// Az értékek jelentése (pl. „1 = Egyáltalán nem értek egyet, 5 = Teljesen egyetértek”).
+        /// The meaning of the values (e.g., "1 = Strongly disagree, 5 = Strongly agree").
         /// </summary>
         public string ValueMeanings { get; init; } = valueMeanings;
 
         /// <summary>
-        /// A skála minimum értéke (pl. 1).
+        /// The minimum scale value (e.g., 1).
         /// </summary>
         public int MinimumScale { get; init; } = minimumScale;
 
         /// <summary>
-        /// A skála maximum értéke (pl. 5).
+        /// The maximum scale value (e.g., 5).
         /// </summary>
         public int MaximumScale { get; init; } = maximumScale;
 
-        /// <summary>Átlag.</summary>
+        /// <summary>Mean.</summary>
         public double MeanValue { get; private set; }
 
-        /// <summary>Medián.</summary>
+        /// <summary>Median.</summary>
         public double MedianValue { get; private set; }
 
-        /// <summary>Módusz.</summary>
+        /// <summary>Mode.</summary>
         public double ModeValue { get; private set; }
 
-        /// <summary>Szórás.</summary>
+        /// <summary>Standard deviation.</summary>
         public double StandardDeviation { get; private set; }
 
-        /// <summary>Legnagyobb érték.</summary>
+        /// <summary>Maximum observed value.</summary>
         public int MaximumRate { get; private set; }
 
-        /// <summary>Legkisebb érték.</summary>
+        /// <summary>Minimum observed value.</summary>
         public int MinimumRate { get; private set; }
 
-        /// <summary>Egyetértési arány (%).</summary>
+        /// <summary>Agreement rate (%).</summary>
         public double AgreementRate { get; private set; }
 
-        /// <summary>Elégedettségi index (0–100%).</summary>
+        /// <summary>Satisfaction index (0–100%).</summary>
         public double SatisfactionIndex { get; private set; }
 
         #endregion
 
         /// <summary>
-        /// A nyers adatok feldolgozása és a statisztikai mutatók kiszámítása.
+        /// Processes the raw data and calculates all statistical indicators.
         /// <para>
-        /// - Medián, átlag, módusz, szórás  
-        /// - Minimum és maximum  
-        /// - Egyetértési arány (küszöb: skála közepe)  
-        /// - Elégedettségi index (átlag normalizálása 0–100%-ra)  
+        /// - Median, mean, mode, standard deviation  
+        /// - Minimum and maximum  
+        /// - Agreement rate (threshold = midpoint of the scale)  
+        /// - Satisfaction index (mean normalized to 0–100%)  
         /// </para>
         /// </summary>
         public override EvaluationData EvaluateData()
@@ -97,7 +97,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// A hozzá tartozó riportkomponens előállítása (PDF-be illeszthető).
+        /// Creates the corresponding report component (for embedding into a PDF).
         /// </summary>
         public override IComponent CompileComponent()
         {

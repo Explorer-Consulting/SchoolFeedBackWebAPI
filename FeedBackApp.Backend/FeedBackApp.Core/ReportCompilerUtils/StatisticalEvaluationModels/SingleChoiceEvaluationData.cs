@@ -6,13 +6,13 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 {
     /// <summary>
-    /// Egyválasztós (Single Choice) kérdés kiértékelési adatmodellje.
+    /// Statistical evaluation data model for single-choice questions.
     /// <para>
-    /// Kétféle kérdéstípus támogatott:
+    /// Supports two types of questions:
     /// <list type="bullet">
-    /// <item><see cref="SingleChoice.REGULAR"/> – előre definiált opciók közül választás (számított statisztikákkal).</item>
-    /// <item><see cref="SingleChoice.CUSTOM"/> – vegyes: a számként értelmezhető válaszokból statisztikák készülnek,
-    /// a nem-szám válaszok külön listában jelennek meg (statisztika nélkül).</item>
+    /// <item><see cref="SingleChoice.REGULAR"/> – selection from predefined options (with computed statistics).</item>
+    /// <item><see cref="SingleChoice.CUSTOM"/> – mixed mode: numeric answers are used for statistics,
+    /// while non-numeric answers are kept separately without statistical evaluation.</item>
     /// </list>
     /// </para>
     /// </summary>
@@ -26,50 +26,52 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     {
         #region Question-specific properties
 
-        /// <summary>A kérdés szövege.</summary>
+        /// <summary>The text of the question.</summary>
         public string QuestionStatement { get; init; } = questionStatement;
 
-        /// <summary>Előre definiált opciók listája.</summary>
+        /// <summary>List of predefined options.</summary>
         public ImmutableArray<string> QuestionOptions = questionOptions;
 
         /// <summary>
-        /// Válaszok számosított reprezentációja.
-        /// REGULAR esetben: az <see cref="QuestionOptions"/> indexei.
-        /// CUSTOM esetben: a beérkezett numerikus értékek (nem indexek!), pl. 1..5.
+        /// Numeric representation of answers.  
+        /// For <see cref="SingleChoice.REGULAR"/>: indices into <see cref="QuestionOptions"/>.  
+        /// For <see cref="SingleChoice.CUSTOM"/>: raw numeric values (e.g., 1..5), not indices.
         /// </summary>
         public ImmutableArray<int> QuestionOptionAnswers = questionOptionAnswers;
 
-        /// <summary>Nem-szám (szabad szöveges) válaszok listája.</summary>
+        /// <summary>List of non-numeric (free text) answers.</summary>
         public ImmutableArray<string> QuestionOpenAnswers = questionOpenAnswers;
 
-        /// <summary>A kérdés típusa: <see cref="SingleChoice.REGULAR"/> vagy <see cref="SingleChoice.CUSTOM"/>.</summary>
+        /// <summary>The type of the question: <see cref="SingleChoice.REGULAR"/> or <see cref="SingleChoice.CUSTOM"/>.</summary>
         public SingleChoice Type = type;
 
-        /// <summary>Átlag (REGULAR és CUSTOM numerikus válaszok esetén).</summary>
+        /// <summary>Mean value (for both REGULAR and CUSTOM numeric answers).</summary>
         public double MeanValue { get; private set; }
 
-        /// <summary>Medián (REGULAR és CUSTOM numerikus válaszok esetén).</summary>
+        /// <summary>Median value (for both REGULAR and CUSTOM numeric answers).</summary>
         public double MedianValue { get; private set; }
 
-        /// <summary>Módusz (REGULAR és CUSTOM numerikus válaszok esetén).</summary>
+        /// <summary>Mode value (for both REGULAR and CUSTOM numeric answers).</summary>
         public double ModeValue { get; private set; }
 
-        /// <summary>Abszolút gyakoriság.
-        /// REGULAR: opció-nevekre aggregálva.
-        /// CUSTOM: konkrét numerikus értékekre (pl. "1","2","3"...).</summary>
+        /// <summary>
+        /// Absolute frequency.  
+        /// REGULAR: aggregated by option names.  
+        /// CUSTOM: aggregated by numeric values (e.g., "1", "2", "3"...).
+        /// </summary>
         public Dictionary<string, int> Frequencies { get; private set; } = [];
 
-        /// <summary>Relatív gyakoriság % (REGULAR és CUSTOM numerikus válaszokra).</summary>
+        /// <summary>Relative frequencies in % (for REGULAR and CUSTOM numeric answers).</summary>
         public Dictionary<string, double> RelativeFrequencies { get; private set; } = [];
 
         #endregion
 
         /// <summary>
-        /// Kiértékelés futtatása.
+        /// Executes the statistical evaluation.
         /// <para>
-        /// REGULAR: átlag/medián/módusz + gyakoriságok az opciók szerint.
-        /// CUSTOM: ha vannak numerikus válaszok, akkor ezekből átlag/medián/módusz + gyakoriságok készülnek,
-        /// a nem-szám válaszok pedig változatlanul megjelennek.
+        /// <b>REGULAR:</b> calculates mean, median, mode, and frequencies by option.  
+        /// <b>CUSTOM:</b> if numeric answers exist, calculates mean, median, mode, and frequencies;
+        /// non-numeric answers remain unchanged and are displayed separately in the report.
         /// </para>
         /// </summary>
         public override EvaluationData EvaluateData()
@@ -90,21 +92,21 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
             // CUSTOM
             if (QuestionOptionAnswers.Length > 0)
             {
-                // Itt a QuestionOptionAnswers NEM opcióindex, hanem maga a numerikus érték (pl. 1..5)
+                // In CUSTOM mode, QuestionOptionAnswers contains raw numeric values (not option indices).
                 MeanValue = CalculateMeanValue(QuestionOptionAnswers);
                 MedianValue = CalculateMedianValue(QuestionOptionAnswers);
                 ModeValue = CalculateModeValue(QuestionOptionAnswers);
                 Frequencies = CalculateFrequency(QuestionOptions, QuestionOptionAnswers);
                 RelativeFrequencies = CalculateRelativeFrequencyPercent(Frequencies, QuestionOptionAnswers.Length);
             }
-            // Ha nincsenek numerikus válaszok, akkor a stat mezők 0/üres maradnak, 
-            // és csak a QuestionOpenAnswers lesz releváns a riportban.
+            // If no numeric answers exist, statistical fields remain at default (0/empty),
+            // and only QuestionOpenAnswers will be relevant in the report.
 
             return this;
         }
 
         /// <summary>
-        /// A hozzá tartozó riportkomponens (PDF) előállítása.
+        /// Creates the corresponding report component (for PDF export).
         /// </summary>
         public override IComponent CompileComponent()
         {
