@@ -83,6 +83,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
                 .Property(q => q.QuestionTemplates)
                 .HasConversion(new RecursiveConverter<IList<QuestionTemplate>>());
 
+            modelBuilder.Entity<QuestionnaireTemplate>()
+                .Property(q => q.Title)
+                .HasConversion(new RecursiveConverter<string>());
+
             modelBuilder.Entity<Questionnaire>()
                 .Property(q => q.Status)
                 .HasConversion(new RecursiveConverter<bool>());

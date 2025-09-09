@@ -18,7 +18,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var setById = metadata.StudentSets.ToDictionary(s => s.SetId);
             var template = metadata.QuestionTemplates;
 
-            QuestionnaireTemplate tempForSave = new QuestionnaireTemplate(metadata.Id.ToString(), template);
+            QuestionnaireTemplate tempForSave = new QuestionnaireTemplate(metadata.Id.ToString(),metadata.Title, template);
 
             _context.Add(metadata);
             _context.Add(tempForSave);
