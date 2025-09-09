@@ -11,7 +11,12 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         public DbSet<QuestionnaireTemplate> QuestionnaireTemplates { get; set; }
         public DbSet<EmailsToSend> EmailsToSend { get; set; }
         public DbSet<StudentWhitelist> StudentWhitelist { get; set; }
-        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) { }
+
+        private readonly string _containerName;
+        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) {
+                _containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME")
+                    ?? throw new InvalidOperationException("COSMOS_CONTAINER_NAME not set in environment variables");
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
