@@ -10,19 +10,37 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
     /// <summary>
-    /// Riportok (PDF/Excel stb.) generálása és feltöltése Azure Blob Storage-ba.
+    /// Riportok (PDF/Excel stb.) generálásáért és Azure Blob Storage-ba történő
+    /// feltöltéséért felelős repository implementáció.
     /// <para>
-    /// A repository nem tárol riport-metaadatot adatbázisban; a riportok elérhetősége a blob elérési útjából / URL-jéből vezethető le.
+    /// Nem tárol riport-metaadatot relációs adatbázisban; a riportok elérhetősége
+    /// a blob elérési útjából / URL-jéből vezethető le.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// <para><b>Felelősség (SRP):</b> kizárólag riport létrehozás + feltöltés.</para>
+    /// <para><b>Oldalsó hatás:</b> blobok jönnek létre/felülíródnak a megadott konténerben.</para>
+    /// <para><b>Thread-safety:</b> az osztály példányai DI-n keresztül tipikusan
+    /// scoped/transient életciklussal használhatók; a metódus nem tart állapotot
+    /// hívások között.</para>
+    /// </remarks>
     public sealed class ReportRepository(AppDBContext context, BlobContainerClient container) : IReportRepository
     {
+        #region Dependencies
+
+        /// <summary>
+        /// Alkalmazás adatbázis-kontekstus (EF Core).
+        /// </summary>
         private readonly AppDBContext _context = context;
 
         /// <summary>
         /// Az Azure Blob Storage konténer kliense, amelybe a riportok feltöltésre kerülnek.
         /// </summary>
         private readonly BlobContainerClient _container = container;
+
+        #endregion
+
+        #region Public API
 
         /// <summary>
         /// Azonosító alapján (pl. <c>questiontemplates_{GUID}</c>) összegyűjti az aktív kérdőíveket,
@@ -33,7 +51,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         /// <c>questiontemplates_{GUID}</c>.
         /// </param>
         /// <remarks>
-        /// Folyamat:
+        /// <para><b>Folyamat:</b></para>
         /// <list type="number">
         /// <item>Azonosító validálása (prefix + GUID).</item>
         /// <item>Aktív kérdőívek és válaszaik beolvasása az adott <c>surveyId</c>-ra.</item>
@@ -41,8 +59,14 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         /// <item>A sablonhoz tartozó kérdések beolvasása.</item>
         /// <item>Riportok legenerálása (<see cref="EvaluationReportCompiler"/>), feltöltése blobba.</item>
         /// </list>
-        /// A metódus nem dob hibát, ha nincs releváns adat (pl. nincs aktív kérdőív vagy kérdés-sablon),
+        /// <para>
+        /// A metódus nem dob hibát, ha nincs releváns adat (pl. nincs aktív kérdőív vagy kérdés-sablon);
         /// ilyenkor csendben visszatér.
+        /// </para>
+        /// <para><b>Teljesítmény:</b> a csoportosítás <c>GroupBy</c> segítségével történik memóriában;
+        /// egy tanár–tantárgy párhoz lokális index épül a reportgenerálás során az értékelő
+        /// util osztályban. A blob feltöltés <see cref="BinaryData"/>-val történik,
+        /// ami közvetlenül a <c>byte[]</c> dokumentumot használja.</para>
         /// </remarks>
         /// <exception cref="ArgumentException">
         /// Ha az <paramref name="fullTemplateId"/> nem a várt formátumú (hibás prefix vagy érvénytelen GUID).
@@ -62,14 +86,14 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             // 1) Aktív kérdőívek + válaszaik betöltése (csak a tárgyalt survey-hez).
             var questionnaires = await _context.Questionnaires
-        .AsNoTracking()
-        .Where(q => q.Status == true && q.SurveyId == surveyId)
-        .ToListAsync();
+                .AsNoTracking()
+                .Where(q => q.Status == true && q.SurveyId == surveyId)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
             if (questionnaires.Count == 0)
                 return;
 
-            // 2) Projekció memóriában + null-koaleszcencia
             var rows = questionnaires.Select(q => new
             {
                 Teacher = new Teacher(q.TeacherEmail ?? string.Empty, q.SubjectName ?? string.Empty),
@@ -86,7 +110,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             if (rows.Count == 0)
                 return;
 
-            // 2) Tanár–tantárgy kulcs alá aggregáljuk az összes választ.
+            // 3) Tanár–tantárgy kulcs alá aggregáljuk az összes választ.
             var answerCollection = rows
                 .GroupBy(x => x.Teacher)
                 .ToImmutableDictionary(
@@ -94,22 +118,23 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     g => g.SelectMany(x => x.Results).ToImmutableArray()
                 );
 
-            // 3) A sablonhoz tartozó kérdések betöltése.
+            // 4) A sablonhoz tartozó kérdések betöltése.
             var template = await _context.QuestionnaireTemplates
-    .AsNoTracking()
-    .SingleOrDefaultAsync(qt => qt.Id == templateDocId);
+                .AsNoTracking()
+                .SingleOrDefaultAsync(qt => qt.Id == templateDocId)
+                .ConfigureAwait(false);
 
-            var questions = (template?.QuestionTemplates ?? new List<QuestionTemplate>())
+            var questions = (template?.QuestionTemplates ?? [])
                 .ToImmutableArray();
 
             // Ha nincs kérdés, nincs mit riportálni.
             if (questions.IsDefaultOrEmpty)
                 return;
 
-            // 4) Riportok generálása és feltöltése.
+            // 5) Riportok generálása és feltöltése.
             await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId))
             {
-                var blobPath = BuildBlobPath(document.Metadata.FileName, document.Recipient);
+                var blobPath = BuildBlobPath($"{surveyId}_{document.Metadata.FileName}", document.Recipient);
                 var blob = _container.GetBlobClient(blobPath);
 
                 // Feltöltés BinaryData-val; a BinaryData-s overload implicit felülír, ha a blob létezik.
@@ -123,9 +148,13 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                             ContentType = document.Metadata.MimeType
                         }
                     }
-                );
+                ).ConfigureAwait(false);
             }
         }
+
+        #endregion
+
+        #region Path helpers
 
         /// <summary>
         /// Képzi a riport blob útvonalát:
@@ -151,7 +180,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         /// a tiltott path-karaktereket kötőjelre (<c>-</c>) cseréli, majd <c>Trim()</c>-et alkalmaz.
         /// </summary>
         /// <param name="input">Eredeti e-mail vagy azonosító.</param>
-        /// <returns>Biztonságosan használható path-szegmens.</returns>
+        /// <returns>Biztonságosan használható path-szegmens (üres bemenet esetén üres string).</returns>
         private static string San(string? input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
@@ -165,5 +194,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             return sb.ToString().Trim();
         }
+
+        #endregion
     }
 }
