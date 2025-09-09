@@ -1,10 +1,17 @@
 import type { BaseQuestionProps } from "@/components/feedback/questions/types";
-import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group"
+import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import QuestionWrapper from "@/components/feedback/questions/QuestionWrapper";
 import { Input } from "@/components/ui/input";
 
-export default function MultinomialSingleChoiceOther({ q, index, value, onChange, isInvalid, description }: BaseQuestionProps) {
+export default function MultinomialSingleChoiceOther({
+    q,
+    index,
+    value,
+    onChange,
+    isInvalid,
+    description,
+}: BaseQuestionProps) {
     const v = String(value ?? "");
     const options = q.options ?? [];
     const predefinedIds = options.map((_, i) => String(i + 1));
@@ -18,14 +25,12 @@ export default function MultinomialSingleChoiceOther({ q, index, value, onChange
                     {index}. {q.text}
                 </Label>
                 {description && (
-                    <span className="text-sm text-muted-foreground">
-                        {description}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{description}</span>
                 )}
             </div>
             <RadioGroup
                 value={isPredef ? v : ""}
-                onValueChange={(val) => onChange(val)}
+                onValueChange={(val) => onChange(val)} // előredefiniált opció
             >
                 {options.map((opt, idx) => {
                     const id = String(idx + 1);
@@ -39,8 +44,10 @@ export default function MultinomialSingleChoiceOther({ q, index, value, onChange
             </RadioGroup>
             <Input
                 placeholder="Egyéb, éspedig:"
-                value={isOther ? v : ""}
-                onChange={(e) => onChange(e.target.value)}
+                value={isOther ? v.replace(/^_/, "") : ""} // "_" ne jelenjen meg a usernek
+                onChange={(e) =>
+                    onChange(e.target.value ? `_${e.target.value}` : "")
+                }
             />
         </QuestionWrapper>
     );
