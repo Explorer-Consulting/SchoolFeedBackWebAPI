@@ -89,7 +89,7 @@ public class EmailService : IEmailService
                 if (surveyBatch != null)
                     surveyBatch.Emails.Remove(e.Email);
 
-                if (!surveyBatch.Emails.Any())
+                if ( surveyBatch!=null && !surveyBatch.Emails.Any())
                 {
                     doc.EmailsToSendList.Remove(surveyBatch);
                 }
