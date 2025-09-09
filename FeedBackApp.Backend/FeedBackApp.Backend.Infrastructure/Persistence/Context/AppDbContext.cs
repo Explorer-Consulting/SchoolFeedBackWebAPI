@@ -1,6 +1,8 @@
 ﻿using FeedBackApp.Backend.Infrastructure.Persistence.Helpers;
 using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Newtonsoft.Json;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence
 {
@@ -13,9 +15,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
         public DbSet<StudentWhitelist> StudentWhitelist { get; set; }
 
         private readonly string _containerName;
-        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options) {
-                _containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME")
-                    ?? throw new InvalidOperationException("COSMOS_CONTAINER_NAME not set in environment variables");
+        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options)
+        {
+            _containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME")
+                ?? throw new InvalidOperationException("COSMOS_CONTAINER_NAME not set in environment variables");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -93,7 +96,15 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence
 
             modelBuilder.Entity<Questionnaire>()
                 .Property(q => q.QuestionnaireResults)
-                .HasConversion(new RecursiveConverter<IList<QuestionAnswer>>());
+                .HasConversion(new RecursiveConverter<IList<QuestionAnswer>>())
+                .Metadata.SetValueComparer(
+                    new ValueComparer<IList<QuestionAnswer>>(
+                        (c1, c2) => JsonConvert.SerializeObject(c1) == JsonConvert.SerializeObject(c2),
+                        c => JsonConvert.SerializeObject(c).GetHashCode(),
+                        c => JsonConvert.DeserializeObject<IList<QuestionAnswer>>(JsonConvert.SerializeObject(c))!
+                    )
+                );
+
 
             modelBuilder.Entity<StudentWhitelist>()
                 .Property(w => w.StudentEmails)
