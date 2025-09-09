@@ -63,6 +63,10 @@ namespace Application.Validation.UpdateValidation
                                 {
                                     context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
                                 }
+                                else if(!answer.StartsWith("_"))
+                                {
+                                    context.AddFailure("Answer", $"Answer for '{template.Question}-{template.Id}' must either be a number or a string starting with _");
+                                }
                             }
                             break;
 

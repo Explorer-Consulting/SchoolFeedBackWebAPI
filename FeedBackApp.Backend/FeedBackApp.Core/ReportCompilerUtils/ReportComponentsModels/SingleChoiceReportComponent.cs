@@ -11,29 +11,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
     /// <summary>
     /// Egyválasztós (Single Choice) kérdések riportkomponense.
     /// <para>
-    /// Két megjelenítési ágat támogat:
+    /// Típusok:
     /// <list type="bullet">
     /// <item><see cref="SingleChoice.REGULAR"/>: opciók eloszlása mini sávdiagrammal (% és db), statisztikákkal (N, átlag, medián, módusz).</item>
-    /// <item><c>OTHER</c> (szöveges „Egyéb” válaszok): a beírt szöveges válaszok listázása kártyákban.</item>
+    /// <item><see cref="SingleChoice.CUSTOM"/>: numerikus értékek statisztikái + gyakoriság, szöveges „Egyéb” válaszok külön listában.</item>
     /// </list>
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// Elvárt adatok:
-    /// <list type="bullet">
-    /// <item><see cref="SingleChoiceEvaluationData.QuestionStatement"/> – a kérdés szövege.</item>
-    /// <item><see cref="SingleChoiceEvaluationData.QuestionOptions"/> – az opciók (eredeti sorrendben).</item>
-    /// <item><see cref="SingleChoiceEvaluationData.QuestionOptionAnswers"/> – a válaszok indexei (REGULAR eset).</item>
-    /// <item><see cref="SingleChoiceEvaluationData.Frequencies"/> és <see cref="SingleChoiceEvaluationData.RelativeFrequencies"/> – eloszlási mutatók.</item>
-    /// <item><see cref="SingleChoiceEvaluationData.QuestionOpenAnswers"/> – szabad szöveges „Egyéb” válaszok (OTHER eset).</item>
-    /// </list>
-    /// Használat:
-    /// <list type="number">
-    /// <item>Példányosítsd a komponenst egy <see cref="SingleChoiceEvaluationData"/> adattal.</item>
-    /// <item>Add a dokumentum <c>ReportComponents</c> listájához.</item>
-    /// <item>Rendereléskor a komponens a típusnak megfelelő elrendezést jeleníti meg.</item>
-    /// </list>
-    /// </remarks>
     public sealed class SingleChoiceReportComponent(SingleChoiceEvaluationData dataSource)
         : ReportComponent<SingleChoiceEvaluationData>(dataSource)
     {
@@ -54,18 +38,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private static readonly string AccentBlue = Colors.Blue.Medium;
         private static readonly string PageWhite = Colors.White;
 
-        /// <summary>
-        /// A komponens megjelenítésének leírása.
-        /// <para>
-        /// Ágak:
-        /// <list type="number">
-        /// <item><b>REGULAR</b>: üres állapot ellenőrzések → meta (N, átlag, medián, módusz) → eloszlás táblázat
-        /// (opció szöveg, mini sáv + %, darab), az opciók eredeti sorrendjét megtartva.</item>
-        /// <item><b>OTHER</b>: üres állapot ellenőrzés → válaszok egyszerű dobozokban (szöveges lista).</item>
-        /// </list>
-        /// </para>
-        /// </summary>
-        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
         public override void Compose(IContainer container)
         {
             var data = DataSource;
@@ -76,6 +48,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                 ? []
                 : data.QuestionOpenAnswers.Where(s => !string.IsNullOrWhiteSpace(s)).ToImmutableArray();
 
+            var hasNums = answersIdx.Length > 0;
+            var hasTexts = openAnswers.Length > 0;
+
             int n = answersIdx.Length;
 
             container
@@ -85,16 +60,15 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                 {
                     col.Spacing(10);
 
-                    // Cím
+                    // --- Cím ---
                     col.Item().Text(data.QuestionStatement)
                         .FontSize(TitleSize).SemiBold()
                         .FontColor(TextBlack)
                         .LineHeight(1.35f);
 
-                    // --- REGULAR ág: diszkrét opciók százalékkal és darabszámmal ---
+                    // --- REGULAR ág ---
                     if (data.Type is SingleChoice.REGULAR)
                     {
-                        // Üres állapotok
                         if (options.Length == 0)
                         {
                             col.Item()
@@ -117,7 +91,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             return;
                         }
 
-                        // Meta – N, alapsztat
+                        // Meta – N, statisztikák
                         col.Item().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
@@ -136,7 +110,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                         col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                        // Eloszlás tábla
+                        // Eloszlás táblázat
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
@@ -154,7 +128,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             var freq = data.Frequencies ?? [];
                             var rel = data.RelativeFrequencies ?? [];
 
-                            // Megjelenítés az opciók eredeti sorrendjében
                             foreach (var option in options)
                             {
                                 freq.TryGetValue(option, out var count);
@@ -167,12 +140,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                                 float filled = (float)(BarWidth * (pct / 100.0));
 
-                                // 1) Opció
                                 table.Cell().PaddingVertical(6)
                                     .Text(option)
                                     .FontSize(TextSize).FontColor(TextBlack);
 
-                                // 2) Mini sáv + %
                                 table.Cell().PaddingVertical(6).Row(row =>
                                 {
                                     row.AutoItem()
@@ -194,47 +165,122 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                            .FontColor(MetaGrey);
                                 });
 
-                                // 3) Darab
                                 table.Cell().PaddingVertical(6).AlignRight()
                                     .Text(count.ToString(CultureInfo.InvariantCulture))
                                     .FontSize(TextSize).FontColor(TextBlack);
                             }
                         });
                     }
-                    // --- OTHER ág: szabad szöveges „Egyéb” válaszok ---
+                    // --- CUSTOM ág ---
                     else
                     {
-                        if (openAnswers.Length == 0)
+                        if (!hasNums && !hasTexts)
                         {
                             col.Item()
                                .Background(PageWhite)
                                .Border(1).BorderColor(AccentBlue)
                                .Padding(12)
-                               .Text("Ehhez a kérdéshez nem érkezett szöveges válasz.")
+                               .Text("Ehhez a kérdéshez nem érkezett válasz.")
                                    .FontSize(TextSize).FontColor(MetaGrey);
                             return;
                         }
 
-                        // Meta – N
-                        col.Item().Text(t =>
+                        if (hasNums)
                         {
-                            t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                            t.Span("Válaszok száma: ");
-                            t.Span(openAnswers.Length.ToString(CultureInfo.InvariantCulture)).SemiBold();
-                        });
+                            // Meta – numerikus statisztikák
+                            col.Item().Text(t =>
+                            {
+                                t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
+                                t.Span("Numerikus válaszok száma: ");
+                                t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
 
-                        col.Item().LineHorizontal(1).LineColor(SubtleGrey);
+                                t.Span("   •   Átlag: ");
+                                t.Span(data.MeanValue.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
 
-                        // Felsorolás dobozokban
-                        foreach (var ans in openAnswers)
+                                t.Span("   •   Medián: ");
+                                t.Span(data.MedianValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
+
+                                t.Span("   •   Módusz: ");
+                                t.Span(data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
+                            });
+
+                            col.Item().LineHorizontal(1).LineColor(SubtleGrey);
+
+                            // Gyakoriság táblázat (kulcsok: numerikus értékek szövegesen)
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn(2);     // érték
+                                    c.RelativeColumn(2);     // mini-sáv + %
+                                    c.ConstantColumn(50);    // darab
+                                });
+
+                                // Fejléc
+                                table.Cell().PaddingBottom(4).Text("Érték").FontSize(MetaSize).FontColor(MetaGrey);
+                                table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
+                                table.Cell().PaddingBottom(4).AlignRight().Text("Db").FontSize(MetaSize).FontColor(MetaGrey);
+
+                                var freq = data.Frequencies ?? [];
+                                var rel = data.RelativeFrequencies ?? [];
+
+                                foreach (var (key, count) in freq.OrderByDescending(kv => kv.Value))
+                                {
+                                    double pct = 0.0;
+                                    if (rel.TryGetValue(key, out var rpct))
+                                        pct = rpct;
+                                    else if (n > 0)
+                                        pct = (double)count / n * 100.0;
+
+                                    float filled = (float)(BarWidth * (pct / 100.0));
+
+                                    table.Cell().PaddingVertical(6)
+                                        .Text(key)
+                                        .FontSize(TextSize).FontColor(TextBlack);
+
+                                    table.Cell().PaddingVertical(6).Row(row =>
+                                    {
+                                        row.AutoItem()
+                                           .Width(BarWidth)
+                                           .Height(BarHeight)
+                                           .Background(TrackGrey)
+                                           .Border(0.5f).BorderColor(SubtleGrey)
+                                           .Column(cc =>
+                                           {
+                                               cc.Item()
+                                                 .Width(filled)
+                                                 .Height(BarHeight)
+                                                 .Background(AccentBlue);
+                                           });
+
+                                        row.AutoItem().PaddingLeft(8)
+                                           .Text(pct.ToString("0.#", CultureInfo.InvariantCulture) + "%")
+                                               .FontSize(MetaSize)
+                                               .FontColor(MetaGrey);
+                                    });
+
+                                    table.Cell().PaddingVertical(6).AlignRight()
+                                        .Text(count.ToString(CultureInfo.InvariantCulture))
+                                        .FontSize(TextSize).FontColor(TextBlack);
+                                }
+                            });
+                        }
+
+                        if (hasTexts)
                         {
-                            col.Item()
-                               .Background(PageWhite)
-                               .Border(0.8f).BorderColor(SubtleGrey)
-                               .Padding(8)
-                               .Text(ans)
-                                   .FontSize(TextSize)
-                                   .FontColor(TextBlack);
+                            col.Item().LineHorizontal(1).LineColor(SubtleGrey);
+                            col.Item().Text("Szöveges válaszok").FontSize(MetaSize).FontColor(MetaGrey);
+
+                            foreach (var ans in openAnswers)
+                            {
+                                col.Item()
+                                   .Background(PageWhite)
+                                   .Border(0.8f).BorderColor(SubtleGrey)
+                                   .Padding(8)
+                                   .Text(ans)
+                                       .FontSize(TextSize)
+                                       .FontColor(TextBlack);
+                            }
                         }
                     }
                 });

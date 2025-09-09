@@ -20,10 +20,10 @@ export default function AdminDashboard() {
     deleteQuestionnaire,
     isDeletingQuestionnaire,
 
-    exportTeacherEvaluations,
-    isExportingTeacher,
-    exportGlobalSummary,
-    isExportingSummary,
+    performGenerateReports,
+    isGeneratingReports,
+    performSendReports,
+    isSendingReports,
 
     adminSurveys,
     isLoadingAdminSurveys,
@@ -31,16 +31,20 @@ export default function AdminDashboard() {
     refetchAdminSurveys,
   } = useReviews();
 
+  useEffect(() => {
+    refetchAdminSurveys();
+  }, [refetchAdminSurveys]);
+  
   const displayedQuestionnaires = adminSurveys;
   const [file, setFile] = useState<File | null>(null);
 
-  if (!user) return <Navigate to="/" replace />;
-  if (user.role !== "Admin") {
-    return <Navigate to="/no-access" replace />
-  } else {
-    refetchAdminSurveys();
+  if (!user) {
+    return <Navigate to="/" replace />;
   }
-
+  
+  if (user.role !== "Admin") {
+    return <Navigate to="/no-access" replace />;
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,31 +121,33 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleExportTeacher = () => {
+  const handleGenerateReports = () => {
     if (!selectedQuestionnaireId) {
       toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
-    exportTeacherEvaluations(selectedQuestionnaireId, {
+    const questionnaireTemplateId = `questiontemplates_${selectedQuestionnaireId}`;
+    performGenerateReports(questionnaireTemplateId, {
       onSuccess: () => {
-        toast.success("A tanári értékelések exportálva!");
+        toast.success("Az összefoglalók sikeresen generálva lettek!");
         setSelectedQuestionnaireId("");
       },
-      onError: () => toast.error("A tanári értékelések exportálása sikertelen.")
+      onError: () => toast.error("Az összefoglalókat nem sikerült kigenerálni!")
     });
   };
-
-  const handleExportSummary = () => {
+  
+  const handleSendReports = () => {
     if (!selectedQuestionnaireId) {
       toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
-    exportGlobalSummary(selectedQuestionnaireId, {
+    const questionnaireTemplateId = `questiontemplates_${selectedQuestionnaireId}`;
+    performSendReports(questionnaireTemplateId, {
       onSuccess: () => {
-        toast.success("Az összesített összefoglaló exportálva!");
+        toast.success("Az összefoglalók küldése sikeres!");
         setSelectedQuestionnaireId("");
       },
-      onError: () => toast.error("Az összesített összefoglaló exportálása sikertelen.")
+      onError: () => toast.error("Az összefoglaló küldése sikertelen.")
     });
   };
 
@@ -221,18 +227,18 @@ export default function AdminDashboard() {
       <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
         <Button
           className="w-full sm:w-auto"
-          onClick={handleExportTeacher}
-          disabled={!selectedQuestionnaireId || isExportingTeacher || isLoadingAdminSurveys}
+          onClick={handleGenerateReports}
+          disabled={!selectedQuestionnaireId || isGeneratingReports || isLoadingAdminSurveys}
         >
-          Tanári értékelések exportálása
+          Összefoglalók kigenerálása
         </Button>
 
         <Button
           className="w-full sm:w-auto"
-          onClick={handleExportSummary}
-          disabled={!selectedQuestionnaireId || isExportingSummary || isLoadingAdminSurveys}
+          onClick={handleSendReports}
+          disabled={!selectedQuestionnaireId || isSendingReports || isLoadingAdminSurveys}
         >
-          Összesített összefoglaló exportálása
+          Összefoglalók kiküldése
         </Button>
 
         <Button

@@ -5,6 +5,7 @@ using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
 using System.Collections.Immutable;
+using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 {
@@ -31,12 +32,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// </summary>
         /// <param name="answers">A kitöltőktől érkezett válaszok.</param>
         /// <returns>Szótár, ahol kulcs a kérdés ID, érték a kapcsolódó válaszok listája.</returns>
-        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers)
-        {
-            return answers
+        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers) => answers
                 .GroupBy(a => a.QuestionId)
                 .ToDictionary(g => g.Key, g => g.ToImmutableArray());
-        }
 
         /// <summary>
         /// Likert-skálás válaszok (egész értékek) összegyűjtése egy kérdéshez.
@@ -69,16 +67,31 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// <summary>
         /// Egyéni/szabad szöveges „Egyéb” válaszok összegyűjtése (whitespace szűréssel).
         /// </summary>
-        private static ImmutableArray<string> CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static (ImmutableArray<int> Numbers, ImmutableArray<string> Texts)
+        CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
-                return [];
+                return (ImmutableArray<int>.Empty, ImmutableArray<string>.Empty);
 
-            var b = ImmutableArray.CreateBuilder<string>(list.Length);
+            // Nem előfoglalunk kapacitást, mert szűrünk közben
+            var nums = ImmutableArray.CreateBuilder<int>();
+            var texts = ImmutableArray.CreateBuilder<string>();
+
             foreach (var a in list)
-                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
-            return b.MoveToImmutable();
+            {
+                var s = a.Answer?.Trim();
+                if (string.IsNullOrEmpty(s)) continue;
+
+                // KIZÁRÓLAG egész számokat tekintünk "numeric" válasznak
+                if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
+                    nums.Add(v);
+                else
+                    texts.Add(s);
+            }
+
+            return (nums.ToImmutable(), texts.ToImmutable());
         }
+
 
         /// <summary>
         /// Többválasztós válaszok összegyűjtése (több index egy mezőben, kötőjellel elválasztva).
@@ -143,6 +156,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                     case QuestionType.MultinomialSingleChoice:
                         {
+
                             var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, CollectSingleChoiceData(q.Id, index), []);
                             document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
@@ -150,7 +164,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                     case QuestionType.MultiNomialSingleChoiceOther:
                         {
-                            var ed = new SingleChoiceEvaluationData(q.Question, [], SingleChoice.CUSTOM, [], CollectCustomSingleChoiceData(q.Id, index));
+                            var (nums, texts) = CollectCustomSingleChoiceData(q.Id, index);
+
+                            var ed = new SingleChoiceEvaluationData(
+                                q.Question,
+                                [.. q.AnswerOptions], // nincs előre definiált opció
+                                SingleChoice.CUSTOM,
+                                nums,   // ide mennek a számok
+                                texts   // ide mennek a stringek
+                            );
+
                             document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
