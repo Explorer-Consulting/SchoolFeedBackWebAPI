@@ -5,6 +5,7 @@ using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
 using System.Collections.Immutable;
+using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 {
@@ -66,26 +67,29 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// <summary>
         /// Egyéni/szabad szöveges „Egyéb” válaszok összegyűjtése (whitespace szűréssel).
         /// </summary>
-        private static (ImmutableArray<int> Numbers, ImmutableArray<string> Texts) CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static (ImmutableArray<int> Numbers, ImmutableArray<string> Texts)
+        CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
-                return ([], []);
+                return (ImmutableArray<int>.Empty, ImmutableArray<string>.Empty);
 
-            var nums = ImmutableArray.CreateBuilder<int>(list.Length);
-            var texts = ImmutableArray.CreateBuilder<string>(list.Length);
+            // Nem előfoglalunk kapacitást, mert szűrünk közben
+            var nums = ImmutableArray.CreateBuilder<int>();
+            var texts = ImmutableArray.CreateBuilder<string>();
 
             foreach (var a in list)
             {
-                if (string.IsNullOrWhiteSpace(a.Answer))
-                    continue;
+                var s = a.Answer?.Trim();
+                if (string.IsNullOrEmpty(s)) continue;
 
-                if (int.TryParse(a.Answer, out var v))
+                // KIZÁRÓLAG egész számokat tekintünk "numeric" válasznak
+                if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
                     nums.Add(v);
                 else
-                    texts.Add(a.Answer);
+                    texts.Add(s);
             }
 
-            return (nums.MoveToImmutable(), texts.MoveToImmutable());
+            return (nums.ToImmutable(), texts.ToImmutable());
         }
 
 
