@@ -35,6 +35,15 @@ public class RecursiveConverter<T> : ValueConverter<T, string>
         var token = JToken.Parse(encryptedJson);
         var decryptedToken = DecryptValuesRecursively(token);
 
+        if (typeof(T) == typeof(bool))
+        {
+            var decryptedString = decryptedToken.Type == JTokenType.String
+                ? decryptedToken.Value<string>()
+                : decryptedToken.ToString();
+
+            return (T)(object)(decryptedString?.ToLower() == "true");
+        }
+
         // serialize decrypted token to JSON and deserialize back to T
         var plainJson = JsonConvert.SerializeObject(decryptedToken);
         var result = JsonConvert.DeserializeObject<T>(plainJson);
@@ -59,6 +68,9 @@ public class RecursiveConverter<T> : ValueConverter<T, string>
 
             JTokenType.String => new JValue(
                 CryptoHelper.Encrypt(token.Value<string>() ?? string.Empty)),
+
+            JTokenType.Boolean => new JValue(
+                CryptoHelper.Encrypt(token.Value<bool>().ToString().ToLower())),
 
             _ => token.DeepClone()
         };
