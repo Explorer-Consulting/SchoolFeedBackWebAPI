@@ -27,68 +27,41 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
     /// </remarks>
     public static class EvaluationReportCompiler
     {
-        // --- Helpers ---
-        private static bool HasData<T>(ImmutableArray<T> data) => !data.IsDefault && data.Length > 0;
-
         /// <summary>
         /// Válaszok indexelése kérdésazonosító (<see cref="QuestionAnswer.QuestionId"/>) szerint.
         /// </summary>
+        /// <param name="answers">A kitöltőktől érkezett válaszok.</param>
+        /// <returns>Szótár, ahol kulcs a kérdés ID, érték a kapcsolódó válaszok listája.</returns>
         private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers) => answers
-            .GroupBy(a => a.QuestionId)
-            .ToDictionary(g => g.Key, g => g.ToImmutableArray());
+                .GroupBy(a => a.QuestionId)
+                .ToDictionary(g => g.Key, g => g.ToImmutableArray());
 
         /// <summary>
         /// Likert-skálás válaszok (egész értékek) összegyűjtése egy kérdéshez.
         /// </summary>
-        private static ImmutableArray<int> CollectLikertScaleData(
-            string id,
-            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static ImmutableArray<int> CollectLikertScaleData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var b = ImmutableArray.CreateBuilder<int>(); // nincs fix kapacitás, mert szűrünk
+            var b = ImmutableArray.CreateBuilder<int>(list.Length);
             foreach (var a in list)
-                if (int.TryParse(a.Answer, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
-                    b.Add(v);
-
-            return b.ToImmutable();
+                if (int.TryParse(a.Answer, out var v)) b.Add(v);
+            return b.ToImmutableArray();
         }
 
         /// <summary>
         /// Egyválasztós (index alapú) válaszok összegyűjtése.
         /// </summary>
-        private static ImmutableArray<int> CollectSingleChoiceData(
-            string id,
-            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static ImmutableArray<int> CollectSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var b = ImmutableArray.CreateBuilder<int>();
+            var b = ImmutableArray.CreateBuilder<int>(list.Length);
             foreach (var a in list)
-                if (int.TryParse(a.Answer, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
-                    b.Add(v);
-
-            return b.ToImmutable();
-        }
-
-        /// <summary>
-        /// Nyílt végű (szöveges) válaszok összegyűjtése (whitespace szűréssel).
-        /// </summary>
-        private static ImmutableArray<string> CollectOpenEndedData(
-            string id,
-            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
-        {
-            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
-                return [];
-
-            var b = ImmutableArray.CreateBuilder<string>();
-            foreach (var a in list)
-                if (!string.IsNullOrWhiteSpace(a.Answer))
-                    b.Add(a.Answer!);
-
-            return b.ToImmutable();
+                if (int.TryParse(a.Answer, out var v)) b.Add(v);
+            return b.ToImmutableArray();
         }
 
         /// <summary>
@@ -100,6 +73,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return (ImmutableArray<int>.Empty, ImmutableArray<string>.Empty);
 
+            // Nem előfoglalunk kapacitást, mert szűrünk közben
             var nums = ImmutableArray.CreateBuilder<int>();
             var texts = ImmutableArray.CreateBuilder<string>();
 
@@ -118,12 +92,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             return (nums.ToImmutable(), texts.ToImmutable());
         }
 
+
         /// <summary>
         /// Többválasztós válaszok összegyűjtése (több index egy mezőben, kötőjellel elválasztva).
         /// </summary>
-        private static ImmutableArray<int> CollectMultipleChoiceData(
-            string id,
-            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static ImmutableArray<int> CollectMultipleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
@@ -133,15 +106,37 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             {
                 if (string.IsNullOrWhiteSpace(a.Answer)) continue;
                 foreach (var token in a.Answer.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                    if (int.TryParse(token, out var v))
-                        buf.Add(v);
+                    if (int.TryParse(token, out var v)) buf.Add(v);
             }
             return [.. buf];
         }
 
         /// <summary>
-        /// Kérdések komponenseinek összeállítása és opcionális kiértékelése.
+        /// Nyílt végű (szöveges) válaszok összegyűjtése (whitespace szűréssel).
         /// </summary>
+        private static ImmutableArray<string> CollectOpenEndedData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var b = ImmutableArray.CreateBuilder<string>(list.Length);
+            foreach (var a in list)
+                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
+            return b.ToImmutableArray();
+        }
+
+        /// <summary>
+        /// Kérdések komponenseinek összeállítása és opcionális kiértékelése.
+        /// <para>
+        /// A <paramref name="evaluate"/> jelzi, hogy az adatmodelleken futtassuk-e az
+        /// <see cref="EvaluationData.EvaluateData"/> metódust (pl. PDF-hez), vagy nyers komponenseket adjunk vissza (pl. Excelhez).
+        /// </para>
+        /// </summary>
+        /// <param name="document">A cél dokumentum (PDF/Excel), amelynek <see cref="ReportDocument.ReportComponents"/> listájába építkezünk.</param>
+        /// <param name="questions">A kérdéssablonok sorozata.</param>
+        /// <param name="index">Válaszindex kérdés-ID szerint.</param>
+        /// <param name="evaluate"><c>true</c> esetén statisztikák számítása is történik.</param>
+        /// <returns>Ugyanaz a <paramref name="document"/> példány, kiegészítve a komponensekkel.</returns>
         private static ReportDocument CompileQuestions(
             ReportDocument document,
             ImmutableArray<QuestionTemplate> questions,
@@ -154,52 +149,46 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 {
                     case QuestionType.LikertScaleOneToFive:
                         {
-                            var data = CollectLikertScaleData(q.Id, index);
-                            var ed = new LikertScaleEvaluationData(q.Question, data, q.Description, 1, 5);
-                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
-                            document.ReportComponents.Add(src.CompileComponent());
+                            var ed = new LikertScaleEvaluationData(q.Question, CollectLikertScaleData(q.Id, index), q.Description, 1, 5);
+                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
 
                     case QuestionType.MultinomialSingleChoice:
                         {
-                            var data = CollectSingleChoiceData(q.Id, index);
-                            var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, data, []);
-                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
-                            document.ReportComponents.Add(src.CompileComponent());
+
+                            var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, CollectSingleChoiceData(q.Id, index), []);
+                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
 
                     case QuestionType.MultiNomialSingleChoiceOther:
                         {
                             var (nums, texts) = CollectCustomSingleChoiceData(q.Id, index);
+
                             var ed = new SingleChoiceEvaluationData(
                                 q.Question,
-                                [.. q.AnswerOptions],
+                                [.. q.AnswerOptions], // nincs előre definiált opció
                                 SingleChoice.CUSTOM,
-                                nums,
-                                texts
+                                nums,   // ide mennek a számok
+                                texts   // ide mennek a stringek
                             );
-                            var src = (evaluate && (HasData(nums) || HasData(texts))) ? ed.EvaluateData() : ed;
-                            document.ReportComponents.Add(src.CompileComponent());
+
+                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
 
                     case QuestionType.MultipleChoice:
                         {
-                            var data = CollectMultipleChoiceData(q.Id, index);
-                            var ed = new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], data);
-                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
-                            document.ReportComponents.Add(src.CompileComponent());
+                            var ed = new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], CollectMultipleChoiceData(q.Id, index));
+                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
 
                     case QuestionType.OpenEnded:
                         {
-                            var data = CollectOpenEndedData(q.Id, index);
-                            var ed = new OpenEndedEvaluationData(q.Question, data);
-                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
-                            document.ReportComponents.Add(src.CompileComponent());
+                            var ed = new OpenEndedEvaluationData(q.Question, CollectOpenEndedData(q.Id, index));
+                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
                             break;
                         }
 
@@ -213,11 +202,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
         /// <summary>
         /// Teljes riportkészítés streamelve: tanáronkénti PDF-ek, globális PDF és globális Excel.
+        /// <para>
+        /// A riportok <b>lustán</b> kerülnek előállításra és <see cref="yield"/>-del adjuk vissza őket,
+        /// így a hívó azonnal feldolgozhatja/feltöltheti az elkészült dokumentumokat.
+        /// </para>
         /// </summary>
+        /// <param name="rawData">Tanárokhoz rendelt válaszok gyűjteménye.</param>
+        /// <param name="rawQuestions">A kitöltött kérdések sablonjai (szöveg, opciók, típusok).</param>
+        /// <returns><see cref="IAsyncEnumerable{ReportDocument}"/> a legenerált dokumentumokkal.</returns>
         public static async IAsyncEnumerable<ReportDocument> CompileReports(
-            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
-            ImmutableArray<QuestionTemplate> rawQuestions,
-            string surveyId) // maradhat, fájlnévhez hasznos
+        ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
+        ImmutableArray<QuestionTemplate> rawQuestions,
+        string surveyId) // maradhat, fájlnévhez hasznos
         {
             ArgumentNullException.ThrowIfNull(rawData);
             ArgumentNullException.ThrowIfNull(rawQuestions);
