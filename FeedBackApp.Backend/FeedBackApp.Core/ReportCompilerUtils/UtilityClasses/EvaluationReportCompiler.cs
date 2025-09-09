@@ -168,7 +168,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                             var ed = new SingleChoiceEvaluationData(
                                 q.Question,
-                                [], // nincs előre definiált opció
+                                [.. q.AnswerOptions], // nincs előre definiált opció
                                 SingleChoice.CUSTOM,
                                 nums,   // ide mennek a számok
                                 texts   // ide mennek a stringek

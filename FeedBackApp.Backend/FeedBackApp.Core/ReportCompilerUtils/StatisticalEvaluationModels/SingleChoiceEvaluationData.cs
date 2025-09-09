@@ -94,6 +94,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
                 MeanValue = CalculateMeanValue(QuestionOptionAnswers);
                 MedianValue = CalculateMedianValue(QuestionOptionAnswers);
                 ModeValue = CalculateModeValue(QuestionOptionAnswers);
+                Frequencies = CalculateFrequency(QuestionOptions, QuestionOptionAnswers);
                 RelativeFrequencies = CalculateRelativeFrequencyPercent(Frequencies, QuestionOptionAnswers.Length);
             }
             // Ha nincsenek numerikus válaszok, akkor a stat mezők 0/üres maradnak, 
