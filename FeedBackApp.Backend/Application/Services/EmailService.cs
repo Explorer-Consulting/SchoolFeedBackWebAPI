@@ -17,10 +17,11 @@ public class EmailService : IEmailService
     private readonly ILogger<EmailService> _logger;
     private readonly IEmailRepository _emailRepository;
     private readonly IQuestionnaireRepository _questionnaireRepository;
+    private readonly IReportService _reportService;
     private static short DAILY_EMAIL_LIMIT = 500;
     private static short DNS_PORT = 587;
 
-    public EmailService(ILogger<EmailService> logger, IEmailRepository emailRepository, IQuestionnaireRepository questionnaireRepository)
+    public EmailService(ILogger<EmailService> logger, IEmailRepository emailRepository, IQuestionnaireRepository questionnaireRepository, IReportService reportService)
     {
         _fromAddress = Environment.GetEnvironmentVariable("EMAIL_FROM_ADDRESS") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
         _fromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
@@ -28,6 +29,7 @@ public class EmailService : IEmailService
         _logger = logger;
         _emailRepository = emailRepository;
         _questionnaireRepository = questionnaireRepository;
+        _reportService = reportService;
     }
 
     public async Task<bool> SendEmailBatchAsync()
@@ -102,6 +104,7 @@ public class EmailService : IEmailService
                         subject = $"Survey Results for {entry.SurveyName}";
                         body = $@"Hello Teacher,<br/><br/>
                       Attached you’ll find the survey results for <b>{entry.SurveyName}</b>.";
+                        attachments = new List<Attachment>().Add(_reportService.DownloadTeacherAsync(entry.Email,entry.SurveyId));
                         break;
 
                     case Role.Admin:
@@ -109,6 +112,7 @@ public class EmailService : IEmailService
                         body = $@"Hello Admin,<br/><br/>
                       Please find attached the administrative report for survey 
                       <b>{entry.SurveyName}</b>.";
+                        attachments = new List<Attachment>().Add(_reportService.DownloadAdminAsync(entry.SurveyId)); //need to convert to attachment
                         break;
 
                     default:

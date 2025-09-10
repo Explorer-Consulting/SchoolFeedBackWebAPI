@@ -35,8 +35,9 @@ namespace Application.Services
             }
         }
 
-        public async Task<byte[]> DownloadAdminAsync(string fileName)
+        public async Task<byte[]> DownloadAdminAsync(string surveyId)
         {
+            string fileName = $"{surveyId}_global_report.pdf";
             if (string.IsNullOrWhiteSpace(fileName))
                 throw new ArgumentException("File name must be provided.", nameof(fileName));
 
@@ -54,8 +55,9 @@ namespace Application.Services
             }
         }
 
-        public async Task<byte[]> DownloadTeacherAsync(string teacherEmail, string fileName)
+        public async Task<byte[]> DownloadTeacherAsync(string teacherEmail, string surveyId)
         {
+            string fileName = $"{surveyId}_{teacherEmail}_{subject}_report.pdf";
             if (string.IsNullOrWhiteSpace(teacherEmail))
                 throw new ArgumentException("Teacher email must be provided.", nameof(teacherEmail));
             if (string.IsNullOrWhiteSpace(fileName))
@@ -75,11 +77,6 @@ namespace Application.Services
                 throw new ReportStorageException(
                     $"Failed to download teacher report '{fileName}' for '{teacherEmail}'.", ex);
             }
-        }
-
-        public async Task CompileEmails(string id)
-        {
-
         }
 
     }
