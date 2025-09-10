@@ -90,7 +90,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                            .Background(PageWhite)
                            .Border(1).BorderColor(AccentBlue)
                            .Padding(12)
-                           .Text("No options are defined for this question.")
+                           .Text("Nem érkezett értelmezhető válasz ehhez a kérdéshez.")
                                .FontSize(TextSize).FontColor(MetaGrey);
                         return;
                     }
@@ -101,7 +101,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                            .Background(PageWhite)
                            .Border(1).BorderColor(AccentBlue)
                            .Padding(12)
-                           .Text("No valid responses were received for this question.")
+                           .Text("Nem érkezett értelmezhető válasz ehhez a kérdéshez.")
                                .FontSize(TextSize).FontColor(MetaGrey);
                         return;
                     }
@@ -110,7 +110,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                        t.Span("Number of responses: ");
+                        t.Span("Válaszok száma: ");
                         t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
                     });
 
@@ -127,8 +127,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         });
 
                         // Header
-                        table.Cell().PaddingBottom(4).Text("Option").FontSize(MetaSize).FontColor(MetaGrey);
-                        table.Cell().PaddingBottom(4).Text("Distribution").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).Text("Opciók").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
                         table.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
                         // Rows — sorted by decreasing frequency
@@ -189,7 +189,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             .Take(5)
                             .ToList();
 
-                        col.Item().Text("Most frequent co-occurrences")
+                        col.Item().Text("Leggyakoribb előfordulás párosok:")
                             .FontSize(MetaSize).FontColor(MetaGrey);
 
                         col.Item().Table(t =>

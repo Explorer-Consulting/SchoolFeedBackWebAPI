@@ -38,17 +38,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 page.Header().Column(col =>
                 {
                     col.Spacing(4);
-                    col.Item().Text("Global Report")
+                    col.Item().Text("Globális Felmérés")
                         .FontSize(14).Bold();
-                    col.Item().Text("Aggregated statistical report across all teachers")
+                    col.Item().Text("Aggregált statisztikai felmérés a tanárok között")
                         .FontSize(11).FontColor(Colors.Grey.Darken2);
                 });
-
                 page.Content().Column(col =>
                 {
                     col.Spacing(12);
                     foreach (var component in ReportComponents)
-                        col.Item().Component(component);
+                        col.Item()
+                           .PreventPageBreak()
+                           .Component(component);
                 });
             });
         }

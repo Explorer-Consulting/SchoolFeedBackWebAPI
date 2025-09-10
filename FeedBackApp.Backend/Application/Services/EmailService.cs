@@ -104,7 +104,7 @@ public class EmailService : IEmailService
                         subject = $"Survey Results for {entry.SurveyName}";
                         body = $@"Hello Teacher,<br/><br/>
                       Attached you’ll find the survey results for <b>{entry.SurveyName}</b>.";
-                        attachments = new List<Attachment>().Add(_reportService.DownloadTeacherAsync(entry.Email,entry.SurveyId));
+                        //attachments = new List<Attachment>().Add(_reportService.DownloadTeacherAsync(entry.Email,entry.SurveyId));
                         break;
 
                     case Role.Admin:
@@ -112,7 +112,7 @@ public class EmailService : IEmailService
                         body = $@"Hello Admin,<br/><br/>
                       Please find attached the administrative report for survey 
                       <b>{entry.SurveyName}</b>.";
-                        attachments = new List<Attachment>().Add(_reportService.DownloadAdminAsync(entry.SurveyId)); //need to convert to attachment
+                        //attachments = new List<Attachment>().Add(_reportService.DownloadAdminAsync(entry.SurveyId)); //need to convert to attachment
                         break;
 
                     default:
