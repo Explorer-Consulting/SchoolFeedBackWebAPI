@@ -27,5 +27,11 @@ namespace Application.Services
                 );
             }
         }
+
+        public async Task CompileEmails(string id)
+        {
+
+        }
+
     }
 }
