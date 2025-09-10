@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using Application.Exceptions;
+using Application.Services;
 using Application.Services.Interfaces;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
@@ -9,11 +11,13 @@ using Microsoft.OpenApi.Models;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
-    public sealed class ReportFunctions(IReportService reportService, ILogger<ReportFunctions> reportLogger)
+    public sealed class ReportFunctions(IReportService reportService,IEmailService emailService, ILogger<ReportFunctions> reportLogger)
     {
         private readonly IReportService _reportService = reportService;
+        private readonly IEmailService _emailService = emailService;
         private readonly ILogger<ReportFunctions> _reportLogger = reportLogger;
 
+        [RequireAdmin]
         [Function("PerformReportCompilation")]
         [OpenApiOperation(
             operationId: "PerformReportCompilation",
@@ -96,12 +100,14 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         }
 
         // ezt kellene implementalni, vagyis kellene meg egy service a BLOB-oknak
+        [RequireAdmin]
         [Function("DeliverEvaluationReports")]
         public async Task<HttpResponseData> DeliverEvaluationReports(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reports/send/{templateID}")] HttpRequestData request, string templateID)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reports/send/{questionTemplate}")] HttpRequestData request, string questionTemplate)
         {
+            string surveyId = questionTemplate.Split('_')[1];
 
-            if (string.IsNullOrWhiteSpace(templateID))
+            if (string.IsNullOrWhiteSpace(surveyId))
             {
                 _reportLogger.LogWarning("Empty templateID received in DeliverEvaluationReports.");
                 var bad = request.CreateResponse(HttpStatusCode.BadRequest);
@@ -109,12 +115,14 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return bad;
             }
 
-            _reportLogger.LogInformation("DeliverEvaluationReports triggered. templateID={TemplateId}", templateID);
+            _reportLogger.LogInformation("DeliverEvaluationReports triggered. surveyId={surveyId}", surveyId);
+
+            await _emailService.CompileReportEmailsAsync(new Guid(surveyId));
 
             var response = request.CreateResponse(HttpStatusCode.Accepted);
             await response.WriteAsJsonAsync(new
             {
-                reportId = templateID,
+                reportId = surveyId,
                 status = "Delivery initiated"
             });
             return response;
