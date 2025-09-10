@@ -3,12 +3,21 @@ import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label";
 import QuestionWrapper from "@/components/feedback/questions/QuestionWrapper";
 
-export default function MultinomialSingleChoice({ q, index, value, onChange, isInvalid }: BaseQuestionProps) {
+export default function MultinomialSingleChoice({ q, index, value, onChange, isInvalid,description }: BaseQuestionProps) {
     const v = String(value ?? "");
     const options = q.options ?? [];
     return (
         <QuestionWrapper isInvalid={isInvalid}>
-            <Label>{index}. {q.text}</Label>
+             <div className="flex flex-col gap-1">
+                <Label className="font-medium">
+                    {index}. {q.text}
+                </Label>
+                {description && (
+                    <span className="text-sm text-muted-foreground">
+                        {description}
+                    </span>
+                )}
+            </div>
             <RadioGroup
                 value={v}
                 onValueChange={(val) => onChange(val)}

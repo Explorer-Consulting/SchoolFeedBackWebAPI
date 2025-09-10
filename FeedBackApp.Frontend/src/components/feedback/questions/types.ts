@@ -6,4 +6,5 @@ export type BaseQuestionProps = {
     value: string | string[];
     onChange: (val: string | string[]) => void;
     isInvalid?: boolean;
+    description?: string;
 };

@@ -4,41 +4,41 @@ using QuestPDF.Infrastructure;
 namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 {
     /// <summary>
-    /// Absztrakt bázisosztály riportkomponensekhez, típusbiztos adatszolgáltatással.
+    /// Abstract base class for report components with type-safe data binding.
     /// <para>
-    /// Minden konkrét riportkomponens egy <see cref="EvaluationData"/> származékhoz kötődik.
-    /// A generikus típusparaméter (<typeparamref name="T"/>) biztosítja, hogy a komponens
-    /// csak a saját adattípusával dolgozzon, így nincs szükség típuskonverzióra (castolásra).
+    /// Every concrete report component is tied to a derived <see cref="EvaluationData"/>.
+    /// The generic type parameter (<typeparamref name="T"/>) ensures that the component
+    /// only works with its own data type, removing the need for type casting.
     /// </para>
     /// </summary>
     /// <typeparam name="T">
-    /// Az adatmodell típusa, amelyből a riportkomponens építkezik.
-    /// Leszármazottnak kell lennie az <see cref="EvaluationData"/> osztályból.
+    /// The data model type used by the report component.
+    /// Must derive from <see cref="EvaluationData"/>.
     /// </typeparam>
     /// <remarks>
-    /// Használat:
+    /// Usage:
     /// <list type="number">
-    /// <item>Származtass belőle egy konkrét osztályt (pl. <c>LikertScaleReportComponent</c>).</item>
-    /// <item>Add meg a megfelelő <see cref="EvaluationData"/> származékot a generikus paraméterben (pl. <c>LikertScaleEvaluationData</c>).</item>
-    /// <item>A <see cref="Compose(IContainer)"/> metódusban definiáld a komponens vizuális megjelenítését.</item>
+    /// <item>Derive from this class to create a concrete component (e.g. <c>LikertScaleReportComponent</c>).</item>
+    /// <item>Specify the correct <see cref="EvaluationData"/> derivative as the generic parameter (e.g. <c>LikertScaleEvaluationData</c>).</item>
+    /// <item>Implement the <see cref="Compose(IContainer)"/> method to define the component’s visual layout.</item>
     /// </list>
     /// </remarks>
     public abstract class ReportComponent<T>(T dataSource) : IComponent
         where T : EvaluationData
     {
         /// <summary>
-        /// Az adott komponenshez tartozó adattípus (pl. Likert-skála adatok, nyílt végű válaszok).
+        /// The data model associated with this component (e.g. Likert-scale data, open-ended responses).
         /// </summary>
         public T DataSource { get; } = dataSource;
 
         /// <summary>
-        /// A komponens megjelenítésének leírása.
+        /// Defines how the component is rendered.
         /// <para>
-        /// A leszármazott osztályok itt definiálják a komponens layoutját a
-        /// QuestPDF <see cref="IContainer"/> API-ját használva.
+        /// Derived classes implement this method to define the component layout
+        /// using the QuestPDF <see cref="IContainer"/> API.
         /// </para>
         /// </summary>
-        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
+        /// <param name="container">The QuestPDF container into which the component is rendered.</param>
         public abstract void Compose(IContainer container);
     }
 }

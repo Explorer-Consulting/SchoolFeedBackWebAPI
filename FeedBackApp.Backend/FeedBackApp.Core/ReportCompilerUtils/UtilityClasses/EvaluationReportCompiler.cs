@@ -5,85 +5,125 @@ using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
 using System.Collections.Immutable;
+using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 {
     /// <summary>
-    /// Riportok összeállítása a beérkezett kérdőív-válaszokból.
+    /// Compiler for reports based on collected questionnaire responses.
     /// <para>
-    /// Tanáronkénti és globális (adminisztrátori) riportokat állít elő PDF/Excel formátumban.
-    /// A kérdések típusai alapján a megfelelő kiértékelési modelleket és komponenseket illeszti be.
+    /// Produces teacher-specific and global (administrator) reports in PDF/Excel formats.  
+    /// Depending on the question type, the appropriate evaluation models and report components are instantiated.
     /// </para>
     /// </summary>
     /// <remarks>
-    /// Fő lépések:
+    /// Main steps:
     /// <list type="number">
-    /// <item>Válaszok indexelése kérdés-azonosító szerint.</item>
-    /// <item>Adatgyűjtés kérdéstípusonként (Likert, single/multi choice, open-ended).</item>
-    /// <item>Komponensek összeállítása és (opcionálisan) kiértékelése.</item>
-    /// <item>Dokumentumok renderelése és <see cref="IAsyncEnumerable{ReportDocument}"/> formában streamelése.</item>
+    /// <item>Index responses by question ID.</item>
+    /// <item>Aggregate data per question type (Likert, single choice, multiple choice, open-ended).</item>
+    /// <item>Assemble components and optionally evaluate statistics.</item>
+    /// <item>Render documents and stream them as <see cref="IAsyncEnumerable{ReportDocument}"/>.</item>
     /// </list>
     /// </remarks>
     public static class EvaluationReportCompiler
     {
-        /// <summary>
-        /// Válaszok indexelése kérdésazonosító (<see cref="QuestionAnswer.QuestionId"/>) szerint.
-        /// </summary>
-        /// <param name="answers">A kitöltőktől érkezett válaszok.</param>
-        /// <returns>Szótár, ahol kulcs a kérdés ID, érték a kapcsolódó válaszok listája.</returns>
-        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers)
-        {
-            return answers
-                .GroupBy(a => a.QuestionId)
-                .ToDictionary(g => g.Key, g => g.ToImmutableArray());
-        }
+        // --- Helpers ---
+        private static bool HasData<T>(ImmutableArray<T> data) => !data.IsDefault && data.Length > 0;
 
         /// <summary>
-        /// Likert-skálás válaszok (egész értékek) összegyűjtése egy kérdéshez.
+        /// Indexes responses by question ID (<see cref="QuestionAnswer.QuestionId"/>).
         /// </summary>
-        private static ImmutableArray<int> CollectLikertScaleData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
-        {
-            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
-                return [];
-
-            var b = ImmutableArray.CreateBuilder<int>(list.Length);
-            foreach (var a in list)
-                if (int.TryParse(a.Answer, out var v)) b.Add(v);
-            return b.MoveToImmutable();
-        }
+        private static IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> BuildAnswersIndex(ImmutableArray<QuestionAnswer> answers) => answers
+            .GroupBy(a => a.QuestionId)
+            .ToDictionary(g => g.Key, g => g.ToImmutableArray());
 
         /// <summary>
-        /// Egyválasztós (index alapú) válaszok összegyűjtése.
+        /// Collects Likert-scale responses (integers) for a given question.
         /// </summary>
-        private static ImmutableArray<int> CollectSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static ImmutableArray<int> CollectLikertScaleData(
+            string id,
+            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var b = ImmutableArray.CreateBuilder<int>(list.Length);
+            var b = ImmutableArray.CreateBuilder<int>();
             foreach (var a in list)
-                if (int.TryParse(a.Answer, out var v)) b.Add(v);
-            return b.MoveToImmutable();
+                if (int.TryParse(a.Answer, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
+                    b.Add(v);
+
+            return b.ToImmutable();
         }
 
         /// <summary>
-        /// Egyéni/szabad szöveges „Egyéb” válaszok összegyűjtése (whitespace szűréssel).
+        /// Collects single-choice responses (index-based).
         /// </summary>
-        private static ImmutableArray<string> CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static ImmutableArray<int> CollectSingleChoiceData(
+            string id,
+            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var b = ImmutableArray.CreateBuilder<string>(list.Length);
+            var b = ImmutableArray.CreateBuilder<int>();
             foreach (var a in list)
-                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
-            return b.MoveToImmutable();
+                if (int.TryParse(a.Answer, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
+                    b.Add(v);
+
+            return b.ToImmutable();
         }
 
         /// <summary>
-        /// Többválasztós válaszok összegyűjtése (több index egy mezőben, kötőjellel elválasztva).
+        /// Collects open-ended (textual) responses (filters out whitespace).
         /// </summary>
-        private static ImmutableArray<int> CollectMultipleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        private static ImmutableArray<string> CollectOpenEndedData(
+            string id,
+            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return [];
+
+            var b = ImmutableArray.CreateBuilder<string>();
+            foreach (var a in list)
+                if (!string.IsNullOrWhiteSpace(a.Answer))
+                    b.Add(a.Answer!);
+
+            return b.ToImmutable();
+        }
+
+        /// <summary>
+        /// Collects custom free-text “Other” responses (filters out whitespace).  
+        /// Separates numeric answers from non-numeric text.
+        /// </summary>
+        private static (ImmutableArray<int> Numbers, ImmutableArray<string> Texts)
+        CollectCustomSingleChoiceData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
+                return (ImmutableArray<int>.Empty, ImmutableArray<string>.Empty);
+
+            var nums = ImmutableArray.CreateBuilder<int>();
+            var texts = ImmutableArray.CreateBuilder<string>();
+
+            foreach (var a in list)
+            {
+                var s = a.Answer?.Trim();
+                if (string.IsNullOrEmpty(s)) continue;
+
+                if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
+                    nums.Add(v);
+                else
+                    texts.Add(s);
+            }
+
+            return (nums.ToImmutable(), texts.ToImmutable());
+        }
+
+        /// <summary>
+        /// Collects multiple-choice responses (multiple indices encoded in a single field, separated by hyphens).
+        /// </summary>
+        private static ImmutableArray<int> CollectMultipleChoiceData(
+            string id,
+            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
@@ -93,37 +133,15 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             {
                 if (string.IsNullOrWhiteSpace(a.Answer)) continue;
                 foreach (var token in a.Answer.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                    if (int.TryParse(token, out var v)) buf.Add(v);
+                    if (int.TryParse(token, out var v))
+                        buf.Add(v);
             }
             return [.. buf];
         }
 
         /// <summary>
-        /// Nyílt végű (szöveges) válaszok összegyűjtése (whitespace szűréssel).
+        /// Compiles components for questions and optionally evaluates statistics.
         /// </summary>
-        private static ImmutableArray<string> CollectOpenEndedData(string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
-        {
-            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
-                return [];
-
-            var b = ImmutableArray.CreateBuilder<string>(list.Length);
-            foreach (var a in list)
-                if (!string.IsNullOrWhiteSpace(a.Answer)) b.Add(a.Answer);
-            return b.MoveToImmutable();
-        }
-
-        /// <summary>
-        /// Kérdések komponenseinek összeállítása és opcionális kiértékelése.
-        /// <para>
-        /// A <paramref name="evaluate"/> jelzi, hogy az adatmodelleken futtassuk-e az
-        /// <see cref="EvaluationData.EvaluateData"/> metódust (pl. PDF-hez), vagy nyers komponenseket adjunk vissza (pl. Excelhez).
-        /// </para>
-        /// </summary>
-        /// <param name="document">A cél dokumentum (PDF/Excel), amelynek <see cref="ReportDocument.ReportComponents"/> listájába építkezünk.</param>
-        /// <param name="questions">A kérdéssablonok sorozata.</param>
-        /// <param name="index">Válaszindex kérdés-ID szerint.</param>
-        /// <param name="evaluate"><c>true</c> esetén statisztikák számítása is történik.</param>
-        /// <returns>Ugyanaz a <paramref name="document"/> példány, kiegészítve a komponensekkel.</returns>
         private static ReportDocument CompileQuestions(
             ReportDocument document,
             ImmutableArray<QuestionTemplate> questions,
@@ -136,41 +154,57 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 {
                     case QuestionType.LikertScaleOneToFive:
                         {
-                            var ed = new LikertScaleEvaluationData(q.Question, CollectLikertScaleData(q.Id, index), q.Description, 1, 5);
-                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
+                            var data = CollectLikertScaleData(q.Id, index);
+                            var ed = new LikertScaleEvaluationData(q.Question, data, q.Description, 1, 5);
+                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
                             break;
                         }
 
                     case QuestionType.MultinomialSingleChoice:
                         {
-                            var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, CollectSingleChoiceData(q.Id, index), []);
-                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
+                            var data = CollectSingleChoiceData(q.Id, index);
+                            var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, data, []);
+                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
                             break;
                         }
 
                     case QuestionType.MultiNomialSingleChoiceOther:
                         {
-                            var ed = new SingleChoiceEvaluationData(q.Question, [], SingleChoice.CUSTOM, [], CollectCustomSingleChoiceData(q.Id, index));
-                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
+                            var (nums, texts) = CollectCustomSingleChoiceData(q.Id, index);
+                            var ed = new SingleChoiceEvaluationData(
+                                q.Question,
+                                [.. q.AnswerOptions],
+                                SingleChoice.CUSTOM,
+                                nums,
+                                texts
+                            );
+                            var src = (evaluate && (HasData(nums) || HasData(texts))) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
                             break;
                         }
 
                     case QuestionType.MultipleChoice:
                         {
-                            var ed = new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], CollectMultipleChoiceData(q.Id, index));
-                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
+                            var data = CollectMultipleChoiceData(q.Id, index);
+                            var ed = new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], data);
+                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
                             break;
                         }
 
                     case QuestionType.OpenEnded:
                         {
-                            var ed = new OpenEndedEvaluationData(q.Question, CollectOpenEndedData(q.Id, index));
-                            document.ReportComponents.Add((evaluate ? ed.EvaluateData() : ed).CompileComponent());
+                            var data = CollectOpenEndedData(q.Id, index);
+                            var ed = new OpenEndedEvaluationData(q.Question, data);
+                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
                             break;
                         }
 
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(q.Type), q.Type, "Ismeretlen kérdéstípus.");
+                        throw new ArgumentOutOfRangeException(nameof(q.Type), q.Type, "Unknown question type.");
                 }
             }
 
@@ -178,25 +212,23 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         }
 
         /// <summary>
-        /// Teljes riportkészítés streamelve: tanáronkénti PDF-ek, globális PDF és globális Excel.
-        /// <para>
-        /// A riportok <b>lustán</b> kerülnek előállításra és <see cref="yield"/>-del adjuk vissza őket,
-        /// így a hívó azonnal feldolgozhatja/feltöltheti az elkészült dokumentumokat.
-        /// </para>
+        /// Full report compilation streamed as an async sequence:
+        /// <list type="bullet">
+        /// <item>Teacher-specific PDFs</item>
+        /// <item>Global PDF</item>
+        /// <item>Global Excel (raw data)</item>
+        /// </list>
         /// </summary>
-        /// <param name="rawData">Tanárokhoz rendelt válaszok gyűjteménye.</param>
-        /// <param name="rawQuestions">A kitöltött kérdések sablonjai (szöveg, opciók, típusok).</param>
-        /// <returns><see cref="IAsyncEnumerable{ReportDocument}"/> a legenerált dokumentumokkal.</returns>
         public static async IAsyncEnumerable<ReportDocument> CompileReports(
-        ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
-        ImmutableArray<QuestionTemplate> rawQuestions,
-        string surveyId) // maradhat, fájlnévhez hasznos
+            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
+            ImmutableArray<QuestionTemplate> rawQuestions,
+            string surveyId)
         {
             ArgumentNullException.ThrowIfNull(rawData);
             ArgumentNullException.ThrowIfNull(rawQuestions);
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
-            // 1) Tanáronkénti PDF-ek
+            // 1) Teacher-specific PDFs
             foreach (var entry in rawData)
             {
                 var teacher = entry.Key;
@@ -222,7 +254,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 yield return compiled;
             }
 
-            // 2/a) Globális PDF
+            // 2/a) Global PDF
             {
                 var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
                 var globalIndex = BuildAnswersIndex(allData);
@@ -242,7 +274,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 yield return compiledPdf;
             }
 
-            // 2/b) Globális Excel (nyers)
+            // 2/b) Global Excel (raw data)
             {
                 const string fileName = "global_report.xlsx";
                 var metadata = new ReportMetadata

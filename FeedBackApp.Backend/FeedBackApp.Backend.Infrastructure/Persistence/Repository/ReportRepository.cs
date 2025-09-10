@@ -10,42 +10,64 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
     /// <summary>
-    /// Riportok (PDF/Excel stb.) generálása és feltöltése Azure Blob Storage-ba.
+    /// Repository responsible for generating reports (PDF/Excel, etc.) and uploading them to Azure Blob Storage.
     /// <para>
-    /// A repository nem tárol riport-metaadatot adatbázisban; a riportok elérhetősége a blob elérési útjából / URL-jéből vezethető le.
+    /// It does not persist report metadata in a relational database; report availability can be inferred
+    /// from the blob path / URL.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// <para><b>Responsibility (SRP):</b> report creation + upload only.</para>
+    /// <para><b>Side effect:</b> blobs are created/overwritten in the specified container.</para>
+    /// <para><b>Thread-safety:</b> instances are typically used via DI with scoped/transient lifetime;
+    /// the method holds no state across calls.</para>
+    /// </remarks>
     public sealed class ReportRepository(AppDBContext context, BlobContainerClient container) : IReportRepository
     {
+        #region Dependencies
+
+        /// <summary>
+        /// Application database context (EF Core).
+        /// </summary>
         private readonly AppDBContext _context = context;
 
         /// <summary>
-        /// Az Azure Blob Storage konténer kliense, amelybe a riportok feltöltésre kerülnek.
+        /// Azure Blob Storage container client where reports are uploaded.
         /// </summary>
         private readonly BlobContainerClient _container = container;
 
+        #endregion
+
+        #region Public API
+
         /// <summary>
-        /// Azonosító alapján (pl. <c>questiontemplates_{GUID}</c>) összegyűjti az aktív kérdőíveket,
-        /// legenerálja a kapcsolódó riportokat, és feltölti azokat a Blob Storage-ba.
+        /// Based on an identifier (e.g., <c>questiontemplates_{GUID}</c>) gathers active questionnaires,
+        /// generates the corresponding reports, and uploads them to Blob Storage.
         /// </summary>
         /// <param name="fullTemplateId">
-        /// A kérdés-sablon teljes Cosmos dokumentumazonosítója. Elvárt formátum:
+        /// The full Cosmos document ID of the question template. Expected format:
         /// <c>questiontemplates_{GUID}</c>.
         /// </param>
         /// <remarks>
-        /// Folyamat:
+        /// <para><b>Process:</b></para>
         /// <list type="number">
-        /// <item>Azonosító validálása (prefix + GUID).</item>
-        /// <item>Aktív kérdőívek és válaszaik beolvasása az adott <c>surveyId</c>-ra.</item>
-        /// <item>Válaszok csoportosítása tanár–tantárgy pár szerint.</item>
-        /// <item>A sablonhoz tartozó kérdések beolvasása.</item>
-        /// <item>Riportok legenerálása (<see cref="EvaluationReportCompiler"/>), feltöltése blobba.</item>
+        /// <item>Validate identifier (prefix + GUID).</item>
+        /// <item>Load active questionnaires and their responses for the given <c>surveyId</c>.</item>
+        /// <item>Group responses by teacher–subject pair.</item>
+        /// <item>Load questions that belong to the template.</item>
+        /// <item>Generate reports (<see cref="EvaluationReportCompiler"/>), then upload them to blobs.</item>
         /// </list>
-        /// A metódus nem dob hibát, ha nincs releváns adat (pl. nincs aktív kérdőív vagy kérdés-sablon),
-        /// ilyenkor csendben visszatér.
+        /// <para>
+        /// The method does not throw if there is no relevant data (e.g., no active questionnaire or question template);
+        /// it simply returns.
+        /// </para>
+        /// <para><b>Performance:</b> grouping is performed in-memory via <c>GroupBy</c>;
+        /// for each teacher–subject pair, a local index is built during report generation in the evaluation utility.
+        /// Blob upload uses <see cref="BinaryData"/>, which directly wraps the document <c>byte[]</c>.
+        /// </para>
         /// </remarks>
         /// <exception cref="ArgumentException">
-        /// Ha az <paramref name="fullTemplateId"/> nem a várt formátumú (hibás prefix vagy érvénytelen GUID).
+        /// Thrown if <paramref name="fullTemplateId"/> is not in the expected format (wrong prefix or invalid GUID).
         /// </exception>
         public async Task CompileAndStoreEvaluationReports(string fullTemplateId)
         {
@@ -60,26 +82,50 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var surveyId = surveyGuid.ToString("D");
             var templateDocId = fullTemplateId;
 
-            // 1) Aktív kérdőívek + válaszaik betöltése (csak a tárgyalt survey-hez).
-            var rows = await _context.Questionnaires
+            // 1) Load ALL questionnaires by SurveyId ONLY (without Status!)
+            //    Project only required fields to keep the payload thin.
+            //    IMPORTANT: do not .Select(...) inner collections here; do that in-memory.
+            var questionnairesRaw = await _context.Questionnaires
                 .AsNoTracking()
-                .Where(q => q.Status && q.SurveyId == surveyId)
+                .Where(q => q.SurveyId == surveyId)
                 .Select(q => new
                 {
-                    Teacher = new Teacher(q.TeacherEmail, q.SubjectName),
-                    Results = q.QuestionnaireResults.Select(r => new QuestionAnswer
-                    {
-                        QuestionId = r.QuestionId,
-                        Answer = r.Answer
-                    })
+                    q.Status,
+                    q.TeacherEmail,
+                    q.SubjectName,
+                    q.QuestionnaireResults
                 })
-                .ToListAsync();
+                .ToListAsync()
+                .ConfigureAwait(false);
 
-            // Nincs adat → nincs teendő.
+            if (questionnairesRaw.Count == 0)
+                return;
+
+            // 2) In-memory Status filter
+            var questionnaires = questionnairesRaw.Where(q => q.Status == true).ToList();
+            if (questionnaires.Count == 0)
+                return;
+
+            // 3) Normalize under teacher–subject key + project the inner collection in-memory
+            var rows = questionnaires
+                .Select(q => new
+                {
+                    Teacher = new Teacher(q.TeacherEmail ?? string.Empty, q.SubjectName ?? string.Empty),
+
+                    // If inner items are already QuestionAnswer, we can just make them immutable:
+                    Results = (q.QuestionnaireResults ?? Enumerable.Empty<QuestionAnswer>()).ToImmutableArray()
+
+                    // If truly new instances were needed:
+                    // Results = (q.QuestionnaireResults ?? Enumerable.Empty<QuestionAnswer>())
+                    //     .Select(r => new QuestionAnswer { QuestionId = r.QuestionId, Answer = r.Answer })
+                    //     .ToImmutableArray()
+                })
+                .ToList();
+
             if (rows.Count == 0)
                 return;
 
-            // 2) Tanár–tantárgy kulcs alá aggregáljuk az összes választ.
+            // 4) Aggregate under teacher–subject key
             var answerCollection = rows
                 .GroupBy(x => x.Teacher)
                 .ToImmutableDictionary(
@@ -87,49 +133,51 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     g => g.SelectMany(x => x.Results).ToImmutableArray()
                 );
 
-            // 3) A sablonhoz tartozó kérdések betöltése.
-            var questions = (await _context.QuestionnaireTemplates
-                    .AsNoTracking()
-                    .Where(qt => qt.Id == templateDocId)
-                    .SelectMany(qt => qt.QuestionTemplates)
-                    .ToListAsync())
-                .ToImmutableArray();
+            // 5) Load questions belonging to the template
+            var template = await _context.QuestionnaireTemplates
+                .AsNoTracking()
+                .SingleOrDefaultAsync(qt => qt.Id == templateDocId)
+                .ConfigureAwait(false);
 
-            // Ha nincs kérdés, nincs mit riportálni.
+            var questions = (template?.QuestionTemplates ?? []).ToImmutableArray();
             if (questions.IsDefaultOrEmpty)
                 return;
 
-            // 4) Riportok generálása és feltöltése.
+            // 5) Generate and upload reports
             await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId))
             {
-                var blobPath = BuildBlobPath(document.Metadata.FileName, document.Recipient);
+                var blobPath = BuildBlobPath($"{surveyId}_{document.Metadata.FileName}", document.Recipient);
                 var blob = _container.GetBlobClient(blobPath);
 
-                // Feltöltés BinaryData-val; a BinaryData-s overload implicit felülír, ha a blob létezik.
+                // Upload using BinaryData; this overload implicitly overwrites if the blob exists.
                 await blob.UploadAsync(
                     BinaryData.FromBytes(document.Data),
                     new BlobUploadOptions
                     {
                         HttpHeaders = new BlobHttpHeaders
                         {
-                            // A megfelelő MIME-típus (pl. application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet).
+                            // Proper MIME type (e.g., application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet).
                             ContentType = document.Metadata.MimeType
                         }
                     }
-                );
+                ).ConfigureAwait(false);
             }
         }
 
+        #endregion
+
+        #region Path helpers
+
         /// <summary>
-        /// Képzi a riport blob útvonalát:
+        /// Builds the blob path for a report:
         /// <list type="bullet">
-        /// <item><description><c>admin/&lt;fileName&gt;</c> – admin szintű, összesített riportok.</description></item>
-        /// <item><description><c>teachers/&lt;safeEmail&gt;/&lt;fileName&gt;</c> – tanári riportok címzett e-mail szerinti alkönyvtárban.</description></item>
+        /// <item><description><c>admin/&lt;fileName&gt;</c> – admin-level, aggregated reports.</description></item>
+        /// <item><description><c>teachers/&lt;safeEmail&gt;/&lt;fileName&gt;</c> – teacher reports under a directory named by the recipient email.</description></item>
         /// </list>
         /// </summary>
-        /// <param name="fileName">A feltöltendő fájl neve (kiterjesztéssel).</param>
-        /// <param name="recipient">A címzett. Ha <see langword="null"/>, admin riportnak minősül.</param>
-        /// <returns>Az Azure Blob Storage-beli relatív elérési út.</returns>
+        /// <param name="fileName">Name of the file to upload (including extension).</param>
+        /// <param name="recipient">The recipient. If <see langword="null"/>, treated as an admin report.</param>
+        /// <returns>Relative path within Azure Blob Storage.</returns>
         private static string BuildBlobPath(string fileName, Recipient? recipient)
         {
             if (recipient is null)
@@ -140,16 +188,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         }
 
         /// <summary>
-        /// Útvonalkompatibilis e-mail/azonosító előállítása:
-        /// a tiltott path-karaktereket kötőjelre (<c>-</c>) cseréli, majd <c>Trim()</c>-et alkalmaz.
+        /// Produces a path-compatible email/identifier:
+        /// replaces forbidden path characters with a hyphen (<c>-</c>) and applies <c>Trim()</c>.
         /// </summary>
-        /// <param name="input">Eredeti e-mail vagy azonosító.</param>
-        /// <returns>Biztonságosan használható path-szegmens.</returns>
+        /// <param name="input">Original email or identifier.</param>
+        /// <returns>A path-safe segment (empty string when input is null/whitespace).</returns>
         private static string San(string? input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
 
-            // Minimális tiltólista; igény szerint bővíthető (pl. *,"<> stb.), ha naming policy megköveteli.
+            // Minimal denylist; extend as needed (*,"<> etc.) if your naming policy requires.
             Span<char> invalid = ['/', '\\', '?', '#', '%', '+', '\t', '\r', '\n', ':'];
 
             var sb = new System.Text.StringBuilder(input.Length);
@@ -158,5 +206,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             return sb.ToString().Trim();
         }
+
+        #endregion
     }
 }

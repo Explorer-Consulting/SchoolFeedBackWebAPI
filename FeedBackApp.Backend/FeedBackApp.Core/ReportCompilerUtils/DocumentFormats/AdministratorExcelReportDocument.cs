@@ -9,44 +9,44 @@ using System.Globalization;
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 {
     /// <summary>
-    /// Adminisztrátori Excel-riportot készítő dokumentumosztály.
-    /// A <see cref="ReportComponents"/> gyűjteményben található riport-komponensek DataSource-a alapján
-    /// típusonként külön munkalapokat hoz létre (Likert, SingleChoice, SingleChoice+Other, MultipleChoice, OpenEnded),
-    /// automatikus oszlopszélességgel, alap stílusokkal és fagyasztott fejléccel.
+    /// Document class that generates the Administrator Excel report.
+    /// Based on the DataSource of the report components found in <see cref="ReportComponents"/>,
+    /// it creates separate worksheets per type (Likert, SingleChoice, SingleChoice+Other, MultipleChoice, OpenEnded),
+    /// with automatic column widths, base styles, and a frozen header row.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// A komponensek <c>DataSource</c> tulajdonságát reflexióval olvassa ki, és a típus alapján a
-    /// lenti switch-ágak alakítják normál sorokká. Minden kérdés egy "blokk": egy fő sor (Main)
-    /// és opcionálisan egy opciós sor (Opts). A numerikus értékek Number cellaként, a szövegek
-    /// InlineString-ként kerülnek a munkalapra.
+    /// The <c>DataSource</c> property of each component is read via reflection, and the switch
+    /// cases below convert it into normalized rows based on the type. Each question forms a “block”:
+    /// a main row (Main) and optionally an options row (Opts). Numeric values are written as Number cells,
+    /// text values as InlineString cells.
     /// </para>
     /// <para>
-    /// Ha a <see cref="ReportComponents"/> üres, egy "Empty" lap készül jelzésként.
-    /// A generált dokumentum memóriában jön létre, a <see cref="RenderDocument"/> byte tömböt ad vissza.
+    /// If <see cref="ReportComponents"/> is empty, an “Empty” sheet is created as an indicator.
+    /// The generated document is built in memory, and <see cref="RenderDocument"/> returns a byte array.
     /// </para>
     /// </remarks>
     public sealed class AdministratorExcelReportDocument(ReportMetadata metadata, Recipient? recipient = null)
         : ReportDocument(metadata, recipient)
     {
         /// <summary>
-        /// Elkészíti a teljes .xlsx fájlt: workbook, stíluslap, lapok, sorok és oszlopok.
+        /// Builds the complete .xlsx file: workbook, stylesheet, sheets, rows, and columns.
         /// </summary>
-        /// <returns>A kész Excel dokumentum bájtjai.</returns>
+        /// <returns>The generated Excel document bytes.</returns>
         /// <remarks>
-        /// Lépések:
-        /// 1) Workbook és Stylesheet létrehozása.
-        /// 2) Komponensek bejárása, blokkok csoportosítása laptípus szerint.
-        /// 3) Maximális válasz/opszió számok feljegyzése a lapon belüli normalizáláshoz.
-        /// 4) Munkalapok létrehozása egységes szélességű sorokkal.
-        /// 5) Workbook mentése és a byte[] visszaadása.
+        /// Steps:
+        /// 1) Create Workbook and Stylesheet.
+        /// 2) Traverse components and group blocks by sheet type.
+        /// 3) Record maximum counts of answers/options for within-sheet normalization.
+        /// 4) Create worksheets with consistent row widths.
+        /// 5) Save the workbook and return the byte[].
         /// </remarks>
         public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();
             using (var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true))
             {
-                // Workbook és stíluslap
+                // Workbook and stylesheet
                 var wbPart = doc.AddWorkbookPart();
                 wbPart.Workbook = new Workbook();
 
@@ -56,12 +56,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 
                 var sheets = wbPart.Workbook.AppendChild(new Sheets());
 
-                // Laptípus -> blokkok (Main: kérdés+válaszok, Opts: opciók sor)
+                // Sheet type -> blocks (Main: question + answers, Opts: options row)
                 var blocksBySheet = new Dictionary<string, List<(List<string> Main, List<string> Opts)>>(StringComparer.OrdinalIgnoreCase);
                 var maxAnsBySheet = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 var maxOptsBySheet = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                // Lokális segédfüggvény: blokk felvétele a megadott laphoz
+                // Local helper: add a block to the given sheet
                 void AddBlock(string sheet, IEnumerable<string> main, IEnumerable<string>? opts = null)
                 {
                     if (!blocksBySheet.TryGetValue(sheet, out var list))
@@ -72,7 +72,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     );
                 }
 
-                // Komponensek bejárása, DataSource vizsgálata és blokkolás
+                // Traverse components, inspect DataSource, and create blocks
                 foreach (var comp in ReportComponents)
                 {
                     var ds = comp.GetType().GetProperty("DataSource")?.GetValue(comp);
@@ -109,20 +109,44 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         case SingleChoiceEvaluationData s:
                             {
                                 var main = new List<string> { s.QuestionStatement };
-                                main.AddRange(s.QuestionOpenAnswers);
+                                if (s.QuestionOptionAnswers.Length > 0)
+                                    main.AddRange(s.QuestionOptionAnswers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
 
-                                List<string>? opts = null;
-                                if (!s.QuestionOptions.IsDefaultOrEmpty)
+                                // Primary block: always ensure we have a Main row
+                                var blocks = new List<(List<string> Main, List<string> Opts)>
                                 {
-                                    opts = new List<string> { "Options" };
-                                    for (int i = 0; i < s.QuestionOptions.Length; i++)
-                                        opts.Add($"{i + 1} = {s.QuestionOptions[i]}");
+                                    (main, new List<string>()) // Opts is empty here
+                                };
 
-                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", s.QuestionOptions.Length);
+                                // Text answers in separate rows
+                                if (!s.QuestionOpenAnswers.IsDefaultOrEmpty && s.QuestionOpenAnswers.Length > 0)
+                                {
+                                    foreach (var ans in s.QuestionOpenAnswers)
+                                    {
+                                        blocks.Add((new List<string>(), new List<string> { "TextAnswer", ans }));
+                                    }
+                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", 2); // 2 columns: label + answer
                                 }
 
-                                AddBlock("SingleChoice+Other", main, opts);
-                                UpdateMax(maxAnsBySheet, "SingleChoice+Other", s.QuestionOpenAnswers.Length);
+                                // Predefined options in separate rows
+                                if (!s.QuestionOptions.IsDefaultOrEmpty && s.QuestionOptions.Length > 0)
+                                {
+                                    int idx = 1;
+                                    foreach (var opt in s.QuestionOptions)
+                                    {
+                                        blocks.Add((new List<string>(), new List<string> { "Option", $"{idx++} = {opt}" }));
+                                    }
+                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", 2); // 2 columns: label + option
+                                }
+
+                                // Add to the sheet
+                                if (!blocksBySheet.TryGetValue("SingleChoice+Other", out var list))
+                                    blocksBySheet["SingleChoice+Other"] = list = new();
+                                list.AddRange(blocks);
+
+                                // Max numeric columns
+                                UpdateMax(maxAnsBySheet, "SingleChoice+Other", s.QuestionOptionAnswers.Length);
+
                                 break;
                             }
 
@@ -153,7 +177,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     }
                 }
 
-                // Ha nincs adat, készítsünk egy "Empty" lapot
+                // If no data, create an "Empty" sheet
                 if (blocksBySheet.Count == 0)
                 {
                     var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
@@ -171,7 +195,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 }
                 else
                 {
-                    // Van adat: minden laptípusra külön munkalapot készítünk
+                    // We have data: create a separate worksheet for each sheet type
                     uint sheetId = 1;
                     var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -182,7 +206,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         var maxAns = maxAnsBySheet.TryGetValue(rawName, out var ma) ? ma : 0;
                         var maxOpts = maxOptsBySheet.TryGetValue(rawName, out var mo) ? mo : 0;
 
-                        // Fejléc a fő táblához
+                        // Header for the main table
                         var header = new List<string> { "Question" };
                         if (sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase))
                         {
@@ -194,13 +218,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                             for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
                         }
 
-                        // Teljes szélesség: max(main, options)
+                        // Total width: max(main, options)
                         var mainCols = 1 + maxAns + (sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
                         var optionCols = 1 + maxOpts;
                         var totalCols = Math.Max(mainCols, optionCols);
                         while (header.Count < totalCols) header.Add(string.Empty);
 
-                        // Blokkok normalizálása totalCols szélességre
+                        // Normalize blocks to totalCols width
                         var normalized = new List<(List<string> Main, List<string> Opts)>(blocks.Count);
                         foreach (var blk in blocks)
                         {
@@ -231,25 +255,25 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         }
 
         /// <summary>
-        /// Létrehoz egy munkalapot és feltölti a megadott fejléccel és adatsorokkal (Main + Opts).
+        /// Creates a worksheet and populates it with the specified header and data rows (Main + Opts).
         /// </summary>
-        /// <param name="wbPart">A munkafüzet part.</param>
-        /// <param name="sheets">A munkafüzet lap-gyűjteménye.</param>
-        /// <param name="sheetName">A munkalap neve (Excel kompatibilis, lásd: <see cref="MakeSafeSheetName"/>).</param>
-        /// <param name="header">A fő tábla fejléce (első sor).</param>
-        /// <param name="blocks">A normalizált blokkok (Main és opcionális Opts).</param>
-        /// <param name="explicitSheetId">Opcionális lapazonosító.</param>
-        /// <param name="maxAns">A válaszoszlopok maximum száma az adott lapon.</param>
-        /// <param name="maxOpts">Az opcióoszlopok maximum száma az adott lapon.</param>
+        /// <param name="wbPart">The workbook part.</param>
+        /// <param name="sheets">The workbook’s sheet collection.</param>
+        /// <param name="sheetName">The worksheet name (Excel-compatible, see <see cref="MakeSafeSheetName"/>).</param>
+        /// <param name="header">The main table header (first row).</param>
+        /// <param name="blocks">The normalized blocks (Main row and optional Opts row).</param>
+        /// <param name="explicitSheetId">Optional sheet ID.</param>
+        /// <param name="maxAns">The maximum number of answer columns on this sheet.</param>
+        /// <param name="maxOpts">The maximum number of option columns on this sheet.</param>
         /// <remarks>
-        /// - Fagyasztott felső sor (A2), így a fejléc görgetésnél látható marad.
-        /// - A numerikus oszlopok (Likert/SingleChoice/MultipleChoice válaszok) jobbra igazított Number cellák.
-        /// - Az "Opts" sor csak akkor íródik ki, ha tartalmaz "Options" címet és legalább 1 opciót.
-        /// - Stílusindexek:
-        ///   1 = fejléc (félkövér, szürke háttér),
-        ///   2 = szöveges adat,
-        ///   3 = opciós sor (dőlt, világos háttér),
-        ///   4 = numerikus adat (kékes háttér).
+        /// - The top row is frozen (A2) so the header remains visible while scrolling.
+        /// - Numeric columns (Likert/SingleChoice/MultipleChoice answers) are right-aligned Number cells.
+        /// - The "Opts" row is written only if it contains the "Options" label and at least one option.
+        /// - Style indexes:
+        ///   1 = header (bold, gray background),
+        ///   2 = text data,
+        ///   3 = options row (italic, light background),
+        ///   4 = numeric data (bluish background).
         /// </remarks>
         private static void CreateSheet(
             WorkbookPart wbPart, Sheets sheets,
@@ -263,10 +287,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             var wsPart = wbPart.AddNewPart<WorksheetPart>();
             var sheetData = new SheetData();
 
-            // Oszlopszélesség-becslés a tartalom alapján
+            // Column width estimation based on content
             var cols = BuildAutoColumns(header, blocks, sheetName, maxAns);
 
-            // Fejléc fagyasztás (Pane)
+            // Freeze header (Pane)
             var views = new SheetViews(new SheetView
             {
                 WorkbookViewId = 0,
@@ -275,7 +299,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 
             wsPart.Worksheet = new Worksheet(views, cols, sheetData);
 
-            // Lap regisztrálása
+            // Register sheet
             var sheet = new Sheet
             {
                 Id = wbPart.GetIdOfPart(wsPart),
@@ -284,19 +308,19 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             };
             sheets.Append(sheet);
 
-            // Fejléc (style 1)
+            // Header (style 1)
             var headerRow = new Row();
             foreach (var text in header)
                 headerRow.Append(TextCell(text, styleIndex: 1));
             sheetData.Append(headerRow);
 
-            // Helyi predikátum: numerikus oszlop-e (a lap típusa és indexe alapján)
+            // Local predicate: is this a numeric column (based on sheet type and index)
             bool IsNumericCol(int colIndex) =>
                 sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase) && colIndex >= 1 && colIndex <= maxAns
                 || (sheetName.Equals("SingleChoice", StringComparison.OrdinalIgnoreCase) ||
                     sheetName.Equals("MultipleChoice", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
 
-            // Adatsorok kiírása
+            // Write data rows
             foreach (var (Main, Opts) in blocks)
             {
                 var dataRow = new Row();
@@ -310,7 +334,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 }
                 sheetData.Append(dataRow);
 
-                // Opciós sor (ha van)
+                // Options row (if present)
                 if (Opts is { Count: > 1 })
                 {
                     var optRow = new Row();
@@ -324,10 +348,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         // ---------------- Helpers: styles & cells ----------------
 
         /// <summary>
-        /// Létrehoz egy szöveges cellát (InlineString) a megadott stílusindexszel.
+        /// Creates a text cell (InlineString) with the given style index.
         /// </summary>
-        /// <param name="text">A cella szövege (null esetén üres string).</param>
-        /// <param name="styleIndex">A használandó cellaformátum indexe.</param>
+        /// <param name="text">Cell text (empty string if null).</param>
+        /// <param name="styleIndex">Cell format style index.</param>
         private static Cell TextCell(string? text, uint styleIndex = 0) =>
             new()
             {
@@ -337,10 +361,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             };
 
         /// <summary>
-        /// Létrehoz egy numerikus cellát (Number) InvariantCulture formázással.
+        /// Creates a numeric cell (Number) using InvariantCulture formatting.
         /// </summary>
-        /// <param name="value">A numerikus érték.</param>
-        /// <param name="styleIndex">A használandó cellaformátum indexe.</param>
+        /// <param name="value">The numeric value.</param>
+        /// <param name="styleIndex">Cell format style index.</param>
         private static Cell NumberCell(double value, uint styleIndex = 0) =>
             new()
             {
@@ -350,18 +374,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             };
 
         /// <summary>
-        /// Alap stíluslap definiálása: betűk, kitöltések, keretek, cellaformátumok.
+        /// Defines the base stylesheet: fonts, fills, borders, and cell formats.
         /// </summary>
         /// <remarks>
-        /// Fontok: normál, félkövér (fejléc), dőlt (opciók).
-        /// Fills: None, Gray125, világos szürkék és kékes kitöltés (numerikus háttér).
-        /// Borders: vékony keret.
+        /// Fonts: normal, bold (header), italic (options).
+        /// Fills: None, Gray125, light grays, and bluish fill (numeric background).
+        /// Borders: thin border.
         /// CellFormats:
-        ///  - 0: alap
-        ///  - 1: fejléc (félkövér + szürke háttér + középre igazítás)
-        ///  - 2: szöveg (keretes, tördelés engedélyezve)
-        ///  - 3: opciók (dőlt + világos háttér)
-        ///  - 4: szám (kékes háttér, jobbra igazítás)
+        ///  - 0: default
+        ///  - 1: header (bold + gray background + centered)
+        ///  - 2: text (bordered, wrap enabled)
+        ///  - 3: options (italic + light background)
+        ///  - 4: numbers (bluish background, right aligned)
         /// </remarks>
         private static Stylesheet BuildStylesheet()
         {
@@ -391,8 +415,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             var cellStyleFormats = new CellStyleFormats(new CellFormat());
 
             var cellFormats = new CellFormats(
-                new CellFormat(), // 0: alap
-                new CellFormat // 1: fejléc
+                new CellFormat(), // 0: default
+                new CellFormat // 1: header
                 {
                     FontId = 1,
                     FillId = 2,
@@ -407,7 +431,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         WrapText = true
                     }
                 },
-                new CellFormat // 2: szöveges adat
+                new CellFormat // 2: text data
                 {
                     FontId = 0,
                     FillId = 0,
@@ -419,7 +443,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         WrapText = true
                     }
                 },
-                new CellFormat // 3: opciós sor
+                new CellFormat // 3: options row
                 {
                     FontId = 2,
                     FillId = 3,
@@ -433,7 +457,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         WrapText = true
                     }
                 },
-                new CellFormat // 4: numerikus adat
+                new CellFormat // 4: numeric data
                 {
                     FontId = 0,
                     FillId = 4,
@@ -459,12 +483,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         }
 
         /// <summary>
-        /// Szöveghossz alapján becsült oszlopszélességet ad vissza, szerepkör szerint (kérdés / szám / egyéb).
+        /// Returns an estimated column width based on text length and role (question / numeric / other).
         /// </summary>
-        /// <param name="text">A cella tartalma (többsorost is kezel).</param>
-        /// <param name="isQuestionCol">Kérdés oszlop-e (A oszlop).</param>
-        /// <param name="isNumericCol">Numerikus oszlop-e (Likert/SC/MC válasz oszlopok).</param>
-        /// <returns>Excel szélesség egységben, ésszerű minimum-maximum közé clampelve.</returns>
+        /// <param name="text">Cell content (supports multiline).</param>
+        /// <param name="isQuestionCol">Whether this is the question column (A column).</param>
+        /// <param name="isNumericCol">Whether this is a numeric column (Likert/SC/MC answer columns).</param>
+        /// <returns>Width in Excel units, clamped to a reasonable min–max.</returns>
         private static double EstimateWidth(string? text, bool isQuestionCol, bool isNumericCol)
         {
             var t = text ?? string.Empty;
@@ -480,13 +504,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         }
 
         /// <summary>
-        /// Oszlopszélességek felépítése a fejléc és az adatsorok bejárásával.
+        /// Builds column widths by scanning the header and data rows.
         /// </summary>
-        /// <param name="header">Fejléc sor.</param>
-        /// <param name="blocks">Adatblokkok (Main + Opts).</param>
-        /// <param name="sheetName">Lapnév (befolyásolja a numerikus oszlop detektálást).</param>
-        /// <param name="maxAns">Numerikus válaszoszlopok száma.</param>
-        /// <returns><see cref="Columns"/> gyűjtemény egyedi szélességekkel.</returns>
+        /// <param name="header">Header row.</param>
+        /// <param name="blocks">Data blocks (Main + Opts).</param>
+        /// <param name="sheetName">Sheet name (influences numeric column detection).</param>
+        /// <param name="maxAns">Number of numeric answer columns.</param>
+        /// <returns><see cref="Columns"/> collection with per-column widths.</returns>
         private static Columns BuildAutoColumns(
             IReadOnlyList<string> header,
             IReadOnlyList<(List<string> Main, List<string> Opts)> blocks,
@@ -501,11 +525,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 || (sheetName.Equals("SingleChoice", StringComparison.OrdinalIgnoreCase) ||
                     sheetName.Equals("MultipleChoice", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
 
-            // Fejléc szélességek
+            // Header widths
             for (int c = 0; c < colCount; c++)
                 maxWidths[c] = Math.Max(maxWidths[c], EstimateWidth(header[c], c == 0, IsNumericCol(c)));
 
-            // Adatsorok szélességei
+            // Data row widths
             foreach (var (Main, Opts) in blocks)
             {
                 for (int c = 0; c < colCount; c++)
@@ -517,7 +541,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 }
             }
 
-            // Columns felépítése (egyenként állított szélességek)
+            // Build Columns (individual widths)
             var cols = new Columns();
             for (uint i = 0; i < colCount; i++)
             {
@@ -527,11 +551,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         }
 
         /// <summary>
-        /// Beállítja a megadott laptípushoz a maximális értéket (válasz/opszió darabszám).
+        /// Sets the maximum value (count of answers/options) for the given sheet type.
         /// </summary>
-        /// <param name="map">Cél szótár.</param>
-        /// <param name="sheet">Laptípus kulcs.</param>
-        /// <param name="candidate">Új jelölt maximum.</param>
+        /// <param name="map">Target dictionary.</param>
+        /// <param name="sheet">Sheet type key.</param>
+        /// <param name="candidate">New candidate maximum.</param>
         private static void UpdateMax(Dictionary<string, int> map, string sheet, int candidate)
         {
             if (map.TryGetValue(sheet, out var curr)) map[sheet] = Math.Max(curr, candidate);
@@ -539,12 +563,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         }
 
         /// <summary>
-        /// Excel-kompatibilis, egyedi munkalapnév készítése: tiltott karakterek törlése, 31 karakter limit,
-        /// ütközés esetén sorszámozás (" (2)", " (3)", ...).
+        /// Creates an Excel-compatible, unique worksheet name:
+        /// removes invalid characters, applies the 31-character limit,
+        /// and adds numbering in case of collisions (" (2)", " (3)", ...).
         /// </summary>
-        /// <param name="raw">Eredeti lapnév.</param>
-        /// <param name="used">Már használt nevek (kis/nagybetű érzéketlen).</param>
-        /// <returns>Biztonságos, egyedi lapnév.</returns>
+        /// <param name="raw">Original sheet name.</param>
+        /// <param name="used">Already used names (case-insensitive).</param>
+        /// <returns>Safe, unique sheet name.</returns>
         private static string MakeSafeSheetName(string raw, HashSet<string> used)
         {
             var invalid = new[] { ':', '\\', '/', '?', '*', '[', ']' };

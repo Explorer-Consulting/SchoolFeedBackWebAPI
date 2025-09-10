@@ -6,37 +6,38 @@ using QuestPDF.Infrastructure;
 namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 {
     /// <summary>
-    /// Nyílt végű (szöveges) kérdésekhez tartozó riportkomponens.
+    /// Report component for open-ended (text) questions.
     /// <para>
-    /// Megjeleníti a kérdés szövegét, a beérkezett szöveges válaszok számát,
-    /// üres állapotban figyelmeztető keretet, egyébként pedig a válaszokat
-    /// idézőjellel, elkülönített kártyákban. A végén anonimitási megjegyzést jelenít meg.
+    /// Displays the question text, the number of received text responses,
+    /// a warning frame in case of no responses, otherwise shows the answers
+    /// in quotation marks inside separate cards. At the end, it displays
+    /// an anonymity note.
     /// </para>
     /// </summary>
     /// <remarks>
-    /// Használat:
+    /// Usage:
     /// <list type="number">
-    /// <item>Példányosítsd a komponenst <see cref="OpenEndedEvaluationData"/> adattal.</item>
-    /// <item>Add a dokumentum <c>ReportComponents</c> listájához.</item>
-    /// <item>Rendereléskor a komponens a szöveges válaszokat kártyánként jeleníti meg.</item>
+    /// <item>Instantiate the component with <see cref="OpenEndedEvaluationData"/>.</item>
+    /// <item>Add it to the document’s <c>ReportComponents</c> list.</item>
+    /// <item>During rendering, the component displays the text answers card by card.</item>
     /// </list>
-    /// Előfeltételek:
+    /// Preconditions:
     /// <list type="bullet">
-    /// <item><see cref="OpenEndedEvaluationData.QuestionStatement"/> – a kérdés szövege.</item>
-    /// <item><see cref="OpenEndedEvaluationData.Answers"/> – a válaszok listája (üres elemeket érdemes előzetesen szűrni).</item>
+    /// <item><see cref="OpenEndedEvaluationData.QuestionStatement"/> – the question text.</item>
+    /// <item><see cref="OpenEndedEvaluationData.Answers"/> – the list of responses (empty items should be filtered in advance).</item>
     /// </list>
     /// </remarks>
     public sealed class OpenEndedReportComponent(OpenEndedEvaluationData dataSource)
          : ReportComponent<OpenEndedEvaluationData>(dataSource)
     {
-        // --- Méretek ---
+        // --- Dimensions ---
         private const float OuterPaddingH = 28f;
         private const float OuterPaddingV = 18f;
         private const float TitleSize = 18f;
         private const float AnswerSize = 11.5f;
         private const float MetaSize = 10f;
 
-        // --- Színtokenek ---
+        // --- Color tokens ---
         private static readonly string FrameBlue = Colors.Blue.Medium;
         private static readonly string TextBlack = Colors.Grey.Darken4;
         private static readonly string MetaGrey = Colors.Grey.Darken2;
@@ -44,18 +45,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private static readonly string PageWhite = Colors.White;
 
         /// <summary>
-        /// A komponens megjelenítésének leírása.
+        /// Describes how the component is rendered.
         /// <para>
-        /// Szekciók:
-        /// 1) Címsor (kérdés),
-        /// 2) Meta (válaszok száma),
-        /// 3) Elválasztó vonal,
-        /// 4) Üres állapot üzenettel (ha nincs válasz),
-        /// 5) Válaszok kártyákban (idézve),
-        /// 6) Anonimitási megjegyzés.
+        /// Sections:
+        /// 1) Title (question),  
+        /// 2) Meta (number of answers),  
+        /// 3) Separator line,  
+        /// 4) Empty state with message (if no answers),  
+        /// 5) Answers displayed in cards (quoted),  
+        /// 6) Anonymity note.  
         /// </para>
         /// </summary>
-        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
+        /// <param name="container">The QuestPDF container into which the component renders.</param>
         public override void Compose(IContainer container)
         {
             var answers = DataSource.Answers.IsDefaultOrEmpty
@@ -69,7 +70,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                 {
                     col.Spacing(10);
 
-                    // 1) Címsor
+                    // 1) Title
                     col.Item().Text(DataSource.QuestionStatement)
                         .FontSize(TitleSize).SemiBold()
                         .FontColor(TextBlack)
@@ -79,43 +80,43 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                        t.Span("Válaszok száma: ");
+                        t.Span("Number of responses: ");
                         t.Span(answers.Length.ToString()).SemiBold();
                     });
 
-                    // 3) Elválasztó
+                    // 3) Separator
                     col.Item()
                         .LineHorizontal(1)
                         .LineColor(SubtleGrey);
 
-                    // 4) Üres állapot
+                    // 4) Empty state
                     if (answers.Length == 0)
                     {
                         col.Item()
                             .Background(PageWhite)
                             .Border(1).BorderColor(FrameBlue)
                             .Padding(12)
-                            .Text("Ehhez a kérdéshez nem érkezett szöveges válasz.")
+                            .Text("No text responses were received for this question.")
                                 .FontSize(AnswerSize).FontColor(MetaGrey);
                         return;
                     }
 
-                    // 5) Válaszok kártyákban
+                    // 5) Answers in cards
                     foreach (var a in answers)
                     {
                         col.Item()
                             .Background(PageWhite)
                             .Border(1).BorderColor(FrameBlue)
                             .Padding(12)
-                            .Text($"„{a}”")
+                            .Text($"“{a}”")
                                 .FontSize(AnswerSize)
                                 .FontColor(TextBlack)
                                 .Italic()
                                 .LineHeight(1.32f);
                     }
 
-                    // 6) Anonimitási megjegyzés
-                    col.Item().Text("A szöveges válaszok anonim módon kerültek feldolgozásra.")
+                    // 6) Anonymity note
+                    col.Item().Text("Text responses have been processed anonymously.")
                         .FontSize(9).FontColor(MetaGrey).Italic();
                 });
         }

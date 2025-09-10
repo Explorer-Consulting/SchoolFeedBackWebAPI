@@ -8,41 +8,42 @@ using System.Globalization;
 namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 {
     /// <summary>
-    /// Likert-skálás kérdéshez tartozó riportkomponens.
+    /// Report component for Likert-scale questions.
     /// <para>
-    /// Megjeleníti a kérdés szövegét, a mintanagyságot, alapvető leíró statisztikákat
-    /// (átlag, medián, szórás), az értékek eloszlását mini sávdiagrammal és táblázattal,
-    /// továbbá részletes mutatókat (minimum, maximum, módusz, elégedettségi index, egyetértési arány).
+    /// Displays the question text, sample size, basic descriptive statistics
+    /// (mean, median, standard deviation), the distribution of values
+    /// with a mini bar chart and table, as well as detailed indicators
+    /// (minimum, maximum, mode, satisfaction index, agreement rate).
     /// </para>
     /// </summary>
     /// <remarks>
-    /// Használat:
+    /// Usage:
     /// <list type="number">
-    /// <item>Példányosítsd a komponenst egy <see cref="LikertScaleEvaluationData"/> adattal.</item>
-    /// <item>Add a komponenst egy dokumentum <c>ReportComponents</c> listájához.</item>
-    /// <item>A dokumentum generálásakor a komponens a tartalom megfelelő részébe renderelődik.</item>
+    /// <item>Instantiate the component with a <see cref="LikertScaleEvaluationData"/> instance.</item>
+    /// <item>Add the component to a document’s <c>ReportComponents</c> list.</item>
+    /// <item>During document generation, the component will render into the corresponding section of the content.</item>
     /// </list>
     /// </remarks>
     public sealed class LikertScaleReportComponent(LikertScaleEvaluationData dataSource)
         : ReportComponent<LikertScaleEvaluationData>(dataSource)
     {
-        // --- Design tokenek (elrendezés és tipográfia) ---
-        /// <summary>Vízszintes külső belső margó.</summary>
+        // --- Design tokens (layout and typography) ---
+        /// <summary>Horizontal outer padding.</summary>
         private const float OuterPaddingH = 28f;
-        /// <summary>Függőleges külső belső margó.</summary>
+        /// <summary>Vertical outer padding.</summary>
         private const float OuterPaddingV = 18f;
-        /// <summary>Címsor betűméret.</summary>
+        /// <summary>Title font size.</summary>
         private const float TitleSize = 18f;
-        /// <summary>Meta-szövegek (leírások, feliratok) betűméret.</summary>
+        /// <summary>Font size for meta texts (descriptions, labels).</summary>
         private const float MetaSize = 10f;
-        /// <summary>Törzsszöveg betűméret.</summary>
+        /// <summary>Body text font size.</summary>
         private const float TextSize = 11.5f;
-        /// <summary>Mini sávdiagram magassága.</summary>
+        /// <summary>Height of the mini bar chart.</summary>
         private const float BarHeight = 8f;
-        /// <summary>Mini sávdiagram szélessége.</summary>
+        /// <summary>Width of the mini bar chart.</summary>
         private const float BarWidth = 180f;
 
-        // --- Szín tokenek ---
+        // --- Color tokens ---
         private static readonly string TextBlack = Colors.Grey.Darken4;
         private static readonly string MetaGrey = Colors.Grey.Darken2;
         private static readonly string SubtleGrey = Colors.Grey.Lighten3;
@@ -51,18 +52,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         private static readonly string PageWhite = Colors.White;
 
         /// <summary>
-        /// A komponens megjelenítésének leírása.
+        /// Describes the rendering of the component.
         /// <para>
-        /// Szekciók:
-        /// 1) Címsor (kérdés szövege),
-        /// 2) Üres állapot (ha nincs érvényes válasz),
-        /// 3) Meta (mintanagyság, átlag, medián, szórás),
-        /// 4) Eloszlás táblázat mini sávdiagramokkal,
-        /// 5) Részletes statisztikák (min, max, módusz, indexek),
-        /// 6) Értelmező megjegyzés (ha van).
+        /// Sections:
+        /// 1) Title (question text),  
+        /// 2) Empty state (if no valid answers),  
+        /// 3) Meta (sample size, mean, median, standard deviation),  
+        /// 4) Distribution table with mini bar charts,  
+        /// 5) Detailed statistics (min, max, mode, indexes),  
+        /// 6) Interpretive note (if present).  
         /// </para>
         /// </summary>
-        /// <param name="container">A QuestPDF konténer, amelybe a komponens renderel.</param>
+        /// <param name="container">QuestPDF container into which the component is rendered.</param>
         public override void Compose(IContainer container)
         {
             var data = DataSource;
@@ -76,62 +77,62 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                 {
                     col.Spacing(10);
 
-                    // 1) Címsor
+                    // 1) Title
                     col.Item().Text(data.QuestionStatement)
                         .FontSize(TitleSize).SemiBold()
                         .FontColor(TextBlack)
                         .LineHeight(1.35f);
 
-                    // 2) Üres állapot
+                    // 2) Empty state
                     if (n == 0)
                     {
                         col.Item()
                            .Background(PageWhite)
                            .Border(1).BorderColor(AccentBlue)
                            .Padding(12)
-                           .Text("Ehhez a kérdéshez nem érkezett érvényes válasz.")
+                           .Text("No valid responses were received for this question.")
                                .FontSize(TextSize).FontColor(MetaGrey);
                         return;
                     }
 
-                    // 3) Meta (N, Átlag, Medián, Szórás)
+                    // 3) Meta (N, Mean, Median, Standard Deviation)
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                        t.Span("Válaszok száma: ");
+                        t.Span("Number of responses: ");
                         t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
 
-                        t.Span("   •   Átlag: ");
+                        t.Span("   •   Mean: ");
                         t.Span(data.MeanValue.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
 
-                        t.Span("   •   Medián: ");
+                        t.Span("   •   Median: ");
                         t.Span(data.MedianValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
 
-                        t.Span("   •   Szórás: ");
+                        t.Span("   •   Std. Dev.: ");
                         t.Span(data.StandardDeviation.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
                     });
 
                     col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                    // 4) Eloszlás táblázat mini sávdiagrammal
+                    // 4) Distribution table with mini bar chart
                     col.Item().Table(table =>
                     {
                         table.ColumnsDefinition(c =>
                         {
-                            c.ConstantColumn(30);    // skálaérték
-                            c.RelativeColumn();      // mini sáv + %
-                            c.ConstantColumn(50);    // darabszám
+                            c.ConstantColumn(30);    // scale value
+                            c.RelativeColumn();      // mini bar + %
+                            c.ConstantColumn(50);    // count
                         });
 
-                        // Fejléc
-                        table.Cell().PaddingBottom(4).Text("Ért.").FontSize(MetaSize).FontColor(MetaGrey);
-                        table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
-                        table.Cell().PaddingBottom(4).AlignRight().Text("Db").FontSize(MetaSize).FontColor(MetaGrey);
+                        // Header
+                        table.Cell().PaddingBottom(4).Text("Val.").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).Text("Distribution").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
                         int min = data.MinimumScale;
                         int max = data.MaximumScale;
 
-                        // Abszolút gyakoriságok
+                        // Absolute frequencies
                         var freq = new int[max - min + 1];
                         foreach (var v in answers)
                             if (v >= min && v <= max) freq[v - min]++;
@@ -143,12 +144,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             double pct = n > 0 ? (double)count / n * 100.0 : 0.0;
                             float filled = (float)(BarWidth * (pct / 100.0));
 
-                            // 4.1 Skálaérték
+                            // 4.1 Scale value
                             table.Cell().PaddingVertical(6)
                                 .Text(value.ToString(CultureInfo.InvariantCulture))
                                 .FontSize(TextSize).FontColor(TextBlack);
 
-                            // 4.2 Mini sáv + százalék
+                            // 4.2 Mini bar + percentage
                             table.Cell().PaddingVertical(6).Row(row =>
                             {
                                 row.AutoItem()
@@ -171,7 +172,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                        .FontColor(MetaGrey);
                             });
 
-                            // 4.3 Darabszám
+                            // 4.3 Count
                             table.Cell().PaddingVertical(6).AlignRight()
                                 .Text(count.ToString(CultureInfo.InvariantCulture))
                                 .FontSize(TextSize).FontColor(TextBlack);
@@ -180,7 +181,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                     col.Item().LineHorizontal(1).LineColor(SubtleGrey);
 
-                    // 5) Részletes statisztikák
+                    // 5) Detailed statistics
                     col.Item().Table(t =>
                     {
                         t.ColumnsDefinition(c =>
@@ -201,13 +202,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                         StatCell("Minimum", data.MinimumRate.ToString(CultureInfo.InvariantCulture));
                         StatCell("Maximum", data.MaximumRate.ToString(CultureInfo.InvariantCulture));
-                        StatCell("Módusz", data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture));
-                        StatCell("Elégedettségi index", data.SatisfactionIndex.ToString("0.0", CultureInfo.InvariantCulture));
-                        StatCell("Egyetértési arány", data.AgreementRate.ToString("0.0", CultureInfo.InvariantCulture) + "%");
-                        t.Cell(); // üres helykitöltő a rugalmas 3 oszlopos elrendezéshez
+                        StatCell("Mode", data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture));
+                        StatCell("Satisfaction Index", data.SatisfactionIndex.ToString("0.0", CultureInfo.InvariantCulture));
+                        StatCell("Agreement Rate", data.AgreementRate.ToString("0.0", CultureInfo.InvariantCulture) + "%");
+                        t.Cell(); // empty filler for flexible 3-column layout
                     });
 
-                    // 6) Értelmező megjegyzés
+                    // 6) Interpretive note
                     if (!string.IsNullOrWhiteSpace(data.ValueMeanings))
                     {
                         col.Item().PaddingTop(6).Text(data.ValueMeanings)

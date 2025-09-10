@@ -7,6 +7,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Exceptions\**" />
+    <Compile Remove="Exception\**" />
+    <EmbeddedResource Remove="Exceptions\**" />
+    <EmbeddedResource Remove="Exception\**" />
+    <None Remove="Exceptions\**" />
+    <None Remove="Exception\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="local.settings.json" />
   </ItemGroup>
   <ItemGroup>
@@ -28,8 +36,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Exceptions\" />
   </ItemGroup>
 </Project>

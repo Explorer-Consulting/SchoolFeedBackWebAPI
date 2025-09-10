@@ -18,8 +18,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using QuestPDF.Infrastructure;
 using System.Text.Json;
 
+QuestPDF.Settings.License = LicenseType.Community;
 var host = new HostBuilder()
     .ConfigureAppConfiguration((ctx, cfg) =>
     {
@@ -77,6 +79,7 @@ var host = new HostBuilder()
         // Functions
         services.AddScoped<QuestionnaireFunctions>();
         services.AddScoped<EvaluationFunctions>();
+        services.AddScoped<ReportFunctions>();  
 
         // Validators
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();

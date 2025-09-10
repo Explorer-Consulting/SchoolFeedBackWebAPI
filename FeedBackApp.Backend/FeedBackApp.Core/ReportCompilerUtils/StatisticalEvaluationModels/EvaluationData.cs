@@ -4,29 +4,30 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 {
     /// <summary>
-    /// Statisztikai kiértékelések absztrakt alaposztálya.
+    /// Abstract base class for statistical evaluation models.
     /// <para>
-    /// Feladata: a beérkező nyers adatok (tipikusan egész értékek) feldolgozása,
-    /// leíró statisztikák kiszámítása és a megfelelő riportkomponens összeállítása.
+    /// Its responsibility is to process raw input data (typically integer values),
+    /// calculate descriptive statistics, and assemble the corresponding report component.
     /// </para>
     /// </summary>
     public abstract class EvaluationData
     {
-        /// <summary>Alap konstruktor.</summary>
+        /// <summary>Default constructor.</summary>
         public EvaluationData() { }
 
         /// <summary>
-        /// A nyers adatok kiértékelése és a kiszámított mutatók (mezők/property-k) feltöltése.
+        /// Evaluates the raw data and populates the calculated indicators (fields/properties).
         /// </summary>
         public abstract EvaluationData EvaluateData();
 
         /// <summary>
-        /// A hozzá tartozó QuestPDF komponens legyártása (megjelenítéshez).
+        /// Creates the corresponding QuestPDF component (for rendering purposes).
         /// </summary>
         public abstract IComponent CompileComponent();
 
         /// <summary>
-        /// Átlag számítása. Üres/default tömb esetén kivételt dob.
+        /// Calculates the mean value.  
+        /// Throws an exception if the array is empty or in default state.
         /// </summary>
         protected virtual double CalculateMeanValue(ImmutableArray<int> data)
         {
@@ -36,30 +37,30 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Medián számítása (statisztikai közép). A bemenetet nem módosítja.
+        /// Calculates the median (statistical middle).  
+        /// Does not modify the input array.
         /// </summary>
         protected virtual double CalculateMedianValue(ImmutableArray<int> data)
         {
             if (data.IsDefaultOrEmpty)
                 throw new ArgumentException("ImmutableArray<int> from CalculateMedianValue() is empty or in default state");
 
-            // Rendezett másolat készítése
             var arr = data.ToArray();
             Array.Sort(arr);
             int n = arr.Length;
 
-            if ((n & 1) == 1) // páratlan
+            if ((n & 1) == 1) // odd length
                 return arr[n / 2];
 
-            // páros
+            // even length
             int a = arr[(n / 2) - 1];
             int b = arr[n / 2];
             return (a + b) / 2.0;
         }
 
         /// <summary>
-        /// Módusz (leggyakoribb érték) meghatározása, rendezést nem igényel.
-        /// Döntetlen esetén a legkisebb értéket adja vissza.
+        /// Calculates the mode (most frequent value) without requiring sorting.  
+        /// In case of ties, the smallest value is returned.
         /// </summary>
         protected virtual int CalculateModeValue(ImmutableArray<int> data)
         {
@@ -87,8 +88,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Szórás számítása Welford-féle online algoritmussal.
-        /// <para>Megjegyzés: ez <b>populációs</b> szórás (N nevező). Mintaszóráshoz (N-1) módosítsd a nevezőt.</para>
+        /// Calculates the standard deviation using Welford’s online algorithm.  
+        /// <para>Note: this is a <b>population</b> standard deviation (denominator N).  
+        /// For sample standard deviation, adjust the denominator to (N-1).</para>
         /// </summary>
         protected virtual double CalculateStandardDeviation(ImmutableArray<int> data)
         {
@@ -111,11 +113,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
             if (count < 2)
                 return 0.0;
 
-            double variance = m2 / count; // populációs
+            double variance = m2 / count; // population
             return Math.Sqrt(variance);
         }
 
-        /// <summary>Maximum érték meghatározása.</summary>
+        /// <summary>Returns the maximum value.</summary>
         protected virtual int GetMaximumValue(ImmutableArray<int> data)
         {
             if (data.IsDefaultOrEmpty)
@@ -123,7 +125,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
             return data.Max();
         }
 
-        /// <summary>Minimum érték meghatározása.</summary>
+        /// <summary>Returns the minimum value.</summary>
         protected virtual int GetMinimumValue(ImmutableArray<int> data)
         {
             if (data.IsDefaultOrEmpty)
@@ -132,8 +134,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Egyetértési arány (pozitívnak tekintett válaszok aránya, %).
-        /// <para><b>Definíció:</b> x &gt; <paramref name="positiveThreshold"/> esetén pozitív.</para>
+        /// Calculates the agreement rate (percentage of responses considered positive).  
+        /// <para><b>Definition:</b> a value is considered positive if <c>x &gt; <paramref name="positiveThreshold"/></c>.</para>
         /// </summary>
         protected virtual double CalculateAgreementRate(ImmutableArray<int> data, in int positiveThreshold)
         {
@@ -151,7 +153,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Elégedettségi index (0–100%), az átlag skálán történő normalizálásával.
+        /// Calculates the satisfaction index (0–100%), normalized on the scale range.
         /// </summary>
         protected virtual double CalculateSatisfactionIndex(ImmutableArray<int> data, in int minScale, in int maxScale)
         {
@@ -166,38 +168,44 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Abszolút gyakoriságok számítása (opció → darab).
+        /// Calculates absolute frequencies (option → count).
         /// </summary>
         protected virtual Dictionary<string, int> CalculateFrequency(
             ImmutableArray<string> answerOptions,
             ImmutableArray<int> data)
         {
             if (answerOptions.IsDefaultOrEmpty)
-                throw new ArgumentException("ImmutableArray<string> from CalculateFrequency() is empty or in default state");
-            if (data.IsDefaultOrEmpty)
-                throw new ArgumentException("ImmutableArray<int> from CalculateFrequency() is empty or in default state");
+                throw new ArgumentException("answerOptions is empty/default");
 
+            // If no data, return zeros instead of throwing:
             var frequencies = new Dictionary<string, int>(answerOptions.Length);
-            foreach (var option in answerOptions)
-                frequencies[option] = 0;
+            foreach (var option in answerOptions) frequencies[option] = 0;
+            if (data.IsDefaultOrEmpty) return frequencies;
 
-            foreach (var answerIndex in data)
+            foreach (var raw in data)
             {
-                if (answerIndex < 0 || answerIndex >= answerOptions.Length)
-                    throw new ArgumentOutOfRangeException(
-                        nameof(data),
-                        $"Érvénytelen opció index: {answerIndex}. Engedélyezett: 0..{answerOptions.Length - 1}");
+                var idx = raw;
 
-                var key = answerOptions[answerIndex];
-                frequencies[key]++;
+                // Normalize from 1-based → 0-based (tolerant)
+                if (idx >= 1 && idx <= answerOptions.Length) idx--;
+
+                if ((uint)idx < (uint)answerOptions.Length)
+                {
+                    frequencies[answerOptions[idx]]++;
+                }
+                else
+                {
+                    // invalid index → skipped (optionally: log)
+                    // TODO: log warning with question id/context
+                }
             }
 
             return frequencies;
         }
 
         /// <summary>
-        /// Relatív gyakoriságok kiszámítása %-ban az abszolút gyakoriságokból.
-        /// Ha <paramref name="totalSelections"/> nincs megadva, az abszolút gyakoriságok összege az alap.
+        /// Calculates relative frequencies (%) from absolute frequencies.  
+        /// If <paramref name="totalSelections"/> is not provided, the sum of absolute frequencies is used as the denominator.
         /// </summary>
         protected virtual Dictionary<string, double> CalculateRelativeFrequencyPercent(
             IReadOnlyDictionary<string, int> absoluteFrequencies,
@@ -216,7 +224,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Rangsor csökkenő abszolút gyakoriság szerint, majd név szerint (stabil megjelenítéshez).
+        /// Ranks options by descending absolute frequency, then by name (for stable output).
         /// </summary>
         protected virtual List<KeyValuePair<string, int>> RankByFrequency(
             IReadOnlyDictionary<string, int> absoluteFrequencies)
@@ -229,7 +237,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Domináns opció (legmagasabb gyakoriság). Üres bemenet esetén <c>null</c>.
+        /// Returns the dominant option (highest frequency).  
+        /// Returns <c>null</c> if the input is empty.
         /// </summary>
         protected virtual KeyValuePair<string, int>? GetDominantOption(
             IReadOnlyDictionary<string, int> absoluteFrequencies)
@@ -240,8 +249,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         }
 
         /// <summary>
-        /// Módusz robusztus meghatározása (rendezetlenség mellett is).
-        /// Döntetlen esetén a legkisebb értéket adja vissza.
+        /// Calculates the mode in a robust way (handles unsorted input).  
+        /// In case of ties, the smallest value is returned.
         /// </summary>
         protected virtual int CalculateModeValueRobust(ImmutableArray<int> data)
         {

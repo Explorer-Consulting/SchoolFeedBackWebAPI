@@ -5,36 +5,36 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
 {
     /// <summary>
-    /// Nyílt végű (szöveges) kérdés kiértékelési adatmodellje.
+    /// Statistical evaluation data model for open-ended (text) questions.
     /// <para>
-    /// Tárolja a kérdés szövegét és a beérkezett szöveges válaszokat.
-    /// Nem végez számszerű statisztikai kiértékelést, a <see cref="EvaluateData"/>
-    /// egyszerűen az aktuális példányt adja vissza.
+    /// Stores the question text and the received free-text answers.  
+    /// Does not perform numerical statistical evaluation — the <see cref="EvaluateData"/> 
+    /// method simply returns the current instance.
     /// </para>
     /// </summary>
     public sealed class OpenEndedEvaluationData(string questionStatement, ImmutableArray<string> answers)
         : EvaluationData
     {
         /// <summary>
-        /// A kérdés szövege.
+        /// The question text.
         /// </summary>
         public string QuestionStatement { get; init; } = questionStatement;
 
         /// <summary>
-        /// A beérkezett szöveges válaszok listája.
+        /// The list of received free-text answers.
         /// <para>
-        /// Üres vagy whitespace-only stringek szűrése ajánlott már a betöltésnél.
+        /// It is recommended to filter out empty or whitespace-only strings during data loading.
         /// </para>
         /// </summary>
         public ImmutableArray<string> Answers { get; init; } = answers;
 
         /// <summary>
-        /// Nem számol további mutatókat, egyszerűen az aktuális példányt adja vissza.
+        /// No statistical indicators are calculated; simply returns the current instance.
         /// </summary>
         public override EvaluationData EvaluateData() => this;
 
         /// <summary>
-        /// A nyílt végű kérdéshez tartozó riportkomponens létrehozása.
+        /// Creates the corresponding report component for open-ended questions.
         /// </summary>
         public override IComponent CompileComponent() => new OpenEndedReportComponent(this);
     }
