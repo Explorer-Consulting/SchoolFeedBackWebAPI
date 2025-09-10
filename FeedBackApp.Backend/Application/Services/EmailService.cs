@@ -103,17 +103,32 @@ public class EmailService : IEmailService
                     case Role.Teacher:
                         subject = $"Survey Results for {entry.SurveyName}";
                         body = $@"Hello Teacher,<br/><br/>
-                      Attached you’ll find the survey results for <b>{entry.SurveyName}</b>.";
-                        //attachments = new List<Attachment>().Add(_reportService.DownloadTeacherAsync(entry.Email,entry.SurveyId));
+              Attached you’ll find the survey results for <b>{entry.SurveyName}</b>.";
+
+                        var teacherReports = await _reportService.DownloadTeacherFilesByIdPrefixAsync(entry.Email, entry.SurveyId);
+                        _logger.LogInformation("Found {Count} teacher reports for {Email} / {SurveyId}",
+                                               teacherReports.Count, entry.Email, entry.SurveyId);
+
+                        attachments = teacherReports
+                            .Select(r => CreateAttachment(r.Data, r.FileName))
+                            .ToList();
                         break;
 
                     case Role.Admin:
                         subject = $"[Admin Report] Survey {entry.SurveyName}";
                         body = $@"Hello Admin,<br/><br/>
-                      Please find attached the administrative report for survey 
-                      <b>{entry.SurveyName}</b>.";
-                        //attachments = new List<Attachment>().Add(_reportService.DownloadAdminAsync(entry.SurveyId)); //need to convert to attachment
+              Please find attached the administrative report(s) for survey 
+              <b>{entry.SurveyName}</b>.";
+
+                        var adminReports = await _reportService.DownloadAdminFilesByIdPrefixAsync(entry.SurveyId);
+                        _logger.LogInformation("Found {Count} admin reports for {SurveyId}",
+                                               adminReports.Count, entry.SurveyId);
+
+                        attachments = adminReports
+                            .Select(r => CreateAttachment(r.Data, r.FileName))
+                            .ToList();
                         break;
+
 
                     default:
                         _logger.LogWarning("Unhandled role {Role} for email {Email}", entry.Role, entry.Email);
@@ -213,4 +228,20 @@ public class EmailService : IEmailService
             await _emailRepository.UpdateEmailsDocumentAsync(emailDocument);
         }
     }
+    private static Attachment CreateAttachment(byte[] data, string fileName)
+    {
+        string contentType = fileName.ToLowerInvariant() switch
+        {
+            string f when f.EndsWith(".pdf") => "application/pdf",
+            string f when f.EndsWith(".xlsx") => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            string f when f.EndsWith(".xls") => "application/vnd.ms-excel",
+            _ => "application/octet-stream"
+        };
+
+        var stream = new MemoryStream(data);
+        stream.Position = 0; // ensure start
+        return new Attachment(stream, fileName, contentType);
+    }
+
+
 }
