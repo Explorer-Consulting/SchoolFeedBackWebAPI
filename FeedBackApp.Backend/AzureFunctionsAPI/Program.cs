@@ -5,12 +5,12 @@ using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
 using FeedBackApp.Backend.Infrastructure.Middleware;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
-using FeedBackApp.Backend.Infrastructure.Persistence;
+using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Backend.Infrastructure.Persistence.Repository;
+using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
 using Microsoft.Azure.Functions.Worker;
@@ -20,8 +20,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
+using Azure.Identity;
 
 QuestPDF.Settings.License = LicenseType.Community;
+
 var host = new HostBuilder()
     .ConfigureAppConfiguration((ctx, cfg) =>
     {
@@ -36,34 +38,37 @@ var host = new HostBuilder()
         services.Configure<WorkerOptions>(o =>
         {
             o.Serializer = new JsonObjectSerializer(
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                });
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         });
 
-        // EF Core Cosmos
+        // --- EF Core (Cosmos) ---
         services.AddDbContext<AppDBContext>(options =>
         {
             var connectionString = Environment.GetEnvironmentVariable("ConnectionString")
                 ?? throw new InvalidOperationException("ConnectionString environment variable is not set.");
 
-            options.UseCosmos(
-                connectionString: connectionString,
-                databaseName: "SchoolDatabase"
-            );
+            options.UseCosmos(connectionString, databaseName: "SchoolDatabase");
         });
 
-        // BlobContainerClient a két env alapján
+        // --- Blob Storage DI (ÚJ: BlobServiceClient + IBlobContext ---
         services.AddSingleton(sp =>
         {
-            var conn = Environment.GetEnvironmentVariable("AZURE_REPORT_BLOB_STORAGE")!;
-            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER")!;
-            var svc = new BlobServiceClient(conn);
-            return svc.GetBlobContainerClient(containerName);
+            var cs = Environment.GetEnvironmentVariable("AZURE_REPORT_BLOB_STORAGE");
+            if (!string.IsNullOrWhiteSpace(cs))
+                return new BlobServiceClient(cs);
+
+            throw new InvalidOperationException("Set AZURE_REPORT_BLOB_STORAGE.");
         });
 
-        // --- App services ---
+        services.AddSingleton<IBlobContext>(sp =>
+        {
+            var svc = sp.GetRequiredService<BlobServiceClient>();
+            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER")
+                ?? throw new InvalidOperationException("AZURE_REPORTS_CONTAINER is not set.");
+            return new BlobContext(svc, containerName); // CreateIfNotExists itt lefut a konstruktorban
+        });
+
+        // --- App services & repos ---
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
@@ -73,13 +78,14 @@ var host = new HostBuilder()
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailRepository, EmailRepository>();
 
+        // Report réteg – a ReportRepository már IBlobContextet használ
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<IReportService, ReportService>();
 
         // Functions
         services.AddScoped<QuestionnaireFunctions>();
         services.AddScoped<EvaluationFunctions>();
-        services.AddScoped<ReportFunctions>();  
+        services.AddScoped<ReportFunctions>();
 
         // Validators
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
@@ -100,14 +106,11 @@ var host = new HostBuilder()
     })
     .Build();
 
-// Inicializáció: DB + Blob konténer (itt, a host felépítése után)
+// Inicializálás: csak DB (BlobContainer létrehozást a BlobContext intézi a konstruktorban)
 using (var scope = host.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     await dbContext.Database.EnsureCreatedAsync();
-
-    var container = scope.ServiceProvider.GetRequiredService<BlobContainerClient>();
-    await container.CreateIfNotExistsAsync(PublicAccessType.None);
 }
 
 await host.RunAsync();
