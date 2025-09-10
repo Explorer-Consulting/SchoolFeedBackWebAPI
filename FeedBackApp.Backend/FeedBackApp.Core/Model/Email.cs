@@ -1,4 +1,6 @@
 ﻿
+using FeedBackApp.Core.Model.Enum;
+
 namespace FeedBackApp.Core.Model
 {
     public class Email
@@ -8,5 +10,7 @@ namespace FeedBackApp.Core.Model
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public IList<string> Emails { get; set; } = new List<string>();
+        public Role Role { get;set; }
+
     }
 }

@@ -76,5 +76,11 @@ namespace Application.Services
                     $"Failed to download teacher report '{fileName}' for '{teacherEmail}'.", ex);
             }
         }
+
+        public async Task CompileEmails(string id)
+        {
+
+        }
+
     }
 }
