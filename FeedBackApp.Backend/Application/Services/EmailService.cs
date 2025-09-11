@@ -211,19 +211,19 @@ public class EmailService : IEmailService
             };
             emailDocument.EmailsToSendList.Add(teacherEmailsToSend);
 
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
-            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var leaders = Environment.GetEnvironmentVariable("LeaderEmail") ?? "";
+            var leadersEmails = leaders.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            var adminEmailsToSend = new Email()
+            var leaderEmailsToSend = new Email()
             {
-                Emails = adminEmails,
+                Emails = leadersEmails,
                 StartDate = metadata.StartDate,
                 EndDate = metadata.EndDate,
                 Role = Role.Admin,
                 SurveyId = surveyId.ToString(),
                 SurveyName = metadata.Title
             };
-            emailDocument.EmailsToSendList.Add(adminEmailsToSend);
+            emailDocument.EmailsToSendList.Add(leaderEmailsToSend);
 
             await _emailRepository.UpdateEmailsDocumentAsync(emailDocument);
         }
