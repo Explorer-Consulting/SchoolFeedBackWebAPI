@@ -93,17 +93,17 @@ public class EmailService : IEmailService
                 switch (entry.Role)
                 {
                     case Role.Student:
-                        subject = $"Survey Invitation: {entry.SurveyName}";
-                        body = $@"Hello,<br/><br/>
-                      Please complete the survey <b>{entry.SurveyName}</b> for teacher feedback.<br/><br/>
+                        subject = $"Kérdőív meghívó: {entry.SurveyName}";
+                        body = $@"Kedves diák,<br/><br/>
+                      Kérünk töltsd ki a <b>{entry.SurveyName}</b> nevű kérdőívet, és adj visszajelzést a tanáraidnak.<br/><br/>
                       <a href=""https://witty-beach-0b0c08903.2.azurestaticapps.net"">
-                      Click here to start the survey</a>";
+                      Kattints ide, hogy elkezdd a kérdőívek kitöltését</a>";
                         break;
 
                     case Role.Teacher:
-                        subject = $"Survey Results for {entry.SurveyName}";
-                        body = $@"Hello Teacher,<br/><br/>
-              Attached you’ll find the survey results for <b>{entry.SurveyName}</b>.";
+                        subject = $"Kérdőív eredmények: {entry.SurveyName}";
+                        body = $@"Kedves tanár,<br/><br/>
+              Csatolva megtalálja a kérdőívek összesített eredményét.<b>{entry.SurveyName}</b>.";
 
                         var teacherReports = await _reportService.DownloadTeacherFilesByIdPrefixAsync(entry.Email, entry.SurveyId);
                         _logger.LogInformation("Found {Count} teacher reports for {Email} / {SurveyId}",
@@ -115,10 +115,10 @@ public class EmailService : IEmailService
                         break;
 
                     case Role.Admin:
-                        subject = $"[Admin Report] Survey {entry.SurveyName}";
-                        body = $@"Hello Admin,<br/><br/>
-              Please find attached the administrative report(s) for survey 
-              <b>{entry.SurveyName}</b>.";
+                        subject = $"Igazgatói összesítés: {entry.SurveyName}";
+                        body = $@"Kedves intézmény vezető,<br/><br/>
+              Alább csatolotuk a
+              <b>{entry.SurveyName}</b> kérdőív összesített eredményeit.";
 
                         var adminReports = await _reportService.DownloadAdminFilesByIdPrefixAsync(entry.SurveyId);
                         _logger.LogInformation("Found {Count} admin reports for {SurveyId}",
