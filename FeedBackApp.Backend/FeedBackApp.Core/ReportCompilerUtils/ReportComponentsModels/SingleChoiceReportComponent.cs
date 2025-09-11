@@ -75,7 +75,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                .Background(PageWhite)
                                .Border(1).BorderColor(AccentBlue)
                                .Padding(12)
-                               .Text("No options are defined for this question.")
+                               .Text("Nincs előre meghatározott opció definiálva.")
                                    .FontSize(TextSize).FontColor(MetaGrey);
                             return;
                         }
@@ -86,7 +86,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                .Background(PageWhite)
                                .Border(1).BorderColor(AccentBlue)
                                .Padding(12)
-                               .Text("No valid responses were received for this question.")
+                               .Text("Nem érkezett értelmezhető válasz ehhez a kérdéshez.")
                                    .FontSize(TextSize).FontColor(MetaGrey);
                             return;
                         }
@@ -95,16 +95,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         col.Item().Text(t =>
                         {
                             t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                            t.Span("Number of responses: ");
+                            t.Span("Válaszok száma: ");
                             t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
 
-                            t.Span("   •   Mean: ");
+                            t.Span("   •   Átlag: ");
                             t.Span(data.MeanValue.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
 
-                            t.Span("   •   Median: ");
+                            t.Span("   •   Medián: ");
                             t.Span(data.MedianValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
 
-                            t.Span("   •   Mode: ");
+                            t.Span("   •   Módusz: ");
                             t.Span(data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
                         });
 
@@ -121,8 +121,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             });
 
                             // Header
-                            table.Cell().PaddingBottom(4).Text("Option").FontSize(MetaSize).FontColor(MetaGrey);
-                            table.Cell().PaddingBottom(4).Text("Distribution").FontSize(MetaSize).FontColor(MetaGrey);
+                            table.Cell().PaddingBottom(4).Text("Opció").FontSize(MetaSize).FontColor(MetaGrey);
+                            table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
                             table.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
                             var freq = data.Frequencies ?? [];
@@ -180,7 +180,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                .Background(PageWhite)
                                .Border(1).BorderColor(AccentBlue)
                                .Padding(12)
-                               .Text("No responses were received for this question.")
+                               .Text("Nem érkezett értelmezhető válasz ehhez a kérdéshez.")
                                    .FontSize(TextSize).FontColor(MetaGrey);
                             return;
                         }
@@ -191,16 +191,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             col.Item().Text(t =>
                             {
                                 t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                                t.Span("Number of numeric responses: ");
+                                t.Span("A numerikus kiértékelések száma: ");
                                 t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
 
-                                t.Span("   •   Mean: ");
+                                t.Span("   •   Átlag: ");
                                 t.Span(data.MeanValue.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
 
-                                t.Span("   •   Median: ");
+                                t.Span("   •   Medián: ");
                                 t.Span(data.MedianValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
 
-                                t.Span("   •   Mode: ");
+                                t.Span("   •   Módusz: ");
                                 t.Span(data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
                             });
 
@@ -217,8 +217,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                                 });
 
                                 // Header
-                                table.Cell().PaddingBottom(4).Text("Value").FontSize(MetaSize).FontColor(MetaGrey);
-                                table.Cell().PaddingBottom(4).Text("Distribution").FontSize(MetaSize).FontColor(MetaGrey);
+                                table.Cell().PaddingBottom(4).Text("Érték").FontSize(MetaSize).FontColor(MetaGrey);
+                                table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
                                 table.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
                                 var freq = data.Frequencies ?? [];
@@ -269,7 +269,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         if (hasTexts)
                         {
                             col.Item().LineHorizontal(1).LineColor(SubtleGrey);
-                            col.Item().Text("Text answers").FontSize(MetaSize).FontColor(MetaGrey);
+                            col.Item().Text("Szöveges válaszok").FontSize(MetaSize).FontColor(MetaGrey);
 
                             foreach (var ans in openAnswers)
                             {

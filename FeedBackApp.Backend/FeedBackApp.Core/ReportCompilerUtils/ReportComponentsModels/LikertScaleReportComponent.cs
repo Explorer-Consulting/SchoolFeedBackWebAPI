@@ -90,7 +90,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                            .Background(PageWhite)
                            .Border(1).BorderColor(AccentBlue)
                            .Padding(12)
-                           .Text("No valid responses were received for this question.")
+                           .Text("Nem érkezett értelmezhető válasz ehhez a kérdéshez.")
                                .FontSize(TextSize).FontColor(MetaGrey);
                         return;
                     }
@@ -99,16 +99,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                        t.Span("Number of responses: ");
+                        t.Span("Válaszok száma: ");
                         t.Span(n.ToString(CultureInfo.InvariantCulture)).SemiBold();
 
-                        t.Span("   •   Mean: ");
+                        t.Span("   •   Átlag: ");
                         t.Span(data.MeanValue.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
 
-                        t.Span("   •   Median: ");
+                        t.Span("   •   Medián: ");
                         t.Span(data.MedianValue.ToString("0.##", CultureInfo.InvariantCulture)).SemiBold();
 
-                        t.Span("   •   Std. Dev.: ");
+                        t.Span("   •   Szórás: ");
                         t.Span(data.StandardDeviation.ToString("0.00", CultureInfo.InvariantCulture)).SemiBold();
                     });
 
@@ -125,8 +125,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                         });
 
                         // Header
-                        table.Cell().PaddingBottom(4).Text("Val.").FontSize(MetaSize).FontColor(MetaGrey);
-                        table.Cell().PaddingBottom(4).Text("Distribution").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).Text("Érték").FontSize(MetaSize).FontColor(MetaGrey);
+                        table.Cell().PaddingBottom(4).Text("Eloszlás").FontSize(MetaSize).FontColor(MetaGrey);
                         table.Cell().PaddingBottom(4).AlignRight().Text("N").FontSize(MetaSize).FontColor(MetaGrey);
 
                         int min = data.MinimumScale;
@@ -202,9 +202,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
 
                         StatCell("Minimum", data.MinimumRate.ToString(CultureInfo.InvariantCulture));
                         StatCell("Maximum", data.MaximumRate.ToString(CultureInfo.InvariantCulture));
-                        StatCell("Mode", data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture));
-                        StatCell("Satisfaction Index", data.SatisfactionIndex.ToString("0.0", CultureInfo.InvariantCulture));
-                        StatCell("Agreement Rate", data.AgreementRate.ToString("0.0", CultureInfo.InvariantCulture) + "%");
+                        StatCell("Módusz", data.ModeValue.ToString("0.##", CultureInfo.InvariantCulture));
+                        StatCell("Elégedettségi Index", data.SatisfactionIndex.ToString("0.0", CultureInfo.InvariantCulture));
+                        StatCell("Egyetértési Index", data.AgreementRate.ToString("0.0", CultureInfo.InvariantCulture) + "%");
                         t.Cell(); // empty filler for flexible 3-column layout
                     });
 

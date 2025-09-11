@@ -1,10 +1,9 @@
-﻿using FeedBackApp.Backend.Infrastructure.Persistence.Helpers;
-using FeedBackApp.Core.Model;
+﻿using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Newtonsoft.Json;
 
-namespace FeedBackApp.Backend.Infrastructure.Persistence
+namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
 {
     public class AppDBContext : DbContext
     {

@@ -50,10 +50,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     {
                         col.Spacing(4);
 
-                        col.Item().Text($"Teacher (Email): {teacher.EmailAddress}")
+                        col.Item().Text($"Tanár E-mail: {teacher.EmailAddress}")
                             .FontSize(12).Bold();
 
-                        col.Item().Text($"Subject: {teacher.SubjectName}")
+                        col.Item().Text($"Tantárgy: {teacher.SubjectName}")
                             .FontSize(11).FontColor(Colors.Grey.Darken2);
                     });
                 }
@@ -62,7 +62,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 {
                     col.Spacing(12);
                     foreach (var component in ReportComponents)
-                        col.Item().Component(component);
+                    {
+                        col.Item()
+                           .PreventPageBreak()
+                           .Component(component);
+                    }
                 });
             });
         }

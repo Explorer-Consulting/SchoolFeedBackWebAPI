@@ -86,8 +86,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                                 main.AddRange(l.Answers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
                                 main.Add(l.ValueMeanings ?? string.Empty);
 
-                                AddBlock("Likert", main);
-                                UpdateMax(maxAnsBySheet, "Likert", l.Answers.Length);
+                                AddBlock("Likert-skála", main);
+                                UpdateMax(maxAnsBySheet, "Likert-skála", l.Answers.Length);
                                 break;
                             }
 
@@ -96,13 +96,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                                 var main = new List<string> { s.QuestionStatement };
                                 main.AddRange(s.QuestionOptionAnswers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
 
-                                var opts = new List<string> { "Options" };
+                                var opts = new List<string> { "Opciók" };
                                 for (int i = 0; i < s.QuestionOptions.Length; i++)
                                     opts.Add($"{i + 1} = {s.QuestionOptions[i]}");
 
-                                AddBlock("SingleChoice", main, opts);
-                                UpdateMax(maxAnsBySheet, "SingleChoice", s.QuestionOptionAnswers.Length);
-                                UpdateMax(maxOptsBySheet, "SingleChoice", s.QuestionOptions.Length);
+                                AddBlock("Egyválasztós", main, opts);
+                                UpdateMax(maxAnsBySheet, "Egyválasztós", s.QuestionOptionAnswers.Length);
+                                UpdateMax(maxOptsBySheet, "Egyválasztós", s.QuestionOptions.Length);
                                 break;
                             }
 
@@ -123,9 +123,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                                 {
                                     foreach (var ans in s.QuestionOpenAnswers)
                                     {
-                                        blocks.Add((new List<string>(), new List<string> { "TextAnswer", ans }));
+                                        blocks.Add((new List<string>(), new List<string> { "Szöveges válasz", ans }));
                                     }
-                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", 2); // 2 columns: label + answer
+                                    UpdateMax(maxOptsBySheet, "Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + answer
                                 }
 
                                 // Predefined options in separate rows
@@ -134,18 +134,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                                     int idx = 1;
                                     foreach (var opt in s.QuestionOptions)
                                     {
-                                        blocks.Add((new List<string>(), new List<string> { "Option", $"{idx++} = {opt}" }));
+                                        blocks.Add((new List<string>(), new List<string> { "Opció", $"{idx++} = {opt}" }));
                                     }
-                                    UpdateMax(maxOptsBySheet, "SingleChoice+Other", 2); // 2 columns: label + option
+                                    UpdateMax(maxOptsBySheet, "Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + option
                                 }
 
                                 // Add to the sheet
-                                if (!blocksBySheet.TryGetValue("SingleChoice+Other", out var list))
-                                    blocksBySheet["SingleChoice+Other"] = list = new();
+                                if (!blocksBySheet.TryGetValue("Egyválasztós + Nyílt végű kérdés", out var list))
+                                    blocksBySheet["Egyválasztós + Nyílt végű kérdés"] = list = new();
                                 list.AddRange(blocks);
 
                                 // Max numeric columns
-                                UpdateMax(maxAnsBySheet, "SingleChoice+Other", s.QuestionOptionAnswers.Length);
+                                UpdateMax(maxAnsBySheet, "Egyválasztós + Nyílt végű kérdés", s.QuestionOptionAnswers.Length);
 
                                 break;
                             }
@@ -155,13 +155,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                                 var main = new List<string> { m.QuestionStatement };
                                 main.AddRange(m.Answers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
 
-                                var opts = new List<string> { "Options" };
+                                var opts = new List<string> { "Opciók" };
                                 for (int i = 0; i < m.AnswerOptions.Length; i++)
                                     opts.Add($"{i + 1} = {m.AnswerOptions[i]}");
 
-                                AddBlock("MultipleChoice", main, opts);
-                                UpdateMax(maxAnsBySheet, "MultipleChoice", m.Answers.Length);
-                                UpdateMax(maxOptsBySheet, "MultipleChoice", m.AnswerOptions.Length);
+                                AddBlock("Többválasztós", main, opts);
+                                UpdateMax(maxAnsBySheet, "Többválasztós", m.Answers.Length);
+                                UpdateMax(maxOptsBySheet, "Többválasztós", m.AnswerOptions.Length);
                                 break;
                             }
 
@@ -170,8 +170,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                                 var main = new List<string> { o.QuestionStatement };
                                 main.AddRange(o.Answers);
 
-                                AddBlock("OpenEnded", main);
-                                UpdateMax(maxAnsBySheet, "OpenEnded", o.Answers.Length);
+                                AddBlock("Nyílt végű", main);
+                                UpdateMax(maxAnsBySheet, "Nyílt végű", o.Answers.Length);
                                 break;
                             }
                     }
@@ -186,8 +186,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     };
 
                     CreateSheet(
-                        wbPart, sheets, "Empty",
-                        header: ["Question"],
+                        wbPart, sheets, "Üres",
+                        header: ["Kérdés"],
                         blocks: emptyBlocks,
                         explicitSheetId: null,
                         maxAns: 0, maxOpts: 0
@@ -207,11 +207,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         var maxOpts = maxOptsBySheet.TryGetValue(rawName, out var mo) ? mo : 0;
 
                         // Header for the main table
-                        var header = new List<string> { "Question" };
-                        if (sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase))
+                        var header = new List<string> { "Kérdés" };
+                        if (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase))
                         {
                             for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
-                            header.Add("ValueMeanings");
+                            header.Add("Értékek jelentése");
                         }
                         else
                         {
@@ -219,7 +219,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         }
 
                         // Total width: max(main, options)
-                        var mainCols = 1 + maxAns + (sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+                        var mainCols = 1 + maxAns + (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
                         var optionCols = 1 + maxOpts;
                         var totalCols = Math.Max(mainCols, optionCols);
                         while (header.Count < totalCols) header.Add(string.Empty);
@@ -316,9 +316,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 
             // Local predicate: is this a numeric column (based on sheet type and index)
             bool IsNumericCol(int colIndex) =>
-                sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase) && colIndex >= 1 && colIndex <= maxAns
-                || (sheetName.Equals("SingleChoice", StringComparison.OrdinalIgnoreCase) ||
-                    sheetName.Equals("MultipleChoice", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
+                sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) && colIndex >= 1 && colIndex <= maxAns
+                || (sheetName.Equals("Egyválasztós", StringComparison.OrdinalIgnoreCase) ||
+                    sheetName.Equals("Többválasztós", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
 
             // Write data rows
             foreach (var (Main, Opts) in blocks)
@@ -521,9 +521,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             var maxWidths = new double[colCount];
 
             bool IsNumericCol(int colIndex) =>
-                sheetName.Equals("Likert", StringComparison.OrdinalIgnoreCase) && colIndex >= 1 && colIndex <= maxAns
-                || (sheetName.Equals("SingleChoice", StringComparison.OrdinalIgnoreCase) ||
-                    sheetName.Equals("MultipleChoice", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
+                sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) && colIndex >= 1 && colIndex <= maxAns
+                || (sheetName.Equals("Egyválasztós", StringComparison.OrdinalIgnoreCase) ||
+                    sheetName.Equals("Többválasztós", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
 
             // Header widths
             for (int c = 0; c < colCount; c++)

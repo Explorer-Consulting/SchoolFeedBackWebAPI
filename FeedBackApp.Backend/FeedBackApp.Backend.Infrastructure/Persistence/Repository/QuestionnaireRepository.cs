@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.Model;
+﻿using FeedBackApp.Backend.Infrastructure.Persistence.Context;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,7 +72,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 SurveyName = metadata.Title,
                 StartDate = metadata.StartDate,
                 EndDate = metadata.EndDate,
-                Emails = allEmails.ToList()
+                Emails = allEmails.ToList(),
+                Role = Core.Model.Enum.Role.Student
             };
 
             if (emailDoc == null)

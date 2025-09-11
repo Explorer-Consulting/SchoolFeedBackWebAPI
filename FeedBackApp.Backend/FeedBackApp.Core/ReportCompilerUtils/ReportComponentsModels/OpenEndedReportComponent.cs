@@ -80,7 +80,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                     col.Item().Text(t =>
                     {
                         t.DefaultTextStyle(x => x.FontSize(MetaSize).FontColor(MetaGrey));
-                        t.Span("Number of responses: ");
+                        t.Span("Válaszok száma: ");
                         t.Span(answers.Length.ToString()).SemiBold();
                     });
 
@@ -96,7 +96,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                             .Background(PageWhite)
                             .Border(1).BorderColor(FrameBlue)
                             .Padding(12)
-                            .Text("No text responses were received for this question.")
+                            .Text("Nem érkezett értelmezhető válasz ehhez a kérdéshez.")
                                 .FontSize(AnswerSize).FontColor(MetaGrey);
                         return;
                     }
@@ -116,7 +116,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
                     }
 
                     // 6) Anonymity note
-                    col.Item().Text("Text responses have been processed anonymously.")
+                    col.Item().Text("A szöveges válaszok anonim módon kerültek feldolgozásra.")
                         .FontSize(9).FontColor(MetaGrey).Italic();
                 });
         }
