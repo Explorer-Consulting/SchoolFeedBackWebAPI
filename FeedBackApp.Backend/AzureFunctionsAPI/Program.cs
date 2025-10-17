@@ -22,6 +22,7 @@ using QuestPDF.Infrastructure;
 using System.Text.Json;
 
 // testing commit validation finally works
+// testing commit validation from user interface
 QuestPDF.Settings.License = LicenseType.Community;
 
 var host = new HostBuilder()
