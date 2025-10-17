@@ -1,23 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Running dotnet format on staged .cs files..."
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
 
-# Stage-elt C# fájlok lekérése
+# csak a stage-elt .cs fájlok
 mapfile -t FILES < <(git diff --cached --name-only --diff-filter=ACM | grep -E '\.cs$' || true)
+[ ${#FILES[@]} -eq 0 ] && { echo "No staged .cs files."; exit 0; }
 
-# Ha nincs mit formázni, lépjünk ki
-if [ ${#FILES[@]} -eq 0 ]; then
-  echo "No staged .cs files to format."
-  exit 0
-fi
-
-echo "Formatting ${#FILES[@]} staged file(s)..."
-
-# Formázás (automatikusan kijavítja az eltéréseket)
-dotnet format --include "${FILES[@]}"
-
-# A kijavított fájlokat újra stage-eljük, hogy a commitba a formázott verzió kerüljön
-git add "${FILES[@]}"
-
-echo "All staged files formatted and re-staged according to .editorconfig."
+echo "Running dotnet format (folder mode) on staged .cs files..."
+dotnet format --folder --no-restore --verify-no-changes --include "${FILES[@]}"

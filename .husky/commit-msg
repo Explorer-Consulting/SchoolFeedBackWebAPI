@@ -19,4 +19,4 @@
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
 
-echo "Hello bello"
+bash "$(git rev-parse --show-toplevel)/.husky/validate-commit-msg.sh" $1

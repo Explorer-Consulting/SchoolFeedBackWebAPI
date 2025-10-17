@@ -21,9 +21,7 @@ using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
 
-// testing Huskey 1
-// testing Huskey 2
-// testing Huskey 3
+// testing commit validator
 QuestPDF.Settings.License = LicenseType.Community;
 
 var host = new HostBuilder()

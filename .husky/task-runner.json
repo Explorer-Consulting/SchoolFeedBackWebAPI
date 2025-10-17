@@ -2,18 +2,6 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
-      "name": "Format staged .cs files",
-      "group": "pre-commit",
-      "command": "bash",
-      "args": [".husky/format-staged.sh"]
-    },
-    {
-      "name": "Validate commit message",
-      "group": "commit-msg",
-      "command": "bash",
-      "args": [".husky/validate-commit-msg.sh", "{1}"]
-    },
-    {
       "name": "welcome-message-example",
       "command": "bash",
       "args": ["-c", "echo Husky.Net is awesome!"]
