@@ -10,7 +10,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 {
     /// <summary>
     /// Document class that generates the Administrator Excel report.
-    /// Based on the DataSource of the report components found in <see cref="ReportComponents"/>,
+    /// Based on the DataSource of the report components found in <see cref="ReportComponent"/>,
     /// it creates separate worksheets per type (Likert, SingleChoice, SingleChoice+Other, MultipleChoice, OpenEnded),
     /// with automatic column widths, base styles, and a frozen header row.
     /// </summary>

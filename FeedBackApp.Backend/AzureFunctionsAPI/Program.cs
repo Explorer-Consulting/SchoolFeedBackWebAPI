@@ -20,7 +20,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
-using Azure.Identity;
 
 QuestPDF.Settings.License = LicenseType.Community;
 

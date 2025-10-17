@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using Application.Exceptions;
-using Application.Services;
 using Application.Services.Interfaces;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using Microsoft.Azure.Functions.Worker;
