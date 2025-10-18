@@ -5,21 +5,70 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
+    /// <summary>
+    /// Cosmos-backed repository for survey authoring and questionnaire materialization.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Responsibilities</b><br/>
+    /// Persists survey metadata and question templates, generates per-student questionnaires,
+    /// maintains the email outbox document for student invitations, and exposes read/delete
+    /// operations for surveys and related artifacts.
+    /// </para>
+    /// <para>
+    /// <b>Storage model</b><br/>
+    /// All aggregates are mapped by <see cref="AppDBContext"/> into a single Cosmos container
+    /// using discriminators. <see cref="SurveyMetadata.Id"/> is the partition key for survey
+    /// documents. Questionnaires and templates use their own identifiers (see method notes).
+    /// </para>
+    /// <para>
+    /// <b>Consistency</b><br/>
+    /// EF Core’s Cosmos provider issues individual requests per entity group during
+    /// <see cref="DbContext.SaveChangesAsync(System.Threading.CancellationToken)"/>; operations are not transactional
+    /// across multiple logical documents unless explicitly batched with transactions (not used here).
+    /// </para>
+    /// </remarks>
     public class QuestionnaireRepository : IQuestionnaireRepository
     {
         private readonly AppDBContext _context;
 
+        /// <summary>
+        /// Initializes the repository with an EF Core Cosmos database context.
+        /// </summary>
+        /// <param name="context">Cosmos-configured EF Core <see cref="DbContext"/>.</param>
         public QuestionnaireRepository(AppDBContext context)
         {
             _context = context;
         }
 
+        /// <summary>
+        /// Compiles and persists a complete survey: saves metadata, creates a template bundle,
+        /// materializes per-student questionnaires, and enqueues student invitation emails.
+        /// </summary>
+        /// <param name="metadata">The fully validated survey metadata to persist and expand.</param>
+        /// <remarks>
+        /// <para>
+        /// <b>Questionnaire IDs</b><br/>
+        /// Each questionnaire receives an identifier composed as:<br/>
+        /// <c>{studentEmail}_{teacherEmail}_{subjectName}_{surveyId}</c>.
+        /// </para>
+        /// <para>
+        /// <b>Template document</b><br/>
+        /// A <see cref="QuestionnaireTemplate"/> is created with id <c>questiontemplates_{surveyId}</c> that holds
+        /// the survey’s <see cref="QuestionTemplate"/> list.
+        /// </para>
+        /// <para>
+        /// <b>Email outbox</b><br/>
+        /// Student invitation recipients are added to the singleton document with id <c>emailsToSend</c>.
+        /// If the document does not exist, it is created.
+        /// </para>
+        /// </remarks>
         public async Task CompileAndSaveAsync(SurveyMetadata metadata)
         {
             var setById = metadata.StudentSets.ToDictionary(s => s.SetId);
             var template = metadata.QuestionTemplates;
 
-            QuestionnaireTemplate tempForSave = new QuestionnaireTemplate(metadata.Id.ToString(),metadata.Title, template);
+            var tempForSave = new QuestionnaireTemplate(metadata.Id.ToString(), metadata.Title, template);
 
             _context.Add(metadata);
             _context.Add(tempForSave);
@@ -78,7 +127,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             if (emailDoc == null)
             {
-                // First time: create the document
                 emailDoc = new EmailsToSend
                 {
                     Id = "emailsToSend",
@@ -93,10 +141,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 _context.Update(emailDoc);
             }
 
-
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Deletes all questionnaires belonging to a survey.
+        /// </summary>
+        /// <param name="surveyId">The survey identifier whose questionnaires should be removed.</param>
+        /// <returns>
+        /// <c>true</c> if at least one questionnaire was deleted; otherwise <c>false</c>.
+        /// </returns>
         public async Task<bool> DeleteQuestionnairesBySurveyIdAsync(Guid surveyId)
         {
             var questionnaires = await _context.Questionnaires
@@ -111,6 +165,13 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
+        /// <summary>
+        /// Deletes the question template bundle associated with the specified survey.
+        /// </summary>
+        /// <param name="surveyId">Survey identifier tied to the template set.</param>
+        /// <returns>
+        /// <c>true</c> if the template bundle existed and was removed; otherwise <c>false</c>.
+        /// </returns>
         public async Task<bool> DeleteQuestionTemplateBySurveyIdAsync(Guid surveyId)
         {
             var questionTemplate = await _context.QuestionnaireTemplates
@@ -126,6 +187,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
+        /// <summary>
+        /// Deletes a survey metadata document.
+        /// </summary>
+        /// <param name="id">Survey identifier.</param>
+        /// <returns><c>true</c> if the survey existed and was deleted; otherwise <c>false</c>.</returns>
         public async Task<bool> DeleteSurveyMetadataAsync(Guid id)
         {
             var metadata = await _context.Surveys
@@ -139,6 +205,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return true;
         }
 
+        /// <summary>
+        /// Retrieves all surveys (no filtering), projected as tracked-off snapshots.
+        /// </summary>
+        /// <returns>List of <see cref="SurveyMetadata"/>.</returns>
         public async Task<List<SurveyMetadata>> GetAllSurveyMetadata()
         {
             return await _context.Surveys
@@ -146,6 +216,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Retrieves a questionnaire by its composite identifier.
+        /// </summary>
+        /// <param name="id">Questionnaire id formatted as <c>{studentEmail}_{teacherEmail}_{subject}_{surveyId}</c>.</param>
+        /// <returns>The questionnaire if found; otherwise <c>null</c>.</returns>
         public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
             return await _context.Questionnaires
@@ -153,6 +228,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .FirstOrDefaultAsync(q => q.Id == id);
         }
 
+        /// <summary>
+        /// Retrieves survey metadata by its identifier.
+        /// </summary>
+        /// <param name="surveyId">Survey identifier.</param>
+        /// <returns>The survey metadata if found; otherwise <c>null</c>.</returns>
         public async Task<SurveyMetadata?> GetSurveyMetadataAsync(Guid surveyId)
         {
             return await _context.Surveys
@@ -160,6 +240,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .FirstOrDefaultAsync(s => s.Id == surveyId);
         }
 
+        /// <summary>
+        /// Retrieves surveys visible to a student based on membership in any configured student set.
+        /// </summary>
+        /// <param name="studentEmail">Student email used for set membership evaluation.</param>
+        /// <returns>Surveys that include the student in at least one set (no date filtering applied here).</returns>
         public async Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail)
         {
             var allSurveys = await _context.Surveys
@@ -170,9 +255,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .Where(s => s.StudentSets.Any(set =>
                     set.StudentEmails.Contains(studentEmail, StringComparer.OrdinalIgnoreCase)))
                 .ToList();
+
             return activeSurveys;
         }
-
-
     }
 }
