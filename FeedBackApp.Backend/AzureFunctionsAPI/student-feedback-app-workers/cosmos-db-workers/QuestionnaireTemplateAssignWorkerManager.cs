@@ -11,7 +11,7 @@ namespace AzureFunctionsAPI.student_feedback_app_workers.cosmos_db_workers;
 public sealed class QuestionnaireTemplateAssignWorkerManager(ILogger<QuestionnaireTemplateAssignWorkerManager> logger)
 {
     [Function(nameof(QuestionnaireTemplateAssignWorkerManager))]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "questionnaire-templates/{templateID}/subscribers/{subscriberID}/responses")] HttpRequestData request, Guid templateID, Guid subscriberID)
+    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "v1/questionnaire-templates/{templateID}/subscribers/{subscriberID}/responses:compile")] HttpRequestData request, Guid templateID, Guid subscriberID)
     {
         logger.LogInformation("assigning to students");
         var ok = request.CreateResponse(System.Net.HttpStatusCode.Accepted);

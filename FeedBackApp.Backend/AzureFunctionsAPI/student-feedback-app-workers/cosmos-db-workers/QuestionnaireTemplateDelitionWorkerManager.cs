@@ -17,7 +17,7 @@ namespace AzureFunctionsAPI.student_feedback_app_workers.cosmos_db_workers
     public sealed class QuestionnaireTemplateDelitionWorkerManager(ILogger<QuestionnaireTemplateDelitionWorkerManager> logger)
     {
         [Function(nameof(QuestionnaireTemplateDelitionWorkerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "questionnaire-templates/{templateID}/delete")] HttpRequestData request, Guid templateID)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "DELETE", Route = "v1/questionnaire-templates/{templateID}:delete")] HttpRequestData request, Guid templateID)
         {
             logger.LogInformation("logging  questionnaire template deletion");
             var ok = request.CreateResponse(HttpStatusCode.Accepted);

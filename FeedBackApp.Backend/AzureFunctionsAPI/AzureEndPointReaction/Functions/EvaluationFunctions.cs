@@ -7,7 +7,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Security.Claims;
 
@@ -77,12 +76,6 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <param name="request">HTTP request containing the JSON body.</param>
         /// <param name="id">Questionnaire identifier whose prefix must match the caller's email.</param>
         /// <returns>HTTP response including status and JSON body with the submission result.</returns>
-        [RequireStudent]
-        [Function("PerformQuestionnaireSubmit")]
-        [OpenApiOperation(operationId: "PerformQuestionnaireSubmit", tags: new[] { "Evaluations" })]
-        [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(string))]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(SubmitQuestionnaireDTO), Required = true)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(SubmitResponseDTO))]
         public async Task<HttpResponseData> PerformQuestionnaireSubmit(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "questionnaire/{id}")] HttpRequestData request,
             string id)
@@ -160,12 +153,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <param name="request">HTTP request containing the JSON body.</param>
         /// <param name="id">Questionnaire identifier whose prefix must match the caller's email.</param>
         /// <returns>HTTP response including status and JSON body with the update result.</returns>
-        [RequireStudent]
-        [Function("PerformQuestionnaireUpdate")]
-        [OpenApiOperation(operationId: "PerformQuestionnaireUpdate", tags: new[] { "Evaluations" })]
-        [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(string))]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(UpdateQuestionnaireDTO), Required = true)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(UpdateResponseDTO))]
+        //[Function("PerformQuestionnaireUpdate")]
         public async Task<HttpResponseData> PerformQuestionnaireUpdate(
             [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "questionnaire/{id}")] HttpRequestData request,
             string id)

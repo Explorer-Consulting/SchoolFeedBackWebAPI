@@ -9,15 +9,15 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AzureFunctionsAPI.student_feedback_app_endpoints.timer_workers
+namespace AzureFunctionsAPI.student_feedback_app_workers.timer_workers
 {
     /// <summary>
     /// delivers all kinds of reports for specific users
     /// </summary>
-    public sealed class ReportCollectionDelivererWokerManager(ILogger<ReportCollectionDelivererWokerManager> logger)
+    public sealed class ReportCollectionDelivererWorkerManager(ILogger<ReportCollectionDelivererWorkerManager> logger)
     {
-        [Function(nameof(ReportCollectionDelivererWokerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "questionnaire-templates/{templateID}/reports/deliver")] HttpRequestData request, Guid templateID)
+        [Function(nameof(ReportCollectionDelivererWorkerManager))]
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "v1/questionnaire-templates/{templateID}/reports:deliver")] HttpRequestData request, Guid templateID)
         {
             logger.LogInformation("logging delivering reports");
             var ok = request.CreateResponse(HttpStatusCode.Accepted);

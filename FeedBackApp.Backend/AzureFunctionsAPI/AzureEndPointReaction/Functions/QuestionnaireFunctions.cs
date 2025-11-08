@@ -8,7 +8,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Security.Claims;
 
@@ -79,11 +78,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </remarks>
         /// <param name="request">HTTP request containing the survey metadata JSON body.</param>
         /// <returns>HTTP response encapsulating <see cref="CreationResponseDTO"/> or an error status.</returns>
-        [RequireAdmin]
-        [Function("PerformQuestionnaireCompilation")]
-        [OpenApiOperation(operationId: "PerformQuestionnaireCompilation", tags: new[] { "Questionnaires" })]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(CreateSurveyMetadataDTO), Required = true)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(CreationResponseDTO))]
+        //[Function("PerformQuestionnaireCompilation")]
         public async Task<HttpResponseData> PerformQuestionnaireCompilation(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "surveys")] HttpRequestData request)
         {
@@ -136,14 +131,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <param name="request">HTTP request (no body required).</param>
         /// <param name="id">Survey identifier to delete.</param>
         /// <returns>HTTP response encapsulating <see cref="DeletionResponseDTO"/> or an error status.</returns>
-        [RequireAdmin]
-        [Function("PerformQuestionnaireDeletion")]
-        [OpenApiOperation(operationId: "PerformQuestionnaireDeletion", tags: new[] { "Questionnaires" })]
-        [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(Guid))]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(DeletionResponseDTO))]
-        [OpenApiResponseWithoutBody(HttpStatusCode.BadRequest)]
-        [OpenApiResponseWithoutBody(HttpStatusCode.NotFound)]
-        [OpenApiResponseWithoutBody(HttpStatusCode.InternalServerError)]
+        //[Function("PerformQuestionnaireDeletion")]
         public async Task<HttpResponseData> PerformQuestionnaireDeletion(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "surveys/{id:guid}")] HttpRequestData request,
             Guid id)
@@ -189,8 +177,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <param name="request">HTTP request (no body required).</param>
         /// <param name="id">Survey identifier to scope the questionnaires.</param>
         /// <returns>HTTP response with the student-scoped questionnaire data or an error status.</returns>
-        [RequireStudent]
-        [Function("PerformGetSurveyData")]
+        //[Function("PerformGetSurveyData")]
         public async Task<HttpResponseData> PerformGetSurveyData(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys/{id}")] HttpRequestData request,
             Guid id)
@@ -239,9 +226,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </remarks>
         /// <param name="request">HTTP request (no body required).</param>
         /// <returns>HTTP response containing the survey metadata collection.</returns>
-        [RequireAdmin]
-        [Function("PerformGetSurveysAdmin")]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(object))]
+        //[Function("PerformGetSurveysAdmin")]
         public async Task<HttpResponseData> PerformGetSurveysAdmin(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "management/surveys")] HttpRequestData request)
         {
@@ -267,9 +252,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </remarks>
         /// <param name="request">HTTP request (no body required).</param>
         /// <returns>HTTP response containing the student-scoped survey metadata collection.</returns>
-        [RequireStudent]
-        [Function("PerformGetSurveys")]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(object))]
+        //[Function("PerformGetSurveys")]
         public async Task<HttpResponseData> PerformGetSurveys(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "surveys")] HttpRequestData request)
         {

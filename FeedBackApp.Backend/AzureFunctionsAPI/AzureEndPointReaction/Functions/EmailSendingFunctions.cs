@@ -68,7 +68,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <param name="myTimer">
         /// Timer metadata including last, next, and current schedule information as supplied by the Azure Functions host.
         /// </param>
-        [Function("EmailSendingFunctions")]
+        //[Function("EmailSendingFunctions")]
         public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
         {
             _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);

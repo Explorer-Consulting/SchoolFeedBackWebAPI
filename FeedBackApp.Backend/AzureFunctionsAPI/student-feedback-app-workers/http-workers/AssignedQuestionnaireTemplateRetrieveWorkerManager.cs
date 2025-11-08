@@ -9,7 +9,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AzureFunctionsAPI.student_feedback_app_endpoints.http_workers
+namespace AzureFunctionsAPI.student_feedback_app_workers.http_workers
 {
     /// <summary>
     /// retrieving a specific assigned questionnaire of a user
@@ -18,7 +18,7 @@ namespace AzureFunctionsAPI.student_feedback_app_endpoints.http_workers
     public sealed class AssignedQuestionnaireTemplateRetrieveWorkerManager(ILogger<AssignedQuestionnaireTemplateRetrieveWorkerManager> logger)
     {
         [Function(nameof(AssignedQuestionnaireTemplateRetrieveWorkerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = "questionnaire-templates/{templateID}/subscribers/{subscriberID}/responses/{responseID}/retrieve")] HttpRequestData request, Guid templateID, Guid subscriberID, Guid responseID)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = "v1/questionnaire-templates/{templateID}/subscribers/{subscriberID}/responses/{responseID}:retrieve")] HttpRequestData request, Guid templateID, Guid subscriberID, Guid responseID)
         {
             /*
              same validation logic as always

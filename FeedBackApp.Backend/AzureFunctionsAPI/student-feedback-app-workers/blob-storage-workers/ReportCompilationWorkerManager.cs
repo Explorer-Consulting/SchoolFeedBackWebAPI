@@ -13,10 +13,10 @@ namespace AzureFunctionsAPI.student_feedback_app_workers.blob_storage_workers
     /// <summary>
     /// permits for a user to submit a response for a specific questionnaire template
     /// </summary>
-    public sealed class AssignedQuestionnaireSubmissionWorkerManager(ILogger<AssignedQuestionnaireSubmissionWorkerManager> logger)
+    public sealed class ReportCompilationWorkerManager(ILogger<ReportCompilationWorkerManager> logger)
     {
-        [Function(nameof(AssignedQuestionnaireSubmissionWorkerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "PUT", Route = "questionnaire-templates/{templateID}/reports/compile")] HttpRequestData request, Guid templateID)
+        [Function(nameof(ReportCompilationWorkerManager))]
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "PUT", Route = "v1/questionnaire-templates/{templateID}/reports:compile")] HttpRequestData request, Guid templateID)
         {
             logger.LogInformation("logging submission of a specific user response to a specific questionnaire template");
             var ok = request.CreateResponse(HttpStatusCode.Accepted);

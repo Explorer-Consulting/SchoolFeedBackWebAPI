@@ -101,7 +101,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         ///   <item><description><c>200 OK</c> – JWT issued (cookie) and user info returned in body</description></item>
         /// </list>
         /// </returns>
-        [Function("LoginWithGoogle")]
+        //[Function("LoginWithGoogle")]
         public async Task<HttpResponseData> LoginWithGoogle(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {

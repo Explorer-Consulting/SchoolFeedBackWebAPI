@@ -196,13 +196,6 @@ var host = new HostBuilder()
         services.AddSingleton<StudentOnlyMiddleware>();
         services.AddSingleton<MiddlewareSelector>();
     })
-    .ConfigureFunctionsWebApplication((IFunctionsWorkerApplicationBuilder app) =>
-    {
-        /// <summary>
-        /// Inserts the middleware selector into the Functions request pipeline.
-        /// </summary>
-        app.UseMiddleware<MiddlewareSelector>();
-    })
     .Build();
 
 /// <summary>

@@ -16,7 +16,7 @@ namespace AzureFunctionsAPI.student_feedback_app_workers.cosmos_db_workers
     public sealed class QuestionnaireTemplateRetrieveAllWorkerManager(ILogger<QuestionnaireTemplateRetrieveAllWorkerManager> logger)
     {
         [Function(nameof(QuestionnaireTemplateRetrieveAllWorkerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = "questionnaire-templates/retrive-all")] HttpRequestData request)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = "v1/questionnaire-templates:retrive-all")] HttpRequestData request)
         {
             logger.LogInformation("logging retriving tmeplates");
             var ok = request.CreateResponse(HttpStatusCode.Accepted);

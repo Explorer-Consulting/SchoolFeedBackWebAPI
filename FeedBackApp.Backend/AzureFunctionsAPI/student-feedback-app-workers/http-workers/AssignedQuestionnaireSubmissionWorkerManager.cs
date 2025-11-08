@@ -8,15 +8,16 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AzureFunctionsAPI.student_feedback_app_endpoints.http_workers
+namespace AzureFunctionsAPI.student_feedback_app_workers.http_workers
 {
     /// <summary>
     /// permits for a user to submit a response for a specific questionnaire template
     /// </summary>
+
     public sealed class AssignedQuestionnaireSubmissionWorkerManager(ILogger<AssignedQuestionnaireSubmissionWorkerManager> logger)
     {
         [Function(nameof(AssignedQuestionnaireSubmissionWorkerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "PATCH", Route = "questionnaire-templates/{templateID}/subscribers/{subscriberID}/responses/{responseID}/submit")] HttpRequestData request, Guid templateID, Guid subscriberID, Guid responseID)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "PATCH", Route = "v1/questionnaire-templates/{templateID}/subscribers/{subscriberID}/responses/{responseID}:submit")] HttpRequestData request, Guid templateID, Guid subscriberID, Guid responseID)
         {
             // here come validators that validate id-formats and whether the users modifies their corresponding response or someone else
             /*

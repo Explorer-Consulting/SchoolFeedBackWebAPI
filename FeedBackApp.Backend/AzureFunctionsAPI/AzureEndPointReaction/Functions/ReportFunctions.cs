@@ -6,7 +6,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
@@ -81,33 +80,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </list>
         /// </returns>
         [RequireAdmin]
-        [Function("PerformReportCompilation")]
-        [OpenApiOperation(
-            operationId: "PerformReportCompilation",
-            tags: ["Reports"],
-            Summary = "Compile and store a report",
-            Description = "Triggers report compilation and stores the result in the configured storage.")]
-        [OpenApiParameter(
-            name: "templateID",
-            In = ParameterLocation.Path,
-            Required = true,
-            Type = typeof(string),
-            Summary = "Template identifier (string or GUID depending on business logic).")]
-        [OpenApiResponseWithBody(
-            statusCode: HttpStatusCode.Created,
-            contentType: "application/json",
-            bodyType: typeof(object),
-            Summary = "Report successfully created",
-            Description = "Returns the report identifier and status.")]
-        [OpenApiResponseWithBody(
-            statusCode: HttpStatusCode.InternalServerError,
-            contentType: "application/json",
-            bodyType: typeof(object),
-            Summary = "Report generation failed",
-            Description = "Unexpected error during report compilation.")]
-        [OpenApiResponseWithoutBody(HttpStatusCode.BadRequest, Summary = "Invalid template ID format")]
-        [OpenApiResponseWithoutBody(HttpStatusCode.Unauthorized)]
-        [OpenApiResponseWithoutBody(HttpStatusCode.Forbidden)]
+        //[Function("PerformReportCompilation")]
         public async Task<HttpResponseData> PerformReportCompilation(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reports/{templateID}")]
             HttpRequestData request,
@@ -193,7 +166,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </list>
         /// </returns>
         [RequireAdmin]
-        [Function("DeliverEvaluationReports")]
+        //[Function("DeliverEvaluationReports")]
         public async Task<HttpResponseData> DeliverEvaluationReports(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reports/send/{questionTemplate}")] HttpRequestData request,
             string questionTemplate)

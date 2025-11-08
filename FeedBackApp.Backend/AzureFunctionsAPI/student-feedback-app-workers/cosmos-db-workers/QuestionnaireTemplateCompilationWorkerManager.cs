@@ -12,7 +12,7 @@ namespace AzureFunctionsAPI.student_feedback_app_workers.cosmos_db_workers
     public sealed class QuestionnaireTemplateCompilationWorkerManager(ILogger<QuestionnaireTemplateCompilationWorkerManager> logger)
     {
         [Function(nameof(QuestionnaireTemplateCompilationWorkerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "questionnaire-template/compile")] HttpRequestData request)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "v1/questionnaire-template:compile")] HttpRequestData request)
         {
             logger.LogInformation("Logging questionnaire compilation");
             var ok = request.CreateResponse(HttpStatusCode.Accepted);
