@@ -1,5 +1,6 @@
 ﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
+using Application.Email.Builders;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
@@ -75,6 +76,9 @@ var host = new HostBuilder()
         services.AddScoped<IEvaluationRepository, EvaluationRepository>();
         services.AddScoped<IWhitelistRepository, WhitelistRepository>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+        
+        // Email services
+        services.AddScoped<IEmailContentBuilder, EmailContentBuilder>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailRepository, EmailRepository>();
 
