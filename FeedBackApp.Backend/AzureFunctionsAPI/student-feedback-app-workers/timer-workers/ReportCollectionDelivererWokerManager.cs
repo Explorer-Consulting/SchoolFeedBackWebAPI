@@ -17,7 +17,7 @@ namespace AzureFunctionsAPI.student_feedback_app_endpoints.timer_workers
     public sealed class ReportCollectionDelivererWokerManager(ILogger<ReportCollectionDelivererWokerManager> logger)
     {
         [Function(nameof(ReportCollectionDelivererWokerManager))]
-        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "questionnaire-templates/{templateID}/reports/deliver")] HttpRequestData request)
+        public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Anonymous, "POST", Route = "questionnaire-templates/{templateID}/reports/deliver")] HttpRequestData request, Guid templateID)
         {
             logger.LogInformation("logging delivering reports");
             var ok = request.CreateResponse(HttpStatusCode.Accepted);
