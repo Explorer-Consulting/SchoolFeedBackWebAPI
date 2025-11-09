@@ -195,6 +195,9 @@ var host = new HostBuilder()
         services.AddSingleton<AdminOnlyMiddleware>();
         services.AddSingleton<StudentOnlyMiddleware>();
         services.AddSingleton<MiddlewareSelector>();
+    }).ConfigureFunctionsWorkerDefaults(builder =>
+    {
+        builder.UseMiddleware<MiddlewareSelector>();
     })
     .Build();
 
