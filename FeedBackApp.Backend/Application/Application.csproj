@@ -25,11 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
-    <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="FluentValidation" Version="12.1.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.OpenApi" Version="1.6.0" />
-    <PackageReference Include="NCrontab.Signed" Version="3.3.3" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

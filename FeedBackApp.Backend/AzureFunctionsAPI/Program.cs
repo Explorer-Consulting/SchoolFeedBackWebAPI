@@ -20,7 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
-
+using Microsoft.Azure.Functions.Worker.ApplicationInsights;
 /// <summary>
 /// Bootstraps the Azure Functions (.NET isolated worker) host for the School Feedback application.
 /// </summary>
@@ -109,8 +109,6 @@ var host = new HostBuilder()
         /// <summary>
         /// Enables Application Insights telemetry for the isolated worker.
         /// </summary>
-        services.AddApplicationInsightsTelemetryWorkerService();
-
         /// <summary>
         /// Configures worker JSON (camelCase) for request/response serialization.
         /// </summary>

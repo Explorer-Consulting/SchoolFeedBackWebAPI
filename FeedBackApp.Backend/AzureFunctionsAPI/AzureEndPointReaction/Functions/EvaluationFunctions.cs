@@ -5,7 +5,6 @@ using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Security.Claims;
