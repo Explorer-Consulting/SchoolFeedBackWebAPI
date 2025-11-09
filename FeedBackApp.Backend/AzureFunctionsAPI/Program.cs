@@ -69,27 +69,34 @@ var host = new HostBuilder()
             return new BlobContext(svc, containerName); // CreateIfNotExists itt lefut a konstruktorban
         });
 
-        // --- App services & repos ---
+        // --- Application Services ---
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
+        services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+
+        // --- Repositories ---
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
         services.AddScoped<IEvaluationRepository, EvaluationRepository>();
         services.AddScoped<IWhitelistRepository, WhitelistRepository>();
-        services.AddScoped<IQuestionnaireService, QuestionnaireService>();
-        
-        // Email services
-        services.AddScoped<IEmailContentBuilder, EmailContentBuilder>();
-        services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailRepository, EmailRepository>();
-
-        // Report réteg – a ReportRepository már IBlobContextet használ
         services.AddScoped<IReportRepository, ReportRepository>();
+
+        // --- Email Services ---
+        // Email content builder: Creates email messages based on recipient roles (Student, Teacher, Admin)
+        services.AddScoped<IEmailContentBuilder, EmailContentBuilder>();
+        
+        // Email service: Orchestrates email batch processing and compilation
+        services.AddScoped<IEmailService, EmailService>();
+
+        // --- Report Services ---
+        // Report service uses IBlobContext for blob storage operations
         services.AddScoped<IReportService, ReportService>();
 
-        // Functions
+        // --- Azure Functions ---
         services.AddScoped<QuestionnaireFunctions>();
         services.AddScoped<EvaluationFunctions>();
         services.AddScoped<ReportFunctions>();
+        services.AddScoped<EmailSendingFunctions>();
 
         // Validators
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
