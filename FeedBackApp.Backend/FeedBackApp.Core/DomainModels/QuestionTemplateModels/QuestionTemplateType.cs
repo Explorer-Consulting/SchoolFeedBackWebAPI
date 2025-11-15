@@ -9,10 +9,10 @@ namespace FeedBackApp.Core.DomainModels.QuestionTemplateModels
     public enum QuestionTemplateType
     {
         Unknown,
-        SingleChoiceQuestionTemplate,
-        HibridQuestionTemplate,
-        MultipleChoiceQuestionTemplate,
-        OpenEndedQuestionTemplate,
-        LikertScaleQuestionTemplate
+        SingleChoiceQuestion,
+        HibridQuestion,
+        MultipleChoiceQuestion,
+        OpenEndedQuestion,
+        LikertScaleQuestion
     }
 }

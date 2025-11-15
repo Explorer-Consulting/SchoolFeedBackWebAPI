@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace FeedBackApp.Core.DomainModels.QuestionTemplateModels
 {
-    public abstract class QuestionTemplate
+    public sealed class QuestionTemplate
     {
         public required int Id { get; init; }
-        public required QuestionTemplateType TemplateType { get; init; }
+        public required QuestionTemplateType Type { get; init; }
 
         public AnswerOptions<string>? Options { get; init; }
         public string? Category { get; set; }
