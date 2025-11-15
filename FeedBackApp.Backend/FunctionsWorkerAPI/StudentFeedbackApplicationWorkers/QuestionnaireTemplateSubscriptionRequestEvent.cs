@@ -2,6 +2,7 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace FunctionsWorkerAPI.StudentFeedbackApplicationWorkers
 {
-    public sealed class QuestionnaireTemplateSubscriptionRequestEvent
+    public sealed class QuestionnaireTemplateSubscriptionRequestEvent(ILogger<QuestionnaireTemplateSubscriptionRequestEvent> logger)
     {
         [Function(nameof(QuestionnaireTemplateSubscriptionRequestEvent))]
         [OpenApiOperation(

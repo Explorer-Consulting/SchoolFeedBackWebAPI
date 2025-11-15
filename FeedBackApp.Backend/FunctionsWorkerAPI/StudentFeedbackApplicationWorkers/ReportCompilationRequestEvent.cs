@@ -2,11 +2,12 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 namespace FunctionsWorkerAPI.StudentFeedbackApplicationWorkers
 {
-    public sealed class ReportCompilationRequestEvent
+    public sealed class ReportCompilationRequestEvent(ILogger<ReportCompilationRequestEvent> logger)
     {
         [Function(nameof(ReportCompilationRequestEvent))]
         [OpenApiOperation(

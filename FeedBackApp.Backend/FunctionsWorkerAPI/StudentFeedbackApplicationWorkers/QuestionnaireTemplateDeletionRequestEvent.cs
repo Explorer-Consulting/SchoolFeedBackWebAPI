@@ -2,13 +2,14 @@
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using System.Net;
 
 
 namespace FunctionsWorkerAPI.StudentFeedbackApplicationWorkers
 {
-    public sealed class QuestionnaireTemplateDeletionRequestEvent
+    public sealed class QuestionnaireTemplateDeletionRequestEvent(ILogger<QuestionnaireTemplateDeletionRequestEvent> logger)
     {
         [Function(nameof(QuestionnaireTemplateDeletionRequestEvent))]
         [OpenApiOperation(
