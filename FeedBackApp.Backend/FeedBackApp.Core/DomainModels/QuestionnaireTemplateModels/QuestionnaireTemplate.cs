@@ -10,6 +10,6 @@ namespace FeedBackApp.Core.DomainModels.QuestionnaireTemplateModels
     public sealed class QuestionnaireTemplate
     {
         public required QuestionnaireTemplateAttributeHeader Header { get; init; }
-
+        public required IReadOnlyCollection<QuestionnaireTemplate> Questions { get; init; }
     }
 }
