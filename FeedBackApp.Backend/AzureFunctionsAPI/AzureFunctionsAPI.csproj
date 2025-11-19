@@ -24,7 +24,9 @@
     <None Remove="Exception\**" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="local.settings.json" />
+    <Content Include="local.settings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
