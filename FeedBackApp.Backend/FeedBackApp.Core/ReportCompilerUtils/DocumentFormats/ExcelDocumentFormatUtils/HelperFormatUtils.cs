@@ -101,17 +101,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             return cols;
         }
 
-        /// <summary>
-        /// Sets the maximum value (count of answers/options) for the given sheet type.
-        /// </summary>
-        /// <param name="map">Target dictionary.</param>
-        /// <param name="sheet">Sheet type key.</param>
-        /// <param name="candidate">New candidate maximum.</param>
-        internal static void UpdateMax(Dictionary<string, int> map, string sheet, int candidate)
-        {
-            if (map.TryGetValue(sheet, out var curr)) map[sheet] = Math.Max(curr, candidate);
-            else map[sheet] = candidate;
-        }
 
         /// <summary>
         /// Creates an Excel-compatible, unique worksheet name:

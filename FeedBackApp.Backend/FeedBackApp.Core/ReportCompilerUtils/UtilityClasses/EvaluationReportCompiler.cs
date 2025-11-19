@@ -285,7 +285,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     BLOB_URI = string.Empty
                 };
 
-                var adminExcel = new AdministratorExcelReportDocument(metadata);
+                var adminExcel = new ExcelReportDocument(metadata);
                 var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
                 var globalIndex = BuildAnswersIndex(allData);
                 var compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
