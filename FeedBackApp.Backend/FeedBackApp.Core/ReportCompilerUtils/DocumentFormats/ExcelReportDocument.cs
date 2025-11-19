@@ -86,10 +86,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     uint sheetId = 1;
                     var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                    // invalid characters for Excel sheet names
+                    var invalidChars = new[] { ':', '\\', '/', '?', '*', '[', ']' };
+
                     foreach (var model in sheetModels)
                     {
                         {
-                            var sheetName = HelperFormatUtils.MakeSafeSheetName(model.RawName, usedNames);
+                            var sheetName = NameUtils.MakeUniqueName(model.RawName, usedNames, invalidChars);
 
                             // extracting model data
                             var maxAns = model.MaxAns;

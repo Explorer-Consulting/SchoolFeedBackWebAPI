@@ -101,32 +101,5 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             return cols;
         }
 
-
-        /// <summary>
-        /// Creates an Excel-compatible, unique worksheet name:
-        /// removes invalid characters, applies the 31-character limit,
-        /// and adds numbering in case of collisions (" (2)", " (3)", ...).
-        /// </summary>
-        /// <param name="raw">Original sheet name.</param>
-        /// <param name="used">Already used names (case-insensitive).</param>
-        /// <returns>Safe, unique sheet name.</returns>
-        internal static string MakeSafeSheetName(string raw, HashSet<string> used)
-        {
-            var invalid = new[] { ':', '\\', '/', '?', '*', '[', ']' };
-            var name = new string(raw.Where(ch => !invalid.Contains(ch)).ToArray());
-            if (string.IsNullOrWhiteSpace(name)) name = "Sheet";
-            if (name.Length > 31) name = name[..31];
-
-            var baseName = name;
-            int i = 2;
-            while (!used.Add(name))
-            {
-                var suffix = $" ({i++})";
-                var baseLen = Math.Min(31 - suffix.Length, baseName.Length);
-                name = baseName[..baseLen] + suffix;
-            }
-            return name;
-        }
-
     }
 }
