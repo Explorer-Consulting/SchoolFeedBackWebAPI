@@ -14,6 +14,21 @@ export const LoginWithGoogle = async (idToken) => {
     const { data } = await apiClient.post('/auth/google', { IdToken: idToken });
     return data;
 };
+//LoginWithFacebook
+export const LoginWithFacebook = async (accessToken) => {
+    const { data } = await apiClient.post('/auth/facebook', { AccessToken: accessToken });
+    return data;
+};
+//LoginWithMicrosoft
+export const LoginWithMicrosoft = async (idToken) => {
+    const { data } = await apiClient.post('/auth/microsoft', { IdToken: idToken });
+    return data;
+};
+//LoginWithLinkedIn
+export const LoginWithLinkedIn = async (accessToken) => {
+    const { data } = await apiClient.post('/auth/linkedin', { AccessToken: accessToken });
+    return data;
+};
 //PerformGetSurveyData
 export const GetQuestionnaires = async (id) => {
     const { data } = await apiClient.get(`/surveys/${id}`);
