@@ -2,7 +2,7 @@
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils
 {
-    internal class ExcelBuildStylesheet
+    internal class ExcelStylesheetBuilder
     {
 
         /// <summary>

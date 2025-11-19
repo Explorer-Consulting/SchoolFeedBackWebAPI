@@ -55,7 +55,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 wbPart.Workbook = new Workbook();
 
                 var styles = wbPart.AddNewPart<WorkbookStylesPart>();
-                styles.Stylesheet = ExcelBuildStylesheet.BuildStylesheet();
+                styles.Stylesheet = ExcelStylesheetBuilder.BuildStylesheet();
                 styles.Stylesheet.Save();
 
                 var sheets = wbPart.Workbook.AppendChild(new Sheets());

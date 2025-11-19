@@ -1,8 +1,9 @@
 ﻿using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.model;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
-using System.Globalization;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
+using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods
 {
@@ -43,7 +44,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             main.Add(l.ValueMeanings ?? string.Empty);
 
                             AddBlock("Likert-skála", main);
-                            UpdateMax(maxAnsBySheet, "Likert-skála", l.Answers.Length);
+                            maxAnsBySheet.UpdateMax("Likert-skála", l.Answers.Length);
                             break;
                         }
 
@@ -57,8 +58,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                                 opts.Add($"{i + 1} = {s.QuestionOptions[i]}");
 
                             AddBlock("Egyválasztós", main, opts);
-                            UpdateMax(maxAnsBySheet, "Egyválasztós", s.QuestionOptionAnswers.Length);
-                            UpdateMax(maxOptsBySheet, "Egyválasztós", s.QuestionOptions.Length);
+                            maxAnsBySheet.UpdateMax("Egyválasztós", s.QuestionOptionAnswers.Length);
+                            maxOptsBySheet.UpdateMax("Egyválasztós", s.QuestionOptions.Length);
                             break;
                         }
 
@@ -81,7 +82,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                                 {
                                     blocks.Add((new List<string>(), new List<string> { "Szöveges válasz", ans }));
                                 }
-                                UpdateMax(maxOptsBySheet, "Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + answer
+                                maxOptsBySheet.UpdateMax("Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + answer
                             }
 
                             // Predefined options in separate rows
@@ -92,7 +93,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                                 {
                                     blocks.Add((new List<string>(), new List<string> { "Opció", $"{idx++} = {opt}" }));
                                 }
-                                UpdateMax(maxOptsBySheet, "Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + option
+                                maxOptsBySheet.UpdateMax("Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + option
                             }
 
                             // Add to the sheet
@@ -101,7 +102,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             list.AddRange(blocks);
 
                             // Max numeric columns
-                            UpdateMax(maxAnsBySheet, "Egyválasztós + Nyílt végű kérdés", s.QuestionOptionAnswers.Length);
+                            maxAnsBySheet.UpdateMax("Egyválasztós + Nyílt végű kérdés", s.QuestionOptionAnswers.Length);
 
                             break;
                         }
@@ -116,8 +117,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                                 opts.Add($"{i + 1} = {m.AnswerOptions[i]}");
 
                             AddBlock("Többválasztós", main, opts);
-                            UpdateMax(maxAnsBySheet, "Többválasztós", m.Answers.Length);
-                            UpdateMax(maxOptsBySheet, "Többválasztós", m.AnswerOptions.Length);
+                            maxAnsBySheet.UpdateMax("Többválasztós", m.Answers.Length);
+                            maxOptsBySheet.UpdateMax("Többválasztós", m.AnswerOptions.Length);
                             break;
                         }
 
@@ -127,7 +128,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             main.AddRange(o.Answers);
 
                             AddBlock("Nyílt végű", main);
-                            UpdateMax(maxAnsBySheet, "Nyílt végű", o.Answers.Length);
+                            maxAnsBySheet.UpdateMax("Nyílt végű", o.Answers.Length);
                             break;
                         }
                 }
@@ -150,14 +151,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         }
 
 
-        // helper for updating max values in dictionary
-        private static void UpdateMax(Dictionary<string, int> map, string key, int value)
-        {
-            if (map.TryGetValue(key, out var curr))
-                map[key] = Math.Max(curr, value);
-            else
-                map[key] = value;
-        }
+
 
     }
 }
