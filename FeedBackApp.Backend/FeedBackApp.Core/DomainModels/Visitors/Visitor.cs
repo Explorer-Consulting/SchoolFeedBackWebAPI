@@ -12,5 +12,6 @@ namespace FeedBackApp.Core.DomainModels.Visitors
         public ULID TrafficId { get; init; } = ULID.NewUlid();
         public ULID VisitorId { get; init; } = ULID.NewUlid();
         public required string Email { get; init; }
+        public required VisitorStatus Status { get; init; }
     }
 }
