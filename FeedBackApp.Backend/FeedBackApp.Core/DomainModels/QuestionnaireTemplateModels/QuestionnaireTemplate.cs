@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FeedBackApp.Core.DomainModels.QuestionTemplateModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,6 @@ namespace FeedBackApp.Core.DomainModels.QuestionnaireTemplateModels
     public sealed class QuestionnaireTemplate
     {
         public required QuestionnaireTemplateAttributeHeader Header { get; init; }
-        public required IReadOnlyCollection<QuestionnaireTemplate> Questions { get; init; }
+        public required IReadOnlyCollection<QuestionTemplate> Questions { get; init; }
     }
 }
