@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj" />
+    <ProjectReference Include="..\FeedBackApp.Backend.Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

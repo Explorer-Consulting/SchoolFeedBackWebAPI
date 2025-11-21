@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35825.156
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11217.181 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Backend.Infrastructure", "FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj", "{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "FeedBackApp.Backend.Infrastructure\Infrastructure.csproj", "{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureFunctionsAPI", "AzureFunctionsAPI\AzureFunctionsAPI.csproj", "{510C8633-3AA1-4589-AC43-CD5DA17EA30E}"
 EndProject
@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Core", "FeedBackApp.Core\FeedBackApp.Core.csproj", "{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "FeedBackApp.Core\Core.csproj", "{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject

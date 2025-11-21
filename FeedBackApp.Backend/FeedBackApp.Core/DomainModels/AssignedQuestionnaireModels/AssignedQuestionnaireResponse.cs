@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FeedBackApp.Core.DomainModels.AssignedQuestionnaireModels
 {
-    public abstract class AssignedQuestionnaireResponse
+    public class AssignedQuestionnaireResponse
     {
         public required AssignedQuestionnaireAttributeHeader Header { get; init; }
 

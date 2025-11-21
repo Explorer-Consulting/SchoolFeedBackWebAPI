@@ -8,7 +8,10 @@ namespace FeedBackApp.Core.DomainModels.QuestionTemplateModels
 {
     public class QuestionTemplateAnswer
     {
-        public required int Id { get; init; }
+        /// <summary>
+        /// the number of the question inside a questionnaire template
+        /// </summary>
+        public required int QuestionNumberInQuestionnaireTemplate { get; init; }
 
         public required QuestionTemplateType Type {get; init;}
 

@@ -8,11 +8,17 @@ namespace FeedBackApp.Core.DomainModels.QuestionTemplateModels
 {
     public enum QuestionTemplateType
     {
-        Unknown,
+        /// <summary>
+        /// 
+        /// </summary>
         SingleChoice,
+
         Hibrid,
+
         MultipleChoice,
+
         OpenEnded,
+
         LikertScale
     }
 }

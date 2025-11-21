@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FeedBackApp.Core\FeedBackApp.Core.csproj" />
+    <ProjectReference Include="..\FeedBackApp.Core\Core.csproj" />
   </ItemGroup>
 
 </Project>

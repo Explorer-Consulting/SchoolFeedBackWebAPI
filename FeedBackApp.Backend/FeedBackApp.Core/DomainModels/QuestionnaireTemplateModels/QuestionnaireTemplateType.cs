@@ -8,7 +8,7 @@ namespace FeedBackApp.Core.DomainModels.QuestionnaireTemplateModels
 {
     public enum QuestionnaireTemplateType
     {
-        SelfEnrollment,
+        SelfEnrollmentAllowed,
         InviteOnly
     }
 }
