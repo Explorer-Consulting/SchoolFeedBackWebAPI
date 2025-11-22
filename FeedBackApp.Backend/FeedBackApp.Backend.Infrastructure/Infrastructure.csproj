@@ -41,8 +41,4 @@
     <ProjectReference Include="..\FeedBackApp.Core\Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Persistence\" />
-  </ItemGroup>
-
 </Project>

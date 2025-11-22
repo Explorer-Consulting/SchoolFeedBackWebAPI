@@ -32,7 +32,6 @@
 
   <ItemGroup>
     <Folder Include="NewFolder\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
 </Project>
