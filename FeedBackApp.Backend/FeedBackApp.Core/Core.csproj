@@ -30,4 +30,9 @@
     <PackageReference Include="QuestPDF" Version="2025.7.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="NewFolder\" />
+    <Folder Include="Repositories\" />
+  </ItemGroup>
+
 </Project>

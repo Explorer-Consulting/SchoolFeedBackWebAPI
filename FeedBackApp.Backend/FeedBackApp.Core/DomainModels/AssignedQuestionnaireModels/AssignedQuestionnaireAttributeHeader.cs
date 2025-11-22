@@ -1,4 +1,6 @@
-﻿using NUlid;
+﻿using Core.Interfaces;
+using FeedBackApp.Core.DomainModels.AssignedQuestionnaireModels;
+using NUlid;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ULID = NUlid.Ulid;
 
-namespace FeedBackApp.Core.DomainModels.AssignedQuestionnaireModels
+namespace Core.DomainModels.AssignedQuestionnaireModels
 {
     public sealed class AssignedQuestionnaireAttributeHeader
     {
