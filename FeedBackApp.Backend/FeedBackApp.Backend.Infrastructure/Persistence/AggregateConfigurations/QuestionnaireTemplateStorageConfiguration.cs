@@ -10,7 +10,9 @@ namespace Infrastructure.Persistence.AggregateConfigurations
     {
         public void Configure(EntityTypeBuilder<QuestionnaireTemplate> builder)
         {
-            throw new NotImplementedException();
+            builder.ToContainer("QuestionnaireTemplateContainer");
+            builder.HasPartitionKey(key => key.Header.StorageId.ToString());
+            builder.HasNoDiscriminator();
         }
     }
 }
