@@ -26,12 +26,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
 
             return normalized;
         }
-
+        #region think it through
         private static void PadTo(List<string> list, int size)
         {
             while (list.Count < size)
                 list.Add(string.Empty);
         }
+        #endregion
     }
 
 }

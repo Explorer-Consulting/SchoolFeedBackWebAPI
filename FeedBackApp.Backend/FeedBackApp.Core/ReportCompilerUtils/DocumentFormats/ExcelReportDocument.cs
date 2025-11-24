@@ -48,106 +48,104 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();
-            using (var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true))
+            using var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true);
+            // Workbook and stylesheet
+            var wbPart = doc.AddWorkbookPart();
+            wbPart.Workbook = new Workbook();
+
+            var styles = wbPart.AddNewPart<WorkbookStylesPart>();
+            styles.Stylesheet = ExcelStylesheetBuilder.BuildStylesheet();
+            styles.Stylesheet.Save();
+
+            var sheets = wbPart.Workbook.AppendChild(new Sheets());
+
+            // creating sheet models from domain components
+            var sheetModels = ExcelReportBuilder.BuildSheets(
+               ReportComponents.OfType<IReportComponent>());
+
+            // if sheetModels is empty, we create an "Empty" sheet
+            if (!sheetModels.Any())
             {
-                // Workbook and stylesheet
-                var wbPart = doc.AddWorkbookPart();
-                wbPart.Workbook = new Workbook();
-
-                var styles = wbPart.AddNewPart<WorkbookStylesPart>();
-                styles.Stylesheet = ExcelStylesheetBuilder.BuildStylesheet();
-                styles.Stylesheet.Save();
-
-                var sheets = wbPart.Workbook.AppendChild(new Sheets());
-
-                // creating sheet models from domain components
-                var sheetModels = ExcelReportBuilder.BuildSheets(
-                   ReportComponents.OfType<IReportComponent>());
-
-                // if sheetModels is empty, we create an "Empty" sheet
-                if (!sheetModels.Any())
-                {
-                    var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
+                var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
                     {
                         (new List<string>{ "—" }, new List<string>())
                     };
 
-                    ExcelCreateSheet.CreateSheet(
-                        wbPart, sheets, "Üres",
-                        header: ["Kérdés"],
-                        blocks: emptyBlocks,
-                        explicitSheetId: null,
-                        maxAns: 0, maxOpts: 0
-                    );
-                }
-                else
-                {
-                    // We have data: create a separate worksheet for each sheet type
-                    uint sheetId = 1;
-                    var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                    // invalid characters for Excel sheet names
-                    var invalidChars = new[] { ':', '\\', '/', '?', '*', '[', ']' };
-
-                    foreach (var model in sheetModels)
-                    {
-                        {
-                            var sheetName = NameUtils.MakeUniqueName(model.RawName, usedNames, invalidChars);
-
-                            // extracting model data
-                            var maxAns = model.MaxAns;
-                            var maxOpts = model.MaxOpts;
-                            var blocks = model.Blocks;
-
-                            // Header for the main table
-                            var header = new List<string> { "Kérdés" };
-
-
-                            if (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase))
-                            {
-                                for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
-                                header.Add("Értékek jelentése");
-                            }
-                            else
-                            {
-                                for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
-                            }
-
-                            // Total width: max(main, options)
-                            var mainCols = 1 + maxAns + (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
-                            var optionCols = 1 + maxOpts;
-                            var totalCols = Math.Max(mainCols, optionCols);
-                            while (header.Count < totalCols) header.Add(string.Empty);
-
-                            // Normalize blocks to totalCols width
-                            var normalized = new List<(List<string> Main, List<string> Opts)>(blocks.Count);
-                            foreach (var blk in blocks)
-                            {
-                                var m = new List<string>(blk.Main);
-                                var o = new List<string>(blk.Opts ?? new List<string>());
-
-                                while (m.Count < mainCols) m.Add(string.Empty);
-                                while (o.Count < optionCols) o.Add(string.Empty);
-                                while (m.Count < totalCols) m.Add(string.Empty);
-                                while (o.Count < totalCols) o.Add(string.Empty);
-
-                                normalized.Add((m, o));
-                            }
-
-                            ExcelCreateSheet.CreateSheet(
-                                wbPart, sheets, sheetName,
-                                header, normalized, sheetId++,
-                                maxAns, maxOpts
-                            );
-                        }
-                    }
-
-                    wbPart.Workbook.Save();
-                }
-
-                Data = ms.ToArray();
-                return Task.FromResult(Data);
+                ExcelCreateSheet.CreateSheet(
+                    wbPart, sheets, "Üres",
+                    header: ["Kérdés"],
+                    blocks: emptyBlocks,
+                    explicitSheetId: null,
+                    maxAns: 0, maxOpts: 0
+                );
             }
+            else
+            {
+                // We have data: create a separate worksheet for each sheet type
+                uint sheetId = 1;
+                var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // invalid characters for Excel sheet names
+                var invalidChars = new[] { ':', '\\', '/', '?', '*', '[', ']' };
+
+                foreach (var model in sheetModels)
+                {
+                    {
+                        var sheetName = NameUtils.MakeUniqueName(model.RawName, usedNames, invalidChars);
+
+                        // extracting model data
+                        var maxAns = model.MaxAns;
+                        var maxOpts = model.MaxOpts;
+                        var blocks = model.Blocks;
+
+                        // Header for the main table
+                        var header = new List<string> { "Kérdés" };
+
+
+                        if (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase))
+                        {
+                            for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
+                            header.Add("Értékek jelentése");
+                        }
+                        else
+                        {
+                            for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
+                        }
+
+                        // Total width: max(main, options)
+                        var mainCols = 1 + maxAns + (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
+                        var optionCols = 1 + maxOpts;
+                        var totalCols = Math.Max(mainCols, optionCols);
+                        while (header.Count < totalCols) header.Add(string.Empty);
+
+                        // Normalize blocks to totalCols width
+                        var normalized = new List<(List<string> Main, List<string> Opts)>(blocks.Count);
+                        foreach (var blk in blocks)
+                        {
+                            var m = new List<string>(blk.Main);
+                            var o = new List<string>(blk.Opts ?? new List<string>());
+
+                            while (m.Count < mainCols) m.Add(string.Empty);
+                            while (o.Count < optionCols) o.Add(string.Empty);
+                            while (m.Count < totalCols) m.Add(string.Empty);
+                            while (o.Count < totalCols) o.Add(string.Empty);
+
+                            normalized.Add((m, o));
+                        }
+
+                        ExcelCreateSheet.CreateSheet(
+                            wbPart, sheets, sheetName,
+                            header, normalized, sheetId++,
+                            maxAns, maxOpts
+                        );
+                    }
+                }
+
+                wbPart.Workbook.Save();
+            }
+
+            Data = ms.ToArray();
+            return Task.FromResult(Data);
         }
     }
 }
