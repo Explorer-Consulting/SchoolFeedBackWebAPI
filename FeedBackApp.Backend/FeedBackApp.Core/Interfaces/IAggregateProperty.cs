@@ -6,4 +6,4 @@ using System.Threading.Tasks;
 
 namespace Core.Interfaces;
 
-public interface IAggregateRoot { }
+public interface IAggregateProperty { }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Core.Interfaces
 {
-    public interface IRepositoryInterface<Type extends >
+    public interface IRepositoryInterface<Type> where Type : IAggregateRoot, IAggregateProperty
     {
     }
 }
