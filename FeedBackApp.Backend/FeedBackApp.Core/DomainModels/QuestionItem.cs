@@ -2,6 +2,7 @@
 
 namespace Core.DomainModels
 {
+
     public sealed class QuestionItem : IAggregateProperty
     {
         // Unique identifier for the question item

@@ -8,6 +8,7 @@ using ULID = NUlid.Ulid;
 
 namespace Core.DomainModels
 {
+
     public sealed class QuestionnaireTemplate() : IAggregateRoot
     {
         // Storage ID for Cosmos DB

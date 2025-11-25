@@ -2,6 +2,17 @@
 
 namespace Core.Interfaces;
 
+/// <summary>
+/// Defines a contract for managing aggregate root entities, including creation, retrieval, update, and deletion
+/// operations using a builder pattern.
+/// </summary>
+/// <remarks>This interface provides asynchronous methods for working with aggregates in a domain-driven design
+/// context. It supports flexible construction and modification of aggregates via builder configuration, as well as
+/// querying and deleting aggregates by identifier or predicate. Implementations may vary in persistence strategy and
+/// concurrency handling.</remarks>
+/// <typeparam name="TAggregate">The type of aggregate root entity managed by the repository. Must implement <see cref="IAggregateRoot"/>.</typeparam>
+/// <typeparam name="TBuilder">The type of builder used to construct or update aggregate instances. Must implement <see
+/// cref="IAggregateBuilder{TAggregate}"/>.</typeparam>
 public interface IAggregateRepository<TAggregate, TBuilder>
     where TAggregate : class, IAggregateRoot
     where TBuilder : IAggregateBuilder<TAggregate>
