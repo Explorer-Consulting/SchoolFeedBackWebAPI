@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Core.Interfaces;
 
-namespace Core.Interfaces
+public interface IAggregateBuilder<TAggregate>
+    where TAggregate : IAggregateRoot
 {
-    public interface IAggregateBuilder<TAggregate> where TAggregate : IAggregateRoot { }
+    Task<TAggregate> BuildAggregateAsync();
 }

@@ -19,11 +19,8 @@
 
   <ItemGroup>
     <Compile Remove="Exceptions\**" />
-    <Compile Remove="NewFolder\**" />
     <EmbeddedResource Remove="Exceptions\**" />
-    <EmbeddedResource Remove="NewFolder\**" />
     <None Remove="Exceptions\**" />
-    <None Remove="NewFolder\**" />
   </ItemGroup>
 
   <ItemGroup>
