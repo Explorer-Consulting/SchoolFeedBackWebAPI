@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils
 {
+
+    /// <summary>
+    /// Provides static factory methods for creating Excel cell objects with specified content and formatting.
+    /// </summary>
     internal class ExcelCellFactory
     {
         /// <summary>

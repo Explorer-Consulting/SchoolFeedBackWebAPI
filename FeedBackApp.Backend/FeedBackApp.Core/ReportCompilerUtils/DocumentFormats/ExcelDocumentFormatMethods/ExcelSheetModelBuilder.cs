@@ -3,6 +3,8 @@ using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
+
 using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods
@@ -134,7 +136,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                 result.Add(new SheetModel
                 {
                     Type = type,
-                    DisplayName = GetDisplayName(type),
+                    DisplayName = type.GetDisplayName(),
                     Blocks = blocks
                 });
             }
@@ -143,17 +145,5 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             return result;
         }
 
-        /// <summary>
-        /// Gets the display name for a given question type.
-        /// </summary>
-        private static string GetDisplayName(QuestionType type) => type switch
-        {
-            QuestionType.LikertScaleOneToFive => "Likert-skála",
-            QuestionType.MultinomialSingleChoice => "Egyválasztós",
-            QuestionType.MultiNomialSingleChoiceOther => "Egyválasztós + Nyílt végű kérdés",
-            QuestionType.MultipleChoice => "Többválasztós",
-            QuestionType.OpenEnded => "Nyílt végű",
-            _ => "Ismeretlen"
-        };
     }
 }

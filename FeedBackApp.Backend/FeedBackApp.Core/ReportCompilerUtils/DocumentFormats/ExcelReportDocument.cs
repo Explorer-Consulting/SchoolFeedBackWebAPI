@@ -1,4 +1,6 @@
 ﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2013.Drawing.Chart;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.Model.Enum;
@@ -50,52 +52,58 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         public override Task<byte[]> RenderDocument()
         {
             using var ms = new MemoryStream();
-            using var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true);
-           
-            // Workbook 
-            var wbPart = doc.AddWorkbookPart();
-            wbPart.Workbook = new Workbook();
 
-            // Stylesheet     
-            var styles = wbPart.AddNewPart<WorkbookStylesPart>();
-            styles.Stylesheet = ExcelStylesheetBuilder.BuildStylesheet();
-            styles.Stylesheet.Save();
-
-            var sheets = wbPart.Workbook.AppendChild(new Sheets());
-
-            // Creating sheet models from domain components
-            var sheetModels = ExcelSheetModelBuilder.BuildSheetsModelsFromComponents(
-               ReportComponents.OfType<IReportComponent>());
-
-            // If sheetModels is empty, we create an "Empty" sheet
-            if (!sheetModels.Any())
+            using (var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true))
             {
-                var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
+
+                // Workbook 
+                var wbPart = doc.AddWorkbookPart();
+                wbPart.Workbook = new Workbook();
+
+                // Stylesheet     
+                var styles = wbPart.AddNewPart<WorkbookStylesPart>();
+                styles.Stylesheet = ExcelStylesheetBuilder.BuildStylesheet();
+                styles.Stylesheet.Save();
+
+                var sheets = wbPart.Workbook.AppendChild(new Sheets());
+
+                // Creating sheet models from domain components
+                var sheetModels = ExcelSheetModelBuilder.BuildSheetsModelsFromComponents(
+                   ReportComponents.OfType<IReportComponent>());
+
+                // If sheetModels is empty, we create an "Empty" sheet
+                if (!sheetModels.Any())
+                {
+                    var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
                     {
                         (new List<string>{ "—" }, new List<string>())
                     };
 
-                // Create the "Empty" sheet
-                ExcelWorksheetRenderer.RenderWorksheet(
-                    wbPart, sheets, "Üres",
-                    header: ["Kérdés"],
-                    blocks: emptyBlocks,
-                    explicitSheetId: null,
-                    maxAns: 0, maxOpts: 0
-                );
-            }
-            else
-            {
-                // We have data: create a separate worksheet for each sheet type
-                uint sheetId = 1;
-                var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // invalid characters for Excel sheet names
-                var invalidChars = new[] { ':', '\\', '/', '?', '*', '[', ']' };
-
-                foreach (var model in sheetModels)
+                    // Create the "Empty" sheet
+                    ExcelWorksheetRenderer.RenderWorksheet(
+                        wbPart,
+                        sheets,
+                        "Üres",
+                        QuestionType.Unknown,
+                        header: ["Kérdés"],
+                        blocks: emptyBlocks,
+                        explicitSheetId: null,
+                        maxAnswerColumns: 0,
+                        maxOptionColumns: 0
+                    );
+                }
+                else
                 {
+                    // We have data: create a separate worksheet for each sheet type
+                    uint sheetId = 1;
+                    var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                    // invalid characters for Excel sheet names
+                    var invalidChars = new[] { ':', '\\', '/', '?', '*', '[', ']' };
+
+                    foreach (var model in sheetModels)
                     {
+
                         // Generate a unique sheet name
                         var sheetName = NameUtils.MakeUniqueName(model.DisplayName, usedNames, invalidChars);
 
@@ -107,13 +115,17 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 
                         // Create the sheet
                         ExcelWorksheetRenderer.RenderWorksheet(
-                            wbPart, sheets, sheetName,
+                            wbPart,
+                            sheets,
+                            sheetName,
+                            model.Type,
                             layout.HeaderRow.ToList(),
                             normalized,
                             sheetId++,
                             layout.MaxAnswerColumns,
                             layout.MaxOptionColumns
                         );
+
                     }
                 }
 

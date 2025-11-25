@@ -1,12 +1,13 @@
 ﻿using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using System.Globalization;
 using static FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils.ExcelCellFactory;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils
 {
-    internal class ExcelWorksheetRenderer
+    internal static class ExcelWorksheetRenderer
     {
 
         /// <summary>
@@ -19,7 +20,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
         /// <param name="blocks">The normalized blocks (Main row and optional Opts row).</param>
         /// <param name="explicitSheetId">Optional sheet ID.</param>
         /// <param name="maxAns">The maximum number of answer columns on this sheet.</param>
-        /// <param name="maxOpts">The maximum number of option columns on this sheet.</param>
+        /// <param name="maxOptionColumns">The maximum number of option columns on this sheet.</param>
         /// <remarks>
         /// - The top row is frozen (A2) so the header remains visible while scrolling.
         /// - Numeric columns (Likert/SingleChoice/MultipleChoice answers) are right-aligned Number cells.
@@ -32,25 +33,33 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
         /// </remarks>
         /// 
         internal static void RenderWorksheet(
-            WorkbookPart wbPart, Sheets sheets,
+            WorkbookPart wbPart,
+            Sheets sheets,
             string sheetName,
+            QuestionType questionType,
             IReadOnlyList<string> header,
             IReadOnlyList<(List<string> Main, List<string> Opts)> blocks,
             uint? explicitSheetId,
-            int maxAns,
-            int maxOpts)
+            int maxAnswerColumns,
+            int maxOptionColumns)
         {
             var wsPart = wbPart.AddNewPart<WorksheetPart>();
             var sheetData = new SheetData();
 
             // Column width estimation based on content
-            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, blocks, sheetName, maxAns);
+            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, blocks, questionType, maxAnswerColumns);
 
             // Freeze header (Pane)
             var views = new SheetViews(new SheetView
             {
                 WorkbookViewId = 0,
-                Pane = new Pane { VerticalSplit = 1D, TopLeftCell = "A2", ActivePane = PaneValues.BottomLeft, State = PaneStateValues.Frozen }
+                Pane = new Pane
+                {
+                    VerticalSplit = 1D,
+                    TopLeftCell = "A2",
+                    ActivePane = PaneValues.BottomLeft,
+                    State = PaneStateValues.Frozen
+                }
             });
 
             wsPart.Worksheet = new Worksheet(views, cols, sheetData);
@@ -71,10 +80,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             sheetData.Append(headerRow);
 
             // Local predicate: is this a numeric column (based on sheet type and index)
-            bool IsNumericCol(int colIndex) =>
-                sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) && colIndex >= 1 && colIndex <= maxAns
-                || (sheetName.Equals("Egyválasztós", StringComparison.OrdinalIgnoreCase) ||
-                    sheetName.Equals("Többválasztós", StringComparison.OrdinalIgnoreCase)) && colIndex >= 1 && colIndex <= maxAns;
+            bool IsNumericColumn(int columnIndex) =>
+                questionType.HasNumericAnswers() && 
+                columnIndex >= 1 &&
+                columnIndex <= maxAnswerColumns;
 
             // Write data rows
             foreach (var (Main, Opts) in blocks)
@@ -82,7 +91,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 var dataRow = new Row();
                 for (int c = 0; c < Main.Count; c++)
                 {
-                    if (IsNumericCol(c) &&
+                    if (IsNumericColumn(c) &&
                         double.TryParse(Main[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
                         dataRow.Append(CreateNumberCell(num, styleIndex: 4));
                     else

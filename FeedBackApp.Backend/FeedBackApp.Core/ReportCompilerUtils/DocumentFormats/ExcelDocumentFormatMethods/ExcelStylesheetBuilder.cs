@@ -41,11 +41,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
 
             var borders = CreateBorders();
 
-            var cellStyleFormats = new CellStyleFormats(new CellFormat());
+            var cellStyleFormats = new CellStyleFormats(new CellFormat()) { Count = 1 };
 
             var cellFormats = CreateCellFormats();
 
-          
+
             return new Stylesheet
             {
                 Fonts = fonts,
@@ -61,7 +61,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 new Font(),
                 new Font(new Bold()),
                 new Font(new Italic())
-            );
+            )
+            { Count = 3 };
 
         private static Fills CreateFills() => new(
                 new Fill(new PatternFill { PatternType = PatternValues.None }),
@@ -69,7 +70,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 new Fill(new PatternFill(new ForegroundColor { Rgb = "FFD9D9D9" }) { PatternType = PatternValues.Solid }),
                 new Fill(new PatternFill(new ForegroundColor { Rgb = "FFF2F2F2" }) { PatternType = PatternValues.Solid }),
                 new Fill(new PatternFill(new ForegroundColor { Rgb = "FFE6F0FF" }) { PatternType = PatternValues.Solid })
-            );
+            )
+        { Count = 5 };
 
         private static Borders CreateBorders()
         {
@@ -80,7 +82,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 new BottomBorder { Style = BorderStyleValues.Thin },
                 new DiagonalBorder()
             );
-            return new Borders(new Border(), borderThin);
+            return new Borders(new Border(), borderThin) { Count = 2 };
         }
 
         private static CellFormats CreateCellFormats() =>
@@ -141,8 +143,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                     }
                 }
 
-
-            );
+            )
+            { Count = 5 };
 
     }
 }

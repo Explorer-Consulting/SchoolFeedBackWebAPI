@@ -287,11 +287,19 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                 var adminExcel = new ExcelReportDocument(metadata);
                 var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
-                var globalIndex = BuildAnswersIndex(allData);
-                var compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
-                await compiledExcel.RenderDocument();
+                ReportDocument compiledExcel;
+                Task<byte[]> renderTask;
+                CreateRenderOfDocument(rawQuestions, adminExcel, allData, out compiledExcel, out renderTask);
+                await renderTask;
                 yield return compiledExcel;
             }
+        }
+
+        public static void CreateRenderOfDocument(ImmutableArray<QuestionTemplate> rawQuestions, ExcelReportDocument adminExcel, ImmutableArray<QuestionAnswer> allData, out ReportDocument compiledExcel, out Task<byte[]> renderTask)
+        {
+            var globalIndex = BuildAnswersIndex(allData);
+            compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
+            renderTask = compiledExcel.RenderDocument();
         }
 
         private static string San(string? input)
