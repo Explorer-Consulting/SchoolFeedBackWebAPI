@@ -1,23 +1,18 @@
 ﻿using Core.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.DomainModels
 {
     public sealed class QuestionItem : IAggregateProperty
     {
         // Unique identifier for the question item
-        public required string QuestionID { get; set; }
+        public string QuestionID { get; set; } = default!;
         // Type of the question (e.g., multiple choice, open-ended)
-        public required QuestionItemType QuestionType { get; set; }
+        public QuestionItemType QuestionType { get; set; } = default!;
         // The actual question statement presented to users
-        public required string QuestionStatement { get; set; }
+        public string QuestionStatement { get; set; } = default!;
         // Collection of possible answer options for the question
-        public required ICollection<string> AnswerOptions { get; set; }
+        public ICollection<string> AnswerOptions { get; set; } = default!;
         // Collection of dependencies that determine the visibility or relevance of the question
-        public required ICollection<QuestionDependency> Dependencies { get; set; }
+        public ICollection<QuestionDependency> Dependencies { get; set; } = default!;
     }
 }

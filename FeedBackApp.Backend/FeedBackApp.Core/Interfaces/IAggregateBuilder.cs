@@ -6,7 +6,5 @@ using System.Threading.Tasks;
 
 namespace Core.Interfaces
 {
-    public interface IRepositoryInterface<Type> where Type : IAggregateRoot, IAggregateProperty
-    {
-    }
+    public interface IAggregateBuilder<TAggregate> where TAggregate : IAggregateRoot { }
 }

@@ -9,7 +9,7 @@ namespace Core.DomainModels
 {
     public sealed class QuestionDependency : IAggregateProperty
     {
-        public required string QuestionID { get; set; } // ID of the question this dependency refers to
-        public required ICollection<string> ExpectedAnswerIndexes { get; set; } // Answers that trigger this
+        public required string QuestionID { get; set; } = default!;// ID of the question this dependency refers to
+        public required ICollection<string> ExpectedAnswerIndexes { get; set; } = default!; // Answers that trigger this
     }
 }

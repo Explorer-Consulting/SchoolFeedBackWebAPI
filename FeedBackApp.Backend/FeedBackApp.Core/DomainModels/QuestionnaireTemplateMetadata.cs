@@ -10,14 +10,14 @@ namespace Core.DomainModels
     public sealed class QuestionnaireTemplateMetadata() : IAggregateProperty
     {
         // Title of the questionnaire template
-        public required string Title { get; set; }
+        public string Title { get; set; } = default!;
         // Description of the questionnaire template
-        public required string Description { get; set; }
+        public string Description { get; set; } = default!;
         // Creation, activation, and expiration dates
-        public required DateTimeOffset CreatedAt { get; set; }
-        public required DateTimeOffset ActivationDate { get; set; }
-        public required DateTimeOffset ExpirationDate { get; set; }
+        public DateTimeOffset CreatedAt { get; set; } = default!;
+        public DateTimeOffset ActivationDate { get; set; } = default!;
+        public DateTimeOffset ExpirationDate { get; set; } = default!;
         // Flag indicating if self-enrollment is allowed
-        public required bool SelfEnrollmentAllowed { get; set; }
+        public bool SelfEnrollmentAllowed { get; set; } = default!;
     }
 }
