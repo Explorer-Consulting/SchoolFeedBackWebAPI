@@ -15,8 +15,8 @@ builder.Services.AddDbContext<ApplicationDatabaseContext>(options =>
         accountKey: builder.Configuration["CosmosDB:AccountKey"]!,
         databaseName: builder.Configuration["CosmosDB:DatabaseName"]!);
 });
-builder.Services.AddSingleton<IQuestionnaireResponseAggregateRepository, CosmosQuestionnaireResponseRepository>();
-builder.Services.AddSingleton<IQuestionnaireTemplateAggregateRepository, CosmosQuestionnaireTemplateRepository>();
+builder.Services.AddScoped<IQuestionnaireResponseAggregateRepository, CosmosQuestionnaireResponseRepository>();
+builder.Services.AddScoped<IQuestionnaireTemplateAggregateRepository, CosmosQuestionnaireTemplateRepository>();
 
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
@@ -29,3 +29,4 @@ await using var scope = application.Services.CreateAsyncScope();
 var database = scope.ServiceProvider.GetRequiredService<ApplicationDatabaseContext>();
 await database.Database.EnsureCreatedAsync();
 #endregion
+application.Run();
