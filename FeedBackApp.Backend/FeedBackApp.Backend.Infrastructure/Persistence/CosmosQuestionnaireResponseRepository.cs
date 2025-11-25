@@ -28,7 +28,7 @@ namespace Infrastructure.Persistence
             throw new NotImplementedException();
         }
 
-        public Task UpdateAggregateAsync(string aggregateId, Action<QuestionnaireResponseBuilder> configure)
+        public Task UpdateAggregateAsync(string aggregateId, Action<QuestionnaireResponse> configure)
         {
             throw new NotImplementedException();
         }

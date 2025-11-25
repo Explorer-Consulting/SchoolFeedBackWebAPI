@@ -22,4 +22,10 @@ builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
 
-builder.Build().Run();
+var application = builder.Build();
+
+#region For development scope
+await using var scope = application.Services.CreateAsyncScope();
+var database = scope.ServiceProvider.GetRequiredService<ApplicationDatabaseContext>();
+await database.Database.EnsureCreatedAsync();
+#endregion

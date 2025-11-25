@@ -37,7 +37,7 @@ public interface IAggregateRepository<TAggregate, TBuilder>
     /// <param name="aggregateId">The unique identifier of the aggregate to update. Cannot be null or empty.</param>
     /// <param name="configure">An action that configures the aggregate builder before the update is applied.</param>
     /// <returns>A task that represents the asynchronous update operation.</returns>
-    Task UpdateAggregateAsync(string aggregateId, Action<TBuilder> configure);
+    Task UpdateAggregateAsync(string aggregateId, Action<TAggregate> configure);
 
     /// <summary>
     /// Asynchronously retrieves a single aggregate entity that matches the specified predicate.

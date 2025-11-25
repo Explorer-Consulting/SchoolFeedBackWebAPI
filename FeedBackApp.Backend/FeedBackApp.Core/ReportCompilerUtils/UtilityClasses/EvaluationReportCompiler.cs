@@ -7,7 +7,7 @@ using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.Statistic
 using System.Collections.Immutable;
 using System.Globalization;
 
-namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
+namespace Core.ReportCompilerUtils.UtilityClasses
 {
     /// <summary>
     /// Compiler for reports based on collected questionnaire responses.

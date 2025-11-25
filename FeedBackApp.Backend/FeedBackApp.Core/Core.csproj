@@ -19,8 +19,11 @@
 
   <ItemGroup>
     <Compile Remove="Exceptions\**" />
+    <Compile Remove="ReportCompilerUtils\**" />
     <EmbeddedResource Remove="Exceptions\**" />
+    <EmbeddedResource Remove="ReportCompilerUtils\**" />
     <None Remove="Exceptions\**" />
+    <None Remove="ReportCompilerUtils\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +31,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NUlid" Version="1.7.3" />
     <PackageReference Include="QuestPDF" Version="2025.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="ExceptionGuards\" />
   </ItemGroup>
 
 </Project>
