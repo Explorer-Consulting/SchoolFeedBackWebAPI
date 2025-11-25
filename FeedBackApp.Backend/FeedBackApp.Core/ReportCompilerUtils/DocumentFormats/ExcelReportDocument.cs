@@ -1,9 +1,11 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
@@ -49,21 +51,23 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
         {
             using var ms = new MemoryStream();
             using var doc = SpreadsheetDocument.Create(ms, SpreadsheetDocumentType.Workbook, true);
-            // Workbook and stylesheet
+           
+            // Workbook 
             var wbPart = doc.AddWorkbookPart();
             wbPart.Workbook = new Workbook();
 
+            // Stylesheet     
             var styles = wbPart.AddNewPart<WorkbookStylesPart>();
             styles.Stylesheet = ExcelStylesheetBuilder.BuildStylesheet();
             styles.Stylesheet.Save();
 
             var sheets = wbPart.Workbook.AppendChild(new Sheets());
 
-            // creating sheet models from domain components
-            var sheetModels = ExcelReportBuilder.BuildSheets(
+            // Creating sheet models from domain components
+            var sheetModels = ExcelSheetModelBuilder.BuildSheetsModelForComponents(
                ReportComponents.OfType<IReportComponent>());
 
-            // if sheetModels is empty, we create an "Empty" sheet
+            // If sheetModels is empty, we create an "Empty" sheet
             if (!sheetModels.Any())
             {
                 var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
@@ -71,6 +75,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         (new List<string>{ "—" }, new List<string>())
                     };
 
+                // Create the "Empty" sheet
                 ExcelCreateSheet.CreateSheet(
                     wbPart, sheets, "Üres",
                     header: ["Kérdés"],
@@ -91,52 +96,23 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 foreach (var model in sheetModels)
                 {
                     {
-                        var sheetName = NameUtils.MakeUniqueName(model.RawName, usedNames, invalidChars);
+                        // Generate a unique sheet name
+                        var sheetName = NameUtils.MakeUniqueName(model.DisplayName, usedNames, invalidChars);
 
-                        // extracting model data
-                        var maxAns = model.MaxAns;
-                        var maxOpts = model.MaxOpts;
-                        var blocks = model.Blocks;
+                        // Calculate layout configuration for the sheet
+                        var layout = SheetLayoutConfigurationUtils.CalculateLayout(model);
 
-                        // Header for the main table
-                        var header = new List<string> { "Kérdés" };
+                        // Normalize blocks for consistent width based on layout
+                        var normalized = SheetLayoutConfigurationUtils.NormalizeBlocks(model.Blocks, layout);
 
-
-                        if (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase))
-                        {
-                            for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
-                            header.Add("Értékek jelentése");
-                        }
-                        else
-                        {
-                            for (int i = 0; i < maxAns; i++) header.Add(string.Empty);
-                        }
-
-                        // Total width: max(main, options)
-                        var mainCols = 1 + maxAns + (sheetName.Equals("Likert-skála", StringComparison.OrdinalIgnoreCase) ? 1 : 0);
-                        var optionCols = 1 + maxOpts;
-                        var totalCols = Math.Max(mainCols, optionCols);
-                        while (header.Count < totalCols) header.Add(string.Empty);
-
-                        // Normalize blocks to totalCols width
-                        var normalized = new List<(List<string> Main, List<string> Opts)>(blocks.Count);
-                        foreach (var blk in blocks)
-                        {
-                            var m = new List<string>(blk.Main);
-                            var o = new List<string>(blk.Opts ?? new List<string>());
-
-                            while (m.Count < mainCols) m.Add(string.Empty);
-                            while (o.Count < optionCols) o.Add(string.Empty);
-                            while (m.Count < totalCols) m.Add(string.Empty);
-                            while (o.Count < totalCols) o.Add(string.Empty);
-
-                            normalized.Add((m, o));
-                        }
-
+                        // Create the sheet
                         ExcelCreateSheet.CreateSheet(
                             wbPart, sheets, sheetName,
-                            header, normalized, sheetId++,
-                            maxAns, maxOpts
+                            layout.HeaderRow.ToList(),
+                            normalized,
+                            sheetId++,
+                            layout.MaxAnswerColumns,
+                            layout.MaxOptionColumns
                         );
                     }
                 }
@@ -147,5 +123,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             Data = ms.ToArray();
             return Task.FromResult(Data);
         }
+
     }
 }

@@ -1,32 +1,40 @@
-﻿using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.model;
+﻿using FeedBackApp.Core.Model.Enum;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
+using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
-using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods
 {
-    internal static class ExcelReportBuilder
+    /// <summary>
+    /// Builds domain sheet models from report components.
+    /// <para>
+    /// Groups questions by type (<see cref="QuestionType"/>) and creates 
+    /// a <see cref="SheetModel"/> for each type containing the question blocks.
+    /// </para>
+    /// </summary>
+    /// <param name="components">The report components containing evaluated question data.</param>
+    /// <returns>A list of sheet models, one per question type.</returns>
+    internal static class ExcelSheetModelBuilder
     {
-        public static IReadOnlyList<SheetModel> BuildSheets(
+        public static IReadOnlyList<SheetModel> BuildSheetsModelForComponents(
         IEnumerable<IReportComponent> components)
         {
 
             // Sheet type -> blocks (Main: question + answers, Opts: options row)
-            var blocksBySheet = new Dictionary<string, List<(List<string> Main, List<string> Opts)>>(StringComparer.OrdinalIgnoreCase);
-            var maxAnsBySheet = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            var maxOptsBySheet = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var blocksBySheet = new Dictionary<QuestionType, List<QuestionBlockModel>>();
 
             // Local helper: add a block to the given sheet
-            void AddBlock(string sheet, IEnumerable<string> main, IEnumerable<string>? opts = null)
+            void AddBlock(QuestionType type, IEnumerable<string> mainRow, IEnumerable<string>? optionsRow = null)
             {
-                if (!blocksBySheet.TryGetValue(sheet, out var list))
-                    blocksBySheet[sheet] = list = new();
-                list.Add(
-                    (main.Select(x => x ?? string.Empty).ToList(),
-                     opts is null ? [] : opts.Select(x => x ?? string.Empty).ToList())
-                );
+                if (!blocksBySheet.TryGetValue(type, out var list))
+                    blocksBySheet[type] = list = [];
+                list.Add(new QuestionBlockModel
+                {
+                    MainRow = mainRow.Select(x => x ?? string.Empty).ToList(),
+                    OptionsRow = optionsRow?.Select(x => x ?? string.Empty).ToList() ?? []
+                });
             }
 
             // Traverse components, inspect DataSource, and create blocks
@@ -43,8 +51,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             main.AddRange(l.Answers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
                             main.Add(l.ValueMeanings ?? string.Empty);
 
-                            AddBlock("Likert-skála", main);
-                            maxAnsBySheet.UpdateMax("Likert-skála", l.Answers.Length);
+                            AddBlock(QuestionType.LikertScaleOneToFive, main);
                             break;
                         }
 
@@ -56,10 +63,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             var opts = new List<string> { "Opciók" };
                             for (int i = 0; i < s.QuestionOptions.Length; i++)
                                 opts.Add($"{i + 1} = {s.QuestionOptions[i]}");
-
-                            AddBlock("Egyválasztós", main, opts);
-                            maxAnsBySheet.UpdateMax("Egyválasztós", s.QuestionOptionAnswers.Length);
-                            maxOptsBySheet.UpdateMax("Egyválasztós", s.QuestionOptions.Length);
+                           
+                            AddBlock(QuestionType.MultinomialSingleChoice, main,opts);
                             break;
                         }
 
@@ -69,21 +74,20 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             if (s.QuestionOptionAnswers.Length > 0)
                                 main.AddRange(s.QuestionOptionAnswers.Select(a => a.ToString(CultureInfo.InvariantCulture)));
 
-                            // Primary block: always ensure we have a Main row
-                            var blocks = new List<(List<string> Main, List<string> Opts)>
-                                {
-                                    (main, new List<string>()) // Opts is empty here
-                                };
+                            // First block: main row
+                            AddBlock(QuestionType.MultiNomialSingleChoiceOther, main);
+
 
                             // Text answers in separate rows
                             if (!s.QuestionOpenAnswers.IsDefaultOrEmpty && s.QuestionOpenAnswers.Length > 0)
                             {
                                 foreach (var ans in s.QuestionOpenAnswers)
                                 {
-                                    blocks.Add((new List<string>(), new List<string> { "Szöveges válasz", ans }));
+                                    var textOpts = new List<string> { "Szöveges válasz", ans };
+                                    AddBlock(QuestionType.MultiNomialSingleChoiceOther, [], textOpts);
                                 }
-                                maxOptsBySheet.UpdateMax("Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + answer
                             }
+
 
                             // Predefined options in separate rows
                             if (!s.QuestionOptions.IsDefaultOrEmpty && s.QuestionOptions.Length > 0)
@@ -91,19 +95,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                                 int idx = 1;
                                 foreach (var opt in s.QuestionOptions)
                                 {
-                                    blocks.Add((new List<string>(), new List<string> { "Opció", $"{idx++} = {opt}" }));
+                                    var optionOpts = new List<string> { "Opció", $"{idx++} = {opt}" };
+                                    AddBlock(QuestionType.MultiNomialSingleChoiceOther, [], optionOpts);
                                 }
-                                maxOptsBySheet.UpdateMax("Egyválasztós + Nyílt végű kérdés", 2); // 2 columns: label + option
                             }
-
-                            // Add to the sheet
-                            if (!blocksBySheet.TryGetValue("Egyválasztós + Nyílt végű kérdés", out var list))
-                                blocksBySheet["Egyválasztós + Nyílt végű kérdés"] = list = new();
-                            list.AddRange(blocks);
-
-                            // Max numeric columns
-                            maxAnsBySheet.UpdateMax("Egyválasztós + Nyílt végű kérdés", s.QuestionOptionAnswers.Length);
-
                             break;
                         }
 
@@ -116,9 +111,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             for (int i = 0; i < m.AnswerOptions.Length; i++)
                                 opts.Add($"{i + 1} = {m.AnswerOptions[i]}");
 
-                            AddBlock("Többválasztós", main, opts);
-                            maxAnsBySheet.UpdateMax("Többválasztós", m.Answers.Length);
-                            maxOptsBySheet.UpdateMax("Többválasztós", m.AnswerOptions.Length);
+                            AddBlock(QuestionType.MultipleChoice, main, opts);
                             break;
                         }
 
@@ -127,28 +120,37 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             var main = new List<string> { o.QuestionStatement };
                             main.AddRange(o.Answers);
 
-                            AddBlock("Nyílt végű", main);
-                            maxAnsBySheet.UpdateMax("Nyílt végű", o.Answers.Length);
+                            AddBlock(QuestionType.OpenEnded, main);
                             break;
                         }
                 }
             }
 
+            // Build result
             var result = new List<SheetModel>();
 
-            foreach (var (rawName, blocks) in blocksBySheet)
+            foreach (var (type, blocks) in blocksBySheet)
             {
                 result.Add(new SheetModel
                 {
-                    RawName = rawName,
-                    Blocks = blocks,
-                    MaxAns = maxAnsBySheet.TryGetValue(rawName, out var ma) ? ma : 0,
-                    MaxOpts = maxOptsBySheet.TryGetValue(rawName, out var mo) ? mo : 0
+                    Type = type,
+                    DisplayName = GetDisplayName(type),
+                    Blocks = blocks
                 });
             }
+
 
             return result;
         }
 
+        private static string GetDisplayName(QuestionType type) => type switch
+        {
+            QuestionType.LikertScaleOneToFive => "Likert-skála",
+            QuestionType.MultinomialSingleChoice => "Egyválasztós",
+            QuestionType.MultiNomialSingleChoiceOther => "Egyválasztós + Nyílt végű kérdés",
+            QuestionType.MultipleChoice => "Többválasztós",
+            QuestionType.OpenEnded => "Nyílt végű",
+            _ => "Ismeretlen"
+        };
     }
 }

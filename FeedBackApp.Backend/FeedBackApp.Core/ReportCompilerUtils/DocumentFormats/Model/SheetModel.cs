@@ -1,16 +1,26 @@
 ﻿
-namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.model
+using FeedBackApp.Core.Model.Enum;
+
+namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model
 {
+    /// <summary>
+    /// Domain model representing a single Excel worksheet's data.
+    ///</summary>
     public sealed class SheetModel
     {
-        public string RawName { get; init; } = "";
-        public string SheetName { get; set; } = "";
-        public List<string> Header { get; init; } = new();
-        public List<(List<string> Main, List<string> Opts)> Blocks { get; init; } = new();
 
-        #region Clarify, please, why we need this
-        public int MaxAns { get; init; }
-        #endregion
-        public int MaxOpts { get; init; }
+        /// <summary>
+        /// The question type for this sheet.
+        /// </summary>
+        public QuestionType Type { get; init; }
+
+        /// <summary>
+        /// Display name for the sheet, used for UI purposes and Excel sheet naming.
+        /// </summary>
+        public string DisplayName { get; init; } = "";
+        /// <summary>
+        /// The question data blocks for this sheet.
+        /// </summary>
+        public IReadOnlyList<QuestionBlockModel> Blocks { get; init; } = [];
     }
 }
