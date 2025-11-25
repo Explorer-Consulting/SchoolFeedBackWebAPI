@@ -18,19 +18,19 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
     /// <returns>A list of sheet models, one per question type.</returns>
     internal static class ExcelSheetModelBuilder
     {
-        public static IReadOnlyList<SheetModel> BuildSheetsModelForComponents(
+        public static IReadOnlyList<SheetModel> BuildSheetsModelsFromComponents(
         IEnumerable<IReportComponent> components)
         {
 
             // Sheet type -> blocks (Main: question + answers, Opts: options row)
-            var blocksBySheet = new Dictionary<QuestionType, List<QuestionBlockModel>>();
+            var blocksBySheet = new Dictionary<QuestionType, List<QuestionBlock>>();
 
             // Local helper: add a block to the given sheet
             void AddBlock(QuestionType type, IEnumerable<string> mainRow, IEnumerable<string>? optionsRow = null)
             {
                 if (!blocksBySheet.TryGetValue(type, out var list))
                     blocksBySheet[type] = list = [];
-                list.Add(new QuestionBlockModel
+                list.Add(new QuestionBlock
                 {
                     MainRow = mainRow.Select(x => x ?? string.Empty).ToList(),
                     OptionsRow = optionsRow?.Select(x => x ?? string.Empty).ToList() ?? []
@@ -63,8 +63,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             var opts = new List<string> { "Opciók" };
                             for (int i = 0; i < s.QuestionOptions.Length; i++)
                                 opts.Add($"{i + 1} = {s.QuestionOptions[i]}");
-                           
-                            AddBlock(QuestionType.MultinomialSingleChoice, main,opts);
+
+                            AddBlock(QuestionType.MultinomialSingleChoice, main, opts);
                             break;
                         }
 
@@ -143,6 +143,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             return result;
         }
 
+        /// <summary>
+        /// Gets the display name for a given question type.
+        /// </summary>
         private static string GetDisplayName(QuestionType type) => type switch
         {
             QuestionType.LikertScaleOneToFive => "Likert-skála",

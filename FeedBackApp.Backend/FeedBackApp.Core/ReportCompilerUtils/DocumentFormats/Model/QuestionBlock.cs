@@ -4,7 +4,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model
     /// <summary>
     /// Represents a single question's data block in an Excel worksheet.
     /// </summary>
-    public sealed class QuestionBlockModel
+    public sealed class QuestionBlock
     {
         /// <summary>
         /// The main data row containing the question text and answer values.

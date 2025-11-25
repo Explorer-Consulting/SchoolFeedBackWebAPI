@@ -11,7 +11,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
     /// from domain sheet models.
     /// </para>
     /// </summary>
-    internal class SheetLayoutConfigurationUtils
+    internal static class ExcelSheetLayoutCalculator
     {
         /// <summary>
         /// Calculates the layout configuration for a sheet model.
@@ -89,7 +89,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         /// <param name="layout">The layout configuration with target column counts.</param>
         /// <returns>Normalized blocks as tuples (for compatibility with rendering layer).</returns>
         public static List<(List<string> Main, List<string> Opts)> NormalizeBlocks(
-        IReadOnlyList<QuestionBlockModel> blocks, SheetLayoutConfig layout)
+        IReadOnlyList<QuestionBlock> blocks, SheetLayoutConfig layout)
         {
             var normalized = new List<(List<string> Main, List<string> Opts)>(blocks.Count);
 

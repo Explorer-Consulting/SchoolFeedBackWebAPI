@@ -2,15 +2,15 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using System.Globalization;
-using static FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils.HelperFormatUtils;
+using static FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils.ExcelCellFactory;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils
 {
-    internal class ExcelCreateSheet
+    internal class ExcelWorksheetRenderer
     {
 
         /// <summary>
-        /// Creates a worksheet and populates it with the specified header and data rows (Main + Opts).
+        /// Render a worksheet and populates it with the specified header and data rows (Main + Opts).
         /// </summary>
         /// <param name="wbPart">The workbook part.</param>
         /// <param name="sheets">The workbook’s sheet collection.</param>
@@ -31,7 +31,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
         ///   4 = numeric data (bluish background).
         /// </remarks>
         /// 
-        internal static void CreateSheet(
+        internal static void RenderWorksheet(
             WorkbookPart wbPart, Sheets sheets,
             string sheetName,
             IReadOnlyList<string> header,
@@ -44,7 +44,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             var sheetData = new SheetData();
 
             // Column width estimation based on content
-            var cols = HelperFormatUtils.BuildAutoColumns(header, blocks, sheetName, maxAns);
+            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, blocks, sheetName, maxAns);
 
             // Freeze header (Pane)
             var views = new SheetViews(new SheetView
@@ -67,7 +67,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             // Header (style 1)
             var headerRow = new Row();
             foreach (var text in header)
-                headerRow.Append(TextCell(text, styleIndex: 1));
+                headerRow.Append(CreateTextCell(text, styleIndex: 1));
             sheetData.Append(headerRow);
 
             // Local predicate: is this a numeric column (based on sheet type and index)
@@ -84,9 +84,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 {
                     if (IsNumericCol(c) &&
                         double.TryParse(Main[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
-                        dataRow.Append(NumberCell(num, styleIndex: 4));
+                        dataRow.Append(CreateNumberCell(num, styleIndex: 4));
                     else
-                        dataRow.Append(TextCell(Main[c], styleIndex: 2));
+                        dataRow.Append(CreateTextCell(Main[c], styleIndex: 2));
                 }
                 sheetData.Append(dataRow);
 
@@ -95,7 +95,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 {
                     var optRow = new Row();
                     for (int c = 0; c < Opts.Count; c++)
-                        optRow.Append(TextCell(Opts[c], styleIndex: 3));
+                        optRow.Append(CreateTextCell(Opts[c], styleIndex: 3));
                     sheetData.Append(optRow);
                 }
             }

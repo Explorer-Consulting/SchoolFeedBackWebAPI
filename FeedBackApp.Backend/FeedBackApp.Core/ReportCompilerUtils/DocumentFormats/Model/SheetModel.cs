@@ -21,6 +21,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model
         /// <summary>
         /// The question data blocks for this sheet.
         /// </summary>
-        public IReadOnlyList<QuestionBlockModel> Blocks { get; init; } = [];
+        public IReadOnlyList<QuestionBlock> Blocks { get; init; } = [];
     }
 }

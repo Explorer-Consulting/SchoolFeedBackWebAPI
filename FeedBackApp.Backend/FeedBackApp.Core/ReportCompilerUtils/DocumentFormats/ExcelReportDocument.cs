@@ -64,7 +64,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             var sheets = wbPart.Workbook.AppendChild(new Sheets());
 
             // Creating sheet models from domain components
-            var sheetModels = ExcelSheetModelBuilder.BuildSheetsModelForComponents(
+            var sheetModels = ExcelSheetModelBuilder.BuildSheetsModelsFromComponents(
                ReportComponents.OfType<IReportComponent>());
 
             // If sheetModels is empty, we create an "Empty" sheet
@@ -76,7 +76,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     };
 
                 // Create the "Empty" sheet
-                ExcelCreateSheet.CreateSheet(
+                ExcelWorksheetRenderer.RenderWorksheet(
                     wbPart, sheets, "Üres",
                     header: ["Kérdés"],
                     blocks: emptyBlocks,
@@ -100,13 +100,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         var sheetName = NameUtils.MakeUniqueName(model.DisplayName, usedNames, invalidChars);
 
                         // Calculate layout configuration for the sheet
-                        var layout = SheetLayoutConfigurationUtils.CalculateLayout(model);
+                        var layout = ExcelSheetLayoutCalculator.CalculateLayout(model);
 
                         // Normalize blocks for consistent width based on layout
-                        var normalized = SheetLayoutConfigurationUtils.NormalizeBlocks(model.Blocks, layout);
+                        var normalized = ExcelSheetLayoutCalculator.NormalizeBlocks(model.Blocks, layout);
 
                         // Create the sheet
-                        ExcelCreateSheet.CreateSheet(
+                        ExcelWorksheetRenderer.RenderWorksheet(
                             wbPart, sheets, sheetName,
                             layout.HeaderRow.ToList(),
                             normalized,
