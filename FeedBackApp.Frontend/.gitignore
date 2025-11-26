@@ -26,3 +26,4 @@ dist-ssr
 
 # Ignore vite env types
 vite-env.d.ts
+.env
