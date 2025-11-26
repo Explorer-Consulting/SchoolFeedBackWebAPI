@@ -24,7 +24,7 @@ using System.Text.Json;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
-// ─────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────---
 // 1) Modern isolated builder
 // ─────────────────────────────────────────────────────
 var builder = FunctionsApplication.CreateBuilder(args);
@@ -32,7 +32,7 @@ var builder = FunctionsApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 // ─────────────────────────────────────────────────────
-// 2) Worker JSON serializer
+// 2) JSON serializer
 // ─────────────────────────────────────────────────────
 builder.Services.Configure<WorkerOptions>(o =>
 {
@@ -48,7 +48,7 @@ builder.Services
     .ConfigureFunctionsApplicationInsights();
 
 // ─────────────────────────────────────────────────────
-// 3) EF Core Cosmos – config közvetlenül local.settings.json-ból
+// 3) EF Core Cosmos – local.settings.json / Azure App Settings
 // ─────────────────────────────────────────────────────
 builder.Services.AddDbContext<AppDBContext>(options =>
 {
@@ -61,14 +61,14 @@ builder.Services.AddDbContext<AppDBContext>(options =>
         string.IsNullOrWhiteSpace(db))
     {
         throw new InvalidOperationException(
-            "Missing Cosmos configuration values. Check local.settings.json.");
+            "Missing Cosmos configuration: Cosmos:AccountEndpoint, Cosmos:AccountKey, Cosmos:DatabaseName");
     }
 
     options.UseCosmos(endpoint, key, db);
 });
 
 // ─────────────────────────────────────────────────────
-// 4) Blob Storage – szintén közvetlenül configból, plusz osztály nélkül
+// 4) Blob Storage – ReportStorage:ConnectionString, ReportStorage:ContainerName
 // ─────────────────────────────────────────────────────
 builder.Services.AddSingleton(sp =>
 {
@@ -91,7 +91,33 @@ builder.Services.AddSingleton<IBlobContext>(sp =>
 });
 
 // ─────────────────────────────────────────────────────
-// 5) Services & repositories
+// 5) Egyéb config ellenőrzés (JWT, Google, Email, AdminEmails)
+// ─────────────────────────────────────────────────────
+_ = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("Missing Jwt:SecretKey");
+
+_ = builder.Configuration["Google:ClientId"]
+    ?? throw new InvalidOperationException("Missing Google:ClientId");
+
+var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
+var adminEmails = rawAdminEmails
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+_ = builder.Configuration["Email:FromAddress"]
+    ?? throw new InvalidOperationException("Missing Email:FromAddress");
+
+_ = builder.Configuration["Email:FromName"]
+    ?? throw new InvalidOperationException("Missing Email:FromName");
+
+_ = builder.Configuration["Email:AppPassword"]
+    ?? throw new InvalidOperationException("Missing Email:AppPassword");
+
+// Certificates – localon használod, Azure-on majd KeyVault lesz valószínűleg
+var certLoadPath = builder.Configuration["Certificates:LoadPath"];
+
+
+// ─────────────────────────────────────────────────────
+// 6) Services & repositories
 // ─────────────────────────────────────────────────────
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
@@ -106,14 +132,14 @@ builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 // ─────────────────────────────────────────────────────
-// 6) Functions injection
+// 7) Functions injection (DI-s function class-ok)
 // ─────────────────────────────────────────────────────
 builder.Services.AddScoped<QuestionnaireFunctions>();
 builder.Services.AddScoped<EvaluationFunctions>();
 builder.Services.AddScoped<ReportFunctions>();
 
 // ─────────────────────────────────────────────────────
-// 7) Validators
+// 8) Validators
 // ─────────────────────────────────────────────────────
 builder.Services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
 builder.Services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
@@ -122,27 +148,23 @@ builder.Services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>
 builder.Services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
 builder.Services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
 
-// ─────────────────────────────────────────────────────
-// 8) Middleware
-// ─────────────────────────────────────────────────────
+
 builder.Services.AddSingleton<AdminOnlyMiddleware>();
 builder.Services.AddSingleton<StudentOnlyMiddleware>();
 builder.Services.AddSingleton<MiddlewareSelector>();
 
-builder.ConfigureFunctionsWebApplication(app =>
-{
-    app.UseMiddleware<MiddlewareSelector>();
-});
+builder
+    .UseMiddleware<MiddlewareSelector>();
 
 // ─────────────────────────────────────────────────────
-// 9) Build, DB init, run
+// 10) Build, DB init, Run
 // ─────────────────────────────────────────────────────
 var app = builder.Build();
 
-using (var scope = app.Services.CreateAsyncScope())
+await using (var scope = app.Services.CreateAsyncScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDBContext>();
-    await dbContext.Database.EnsureCreatedAsync();
+    var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
+    await db.Database.EnsureCreatedAsync();
 }
 
 app.Run();
