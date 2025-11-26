@@ -1,14 +1,13 @@
 ﻿using Application.Email.Builders;
-using Application.Email.Configuration;
-using Application.Email.Constants;
 using Application.Email.Helpers;
 using Application.Services.Interfaces;
+using FeedBackApp.Core.Email;
+using FeedBackApp.Core.Email.Configuration;
+using FeedBackApp.Core.Email.Constants;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.Repositories;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Net.Mail;
 
 namespace Application.Services;
 
@@ -22,18 +21,22 @@ public class EmailService : IEmailService
     private readonly IEmailRepository _emailRepository;
     private readonly IQuestionnaireRepository _questionnaireRepository;
     private readonly IEmailContentBuilder _emailContentBuilder;
+    private readonly IEmailSender _emailSender;
 
     public EmailService(
         ILogger<EmailService> logger,
         IEmailRepository emailRepository,
         IQuestionnaireRepository questionnaireRepository,
-        IEmailContentBuilder emailContentBuilder)
+        IEmailContentBuilder emailContentBuilder,
+        IEmailSender emailSender,
+        EmailConfiguration emailConfig)
     {
-        _emailConfig = EmailConfiguration.FromEnvironment();
+        _emailConfig = emailConfig ?? throw new ArgumentNullException(nameof(emailConfig));
         _logger = logger;
         _emailRepository = emailRepository;
         _questionnaireRepository = questionnaireRepository;
         _emailContentBuilder = emailContentBuilder;
+        _emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
     }
 
     /// <summary>
@@ -69,13 +72,8 @@ public class EmailService : IEmailService
                 return false;
             }
 
-            // Send emails using SMTP (temporary until we implement IEmailSender)
-            using var smtp = new SmtpClient(_emailConfig.SmtpHost, _emailConfig.SmtpPort)
-            {
-                Credentials = new NetworkCredential(_emailConfig.FromAddress, _emailConfig.AppPassword),
-                EnableSsl = true
-            };
-
+            // Send emails using IEmailSender (MailKit implementation)
+            var successCount = 0;
             foreach (var entry in batch)
             {
                 try
@@ -87,19 +85,24 @@ public class EmailService : IEmailService
                         entry.SurveyId,
                         entry.Role);
 
-                    // Convert to MailMessage and send (temporary adapter)
-                    using var mailMessage = MailMessageConverter.ToMailMessage(
-                        emailMessage,
-                        _emailConfig.FromAddress,
-                        _emailConfig.FromName);
-
-                    await smtp.SendMailAsync(mailMessage);
-                    _logger.LogInformation("Sent email to {Email} for survey {SurveyName} (Role: {Role})",
-                                           entry.Email, entry.SurveyName, entry.Role);
+                    // Send email using the email sender implementation
+                    var success = await _emailSender.SendEmailAsync(emailMessage);
+                    
+                    if (success)
+                    {
+                        successCount++;
+                        _logger.LogInformation("Sent email to {Email} for survey {SurveyName} (Role: {Role})",
+                                               entry.Email, entry.SurveyName, entry.Role);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to send email to {Email} for survey {SurveyName} (Role: {Role})",
+                                          entry.Email, entry.SurveyName, entry.Role);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to send email to {Email} for survey {SurveyName}",
+                    _logger.LogError(ex, "Exception while sending email to {Email} for survey {SurveyName}",
                                      entry.Email, entry.SurveyName);
                     // Continue with next email instead of failing entire batch
                 }
@@ -109,8 +112,13 @@ public class EmailService : IEmailService
             EmailBatchProcessor.RemoveSentEmails(doc, batch);
             await _emailRepository.UpdateEmailsDocumentAsync(doc);
 
-            _logger.LogInformation("Successfully processed email batch. Sent {Count} emails", batch.Count);
-            return true;
+            _logger.LogInformation(
+                "Email batch processing completed. Attempted: {Attempted}, Successful: {Successful}, Failed: {Failed}",
+                batch.Count,
+                successCount,
+                batch.Count - successCount);
+            
+            return successCount > 0;
         }
         catch (Exception ex)
         {

@@ -1,6 +1,6 @@
-using Application.Email.Constants;
+using FeedBackApp.Core.Email.Constants;
 
-namespace Application.Email.Configuration;
+namespace FeedBackApp.Core.Email.Configuration;
 
 /// <summary>
 /// Configuration settings for email sending.

@@ -1,4 +1,4 @@
-namespace Application.Email.Constants;
+namespace FeedBackApp.Core.Email.Constants;
 
 /// <summary>
 /// Constants related to email sending configuration and limits.
@@ -25,4 +25,5 @@ public static class EmailConstants
     /// </summary>
     public const string FrontendUrl = "https://witty-beach-0b0c08903.2.azurestaticapps.net";
 }
+
 

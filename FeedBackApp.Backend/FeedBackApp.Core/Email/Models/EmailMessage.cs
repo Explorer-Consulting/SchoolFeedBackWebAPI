@@ -1,4 +1,4 @@
-namespace Application.Email.Models;
+namespace FeedBackApp.Core.Email.Models;
 
 /// <summary>
 /// Represents an email message to be sent.
@@ -51,4 +51,5 @@ public class EmailAttachment
     /// </summary>
     public string ContentType { get; set; } = "application/octet-stream";
 }
+
 

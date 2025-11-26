@@ -2,6 +2,7 @@
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
+using CoreEmail = FeedBackApp.Core.Model.Email;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
@@ -64,9 +65,9 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             }
 
             var emailDoc = await _context.EmailsToSend
-                .FirstOrDefaultAsync(e => e.Id == "emailsToSend");
+                .FirstOrDefaultAsync(e => e.Id == EmailRepositoryConstants.EmailsToSendDocumentId);
 
-            var newEmailEntry = new Email
+            var newEmailEntry = new CoreEmail
             {
                 SurveyId = metadata.Id.ToString(),
                 SurveyName = metadata.Title,
@@ -81,8 +82,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 // First time: create the document
                 emailDoc = new EmailsToSend
                 {
-                    Id = "emailsToSend",
-                    EmailsToSendList = new List<Email> { newEmailEntry }
+                    Id = EmailRepositoryConstants.EmailsToSendDocumentId,
+                    EmailsToSendList = new List<CoreEmail> { newEmailEntry }
                 };
 
                 _context.Add(emailDoc);

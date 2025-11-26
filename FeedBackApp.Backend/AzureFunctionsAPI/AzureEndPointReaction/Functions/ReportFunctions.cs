@@ -206,14 +206,14 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                     "Successfully initiated email compilation for survey {SurveyId}", 
                     surveyId);
 
-                var response = request.CreateResponse(HttpStatusCode.Accepted);
-                await response.WriteAsJsonAsync(new
-                {
+            var response = request.CreateResponse(HttpStatusCode.Accepted);
+            await response.WriteAsJsonAsync(new
+            {
                     surveyId = surveyId.ToString(),
                     status = "Email delivery initiated",
                     message = "Email notifications have been queued for delivery to teachers and administrators."
-                });
-                return response;
+            });
+            return response;
             }
             catch (Exception ex)
             {

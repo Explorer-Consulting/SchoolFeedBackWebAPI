@@ -1,6 +1,6 @@
-using Application.Email.Models;
+using FeedBackApp.Core.Email.Models;
 
-namespace Application.Email.Interfaces;
+namespace FeedBackApp.Core.Email;
 
 /// <summary>
 /// Interface for sending email messages asynchronously.
@@ -16,4 +16,5 @@ public interface IEmailSender
     /// <returns>True if the email was sent successfully, false otherwise.</returns>
     Task<bool> SendEmailAsync(EmailMessage message, CancellationToken cancellationToken = default);
 }
+
 

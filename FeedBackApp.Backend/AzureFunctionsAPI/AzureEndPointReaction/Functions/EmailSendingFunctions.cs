@@ -13,7 +13,9 @@ public sealed class EmailSendingFunctions
     private readonly ILogger<EmailSendingFunctions> _logger;
     private readonly IEmailService _emailService;
 
-    public EmailSendingFunctions(ILogger<EmailSendingFunctions> logger, IEmailService emailService)
+    public EmailSendingFunctions(
+        ILogger<EmailSendingFunctions> logger, 
+        IEmailService emailService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
@@ -70,4 +72,5 @@ public sealed class EmailSendingFunctions
             throw;
         }
     }
+
 }

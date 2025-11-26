@@ -1,7 +1,6 @@
-using Application.Email.Configuration;
-using Application.Email.Constants;
-using Application.Email.Models;
 using Application.Services.Interfaces;
+using FeedBackApp.Core.Email.Constants;
+using FeedBackApp.Core.Email.Models;
 using FeedBackApp.Core.Model.Enum;
 using Microsoft.Extensions.Logging;
 

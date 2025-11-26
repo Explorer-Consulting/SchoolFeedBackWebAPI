@@ -4,6 +4,8 @@ using Application.Email.Builders;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
+using FeedBackApp.Backend.Infrastructure.Email;
+using FeedBackApp.Core.Email;
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
@@ -82,8 +84,15 @@ var host = new HostBuilder()
         services.AddScoped<IReportRepository, ReportRepository>();
 
         // --- Email Services ---
+        // Email configuration: Loaded from environment variables
+        services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
+            _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
+        
         // Email content builder: Creates email messages based on recipient roles (Student, Teacher, Admin)
         services.AddScoped<IEmailContentBuilder, EmailContentBuilder>();
+        
+        // Email sender: MailKit-based SMTP implementation (replaces System.Net.Mail.SmtpClient)
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
         
         // Email service: Orchestrates email batch processing and compilation
         services.AddScoped<IEmailService, EmailService>();

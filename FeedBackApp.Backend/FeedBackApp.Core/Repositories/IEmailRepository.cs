@@ -7,8 +7,8 @@ namespace FeedBackApp.Core.Repositories;
 /// Provides operations to retrieve and update the EmailsToSend document which contains
 /// all pending email notifications queued for delivery.
 /// </summary>
-public interface IEmailRepository
-{
+    public interface IEmailRepository
+    {
     /// <summary>
     /// Retrieves the EmailsToSend document from persistent storage.
     /// </summary>
@@ -20,7 +20,7 @@ public interface IEmailRepository
     /// This method is used by the email service to retrieve pending emails for batch processing.
     /// If no document exists, it indicates there are no emails queued for sending.
     /// </remarks>
-    Task<EmailsToSend?> GetEmailsDocumentAsync();
+        Task<EmailsToSend?> GetEmailsDocumentAsync();
 
     /// <summary>
     /// Updates or creates the EmailsToSend document in persistent storage.
@@ -32,5 +32,5 @@ public interface IEmailRepository
     /// The document ID should be set to the configured constant value.
     /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when doc is null.</exception>
-    Task UpdateEmailsDocumentAsync(EmailsToSend doc);
+        Task UpdateEmailsDocumentAsync(EmailsToSend doc);
 }

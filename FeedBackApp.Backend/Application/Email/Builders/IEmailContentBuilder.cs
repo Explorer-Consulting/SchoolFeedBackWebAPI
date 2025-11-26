@@ -1,4 +1,4 @@
-using Application.Email.Models;
+using FeedBackApp.Core.Email.Models;
 using FeedBackApp.Core.Model.Enum;
 
 namespace Application.Email.Builders;
