@@ -48,6 +48,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
+            
             // encrypting
             modelBuilder.Entity<SurveyMetadata>()
                 .Property(s => s.Title)
@@ -99,11 +100,12 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                         c => JsonConvert.DeserializeObject<IList<QuestionAnswer>>(JsonConvert.SerializeObject(c))!
                     )
                 );
+            
 
-
-            modelBuilder.Entity<StudentWhitelist>()
+            /*modelBuilder.Entity<StudentWhitelist>()
                 .Property(w => w.StudentEmails)
                 .HasConversion(new RecursiveConverter<List<string>>());
+            */
 
             // discriminators
             modelBuilder.Entity<SurveyMetadata>()
