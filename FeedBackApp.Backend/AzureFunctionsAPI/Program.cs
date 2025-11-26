@@ -14,103 +14,135 @@ using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
-using Azure.Identity;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
-var host = new HostBuilder()
-    .ConfigureAppConfiguration((ctx, cfg) =>
+// ─────────────────────────────────────────────────────
+// 1) Modern isolated builder
+// ─────────────────────────────────────────────────────
+var builder = FunctionsApplication.CreateBuilder(args);
+
+builder.Configuration.AddEnvironmentVariables();
+
+// ─────────────────────────────────────────────────────
+// 2) Worker JSON serializer
+// ─────────────────────────────────────────────────────
+builder.Services.Configure<WorkerOptions>(o =>
+{
+    o.Serializer = new JsonObjectSerializer(
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+});
+
+builder.Services
+    .AddApplicationInsightsTelemetryWorkerService()
+    .ConfigureFunctionsApplicationInsights();
+
+// ─────────────────────────────────────────────────────
+// 3) EF Core Cosmos – config közvetlenül local.settings.json-ból
+// ─────────────────────────────────────────────────────
+builder.Services.AddDbContext<AppDBContext>(options =>
+{
+    var endpoint = builder.Configuration["Cosmos:AccountEndpoint"];
+    var key = builder.Configuration["Cosmos:AccountKey"];
+    var db = builder.Configuration["Cosmos:DatabaseName"];
+
+    if (string.IsNullOrWhiteSpace(endpoint) ||
+        string.IsNullOrWhiteSpace(key) ||
+        string.IsNullOrWhiteSpace(db))
     {
-        cfg.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-           .AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json", optional: true)
-           .AddEnvironmentVariables();
-    })
-    .ConfigureServices((ctx, services) =>
-    {
-        services.AddApplicationInsightsTelemetryWorkerService();
+        throw new InvalidOperationException(
+            "Missing Cosmos configuration values. Check local.settings.json.");
+    }
 
-        services.Configure<WorkerOptions>(o =>
-        {
-            o.Serializer = new JsonObjectSerializer(
-                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        });
+    options.UseCosmos(endpoint, key, db);
+});
 
-        // --- EF Core (Cosmos) ---
-        services.AddDbContext<AppDBContext>(options =>
-        {
-            var connectionString = Environment.GetEnvironmentVariable("ConnectionString")
-                ?? throw new InvalidOperationException("ConnectionString environment variable is not set.");
+// ─────────────────────────────────────────────────────
+// 4) Blob Storage – szintén közvetlenül configból, plusz osztály nélkül
+// ─────────────────────────────────────────────────────
+builder.Services.AddSingleton(sp =>
+{
+    var cs = builder.Configuration["ReportStorage:ConnectionString"];
+    if (string.IsNullOrWhiteSpace(cs))
+        throw new InvalidOperationException("Missing ReportStorage:ConnectionString");
 
-            options.UseCosmos(connectionString, databaseName: "SchoolDatabase");
-        });
+    return new BlobServiceClient(cs);
+});
 
-        // --- Blob Storage DI (ÚJ: BlobServiceClient + IBlobContext ---
-        services.AddSingleton(sp =>
-        {
-            var cs = Environment.GetEnvironmentVariable("AZURE_REPORT_BLOB_STORAGE");
-            if (!string.IsNullOrWhiteSpace(cs))
-                return new BlobServiceClient(cs);
+builder.Services.AddSingleton<IBlobContext>(sp =>
+{
+    var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+    var containerName = builder.Configuration["ReportStorage:ContainerName"];
 
-            throw new InvalidOperationException("Set AZURE_REPORT_BLOB_STORAGE.");
-        });
+    if (string.IsNullOrWhiteSpace(containerName))
+        throw new InvalidOperationException("Missing ReportStorage:ContainerName");
 
-        services.AddSingleton<IBlobContext>(sp =>
-        {
-            var svc = sp.GetRequiredService<BlobServiceClient>();
-            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER")
-                ?? throw new InvalidOperationException("AZURE_REPORTS_CONTAINER is not set.");
-            return new BlobContext(svc, containerName); // CreateIfNotExists itt lefut a konstruktorban
-        });
+    return new BlobContext(serviceClient, containerName);
+});
 
-        // --- App services & repos ---
-        services.AddScoped<ISurveyService, SurveyService>();
-        services.AddScoped<IEvaluationService, EvaluationService>();
-        services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
-        services.AddScoped<IEvaluationRepository, EvaluationRepository>();
-        services.AddScoped<IWhitelistRepository, WhitelistRepository>();
-        services.AddScoped<IQuestionnaireService, QuestionnaireService>();
-        services.AddScoped<IEmailService, EmailService>();
-        services.AddScoped<IEmailRepository, EmailRepository>();
+// ─────────────────────────────────────────────────────
+// 5) Services & repositories
+// ─────────────────────────────────────────────────────
+builder.Services.AddScoped<ISurveyService, SurveyService>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IWhitelistRepository, WhitelistRepository>();
+builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
-        // Report réteg – a ReportRepository már IBlobContextet használ
-        services.AddScoped<IReportRepository, ReportRepository>();
-        services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
-        // Functions
-        services.AddScoped<QuestionnaireFunctions>();
-        services.AddScoped<EvaluationFunctions>();
-        services.AddScoped<ReportFunctions>();
+// ─────────────────────────────────────────────────────
+// 6) Functions injection
+// ─────────────────────────────────────────────────────
+builder.Services.AddScoped<QuestionnaireFunctions>();
+builder.Services.AddScoped<EvaluationFunctions>();
+builder.Services.AddScoped<ReportFunctions>();
 
-        // Validators
-        services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
-        services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
-        services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
-        services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
-        services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
-        services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
+// ─────────────────────────────────────────────────────
+// 7) Validators
+// ─────────────────────────────────────────────────────
+builder.Services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
+builder.Services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
+builder.Services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
+builder.Services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
+builder.Services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
+builder.Services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
 
-        // Middleware
-        services.AddSingleton<AdminOnlyMiddleware>();
-        services.AddSingleton<StudentOnlyMiddleware>();
-        services.AddSingleton<MiddlewareSelector>();
-    })
-    .ConfigureFunctionsWebApplication((IFunctionsWorkerApplicationBuilder app) =>
-    {
-        app.UseMiddleware<MiddlewareSelector>();
-    })
-    .Build();
+// ─────────────────────────────────────────────────────
+// 8) Middleware
+// ─────────────────────────────────────────────────────
+builder.Services.AddSingleton<AdminOnlyMiddleware>();
+builder.Services.AddSingleton<StudentOnlyMiddleware>();
+builder.Services.AddSingleton<MiddlewareSelector>();
 
-// Inicializálás: csak DB (BlobContainer létrehozást a BlobContext intézi a konstruktorban)
-using (var scope = host.Services.CreateScope())
+builder.ConfigureFunctionsWebApplication(app =>
+{
+    app.UseMiddleware<MiddlewareSelector>();
+});
+
+// ─────────────────────────────────────────────────────
+// 9) Build, DB init, run
+// ─────────────────────────────────────────────────────
+var app = builder.Build();
+
+using (var scope = app.Services.CreateAsyncScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     await dbContext.Database.EnsureCreatedAsync();
 }
 
-await host.RunAsync();
+app.Run();
