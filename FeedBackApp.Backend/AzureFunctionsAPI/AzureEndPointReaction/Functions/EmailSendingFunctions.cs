@@ -10,7 +10,7 @@ public sealed class EmailSendingFunctions(ILogger<EmailSendingFunctions> logger,
     private readonly IEmailService _emailService = emailService;
 
     [Function("EmailSendingFunctions")]
-    public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
+    public async Task Run([TimerTrigger("* * 32 1 * * *")] TimerInfo myTimer)
     {
         _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
 

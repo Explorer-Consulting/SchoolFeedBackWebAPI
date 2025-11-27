@@ -25,7 +25,7 @@ public class EmailService : IEmailService
     {
         _fromAddress = Environment.GetEnvironmentVariable("Email:FromAddress") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
         _fromName = Environment.GetEnvironmentVariable("Email:FromName") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
-        _appPassword = Environment.GetEnvironmentVariable("Email:FromPassword") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
+        _appPassword = Environment.GetEnvironmentVariable("Email:AppPassword") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
         _logger = logger;
         _emailRepository = emailRepository;
         _questionnaireRepository = questionnaireRepository;
@@ -40,7 +40,6 @@ public class EmailService : IEmailService
             if (doc == null || !doc.EmailsToSendList.Any())
                 return false;
 
-            // clean up expired surveys if any remain
             var expired = doc.EmailsToSendList
                 .Where(s => s.EndDate < DateTime.UtcNow && s.Role == FeedBackApp.Core.Model.Enum.Role.Student)
                 .ToList();
@@ -50,7 +49,7 @@ public class EmailService : IEmailService
                 doc.EmailsToSendList.Remove(survey);
                 _logger.LogInformation("Removed expired survey {SurveyName} ({SurveyId})", survey.SurveyName, survey.SurveyId);
             }
-
+            
             var activeSurveys = doc.EmailsToSendList
                 .Where(s => s.StartDate <= DateTime.UtcNow)
                 .ToList();

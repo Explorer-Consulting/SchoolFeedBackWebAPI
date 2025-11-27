@@ -8,7 +8,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Helpers
     public static class CryptoHelper
     {
         private static readonly byte[] Key = Encoding.UTF8.GetBytes(
-            Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? throw new InvalidOperationException("ENCRYPTION_KEY not set"));
+            Environment.GetEnvironmentVariable("Encryption:Key") ?? throw new InvalidOperationException("ENCRYPTION_KEY not set"));
         private static readonly CipherMode Mode = CipherMode.ECB;
         private static readonly PaddingMode Padding = PaddingMode.PKCS7;
 
