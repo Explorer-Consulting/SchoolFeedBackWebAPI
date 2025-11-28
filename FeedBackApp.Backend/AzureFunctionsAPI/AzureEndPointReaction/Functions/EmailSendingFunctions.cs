@@ -6,28 +6,30 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
 
 public sealed class EmailSendingFunctions(ILogger<EmailSendingFunctions> logger, IEmailService emailService)
 {
-    private readonly ILogger _logger = logger;
-    private readonly IEmailService _emailService = emailService;
 
-    [Function("EmailSendingFunctions")]
-    public async Task Run([TimerTrigger("* * 32 1 * * *")] TimerInfo myTimer)
+    [Function(nameof(EmailSendingFunctions))]
+    public async Task RunAsync([TimerTrigger("%Email:BatchSchedule%")] TimerInfo timer)
     {
-        _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
+        logger.LogInformation("EmailSendingTimer fired at {ExecutionTime}. IsPastDue = {IsPastDue}", DateTimeOffset.UtcNow, timer.IsPastDue);
 
-        if (myTimer.ScheduleStatus is not null)
+        if (timer.ScheduleStatus is not null)
         {
-            _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next);
+            logger.LogInformation("Last: {Last}, Next: {Next}, LastUpdated: {LastUpdated}",
+                timer.ScheduleStatus.Last,
+                timer.ScheduleStatus.Next,
+                timer.ScheduleStatus.LastUpdated);
         }
 
         try
         {
-            await _emailService.SendEmailBatchAsync();
+            await emailService.SendEmailBatchAsync();
 
-            _logger.LogInformation("Email processing finished successfully.");
+            logger.LogInformation("Email processing finished successfully.");
         }
-        catch (Exception ex)
+        catch (Exception ex) // some custom exception would be fain.
         {
-            _logger.LogError(ex, "Error while processing pending emails.");
+            logger.LogError(ex, "Error while processing pending emails.");
+            throw;
         }
     }
 }
