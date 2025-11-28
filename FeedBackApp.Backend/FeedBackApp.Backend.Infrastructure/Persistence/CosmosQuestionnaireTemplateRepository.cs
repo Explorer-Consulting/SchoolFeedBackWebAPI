@@ -14,8 +14,7 @@ namespace Infrastructure.Persistence
     {
         public async Task ConstructAggregateInstanceAsync(Action<QuestionnaireTemplateBuilder> configure)
         {
-            if (configure is null)
-                throw new ArgumentNullException(nameof(configure));
+            ArgumentNullException.ThrowIfNull(configure);
 
             logger.LogInformation("Constructing new QuestionnaireTemplate aggregate...");
 
@@ -40,26 +39,28 @@ namespace Infrastructure.Persistence
 
         public async Task DeleteAggregateAsync(string aggregateId)
         {
-            if (string.IsNullOrWhiteSpace(aggregateId))
-                throw new ArgumentException("Aggregate ID is required.", nameof(aggregateId));
-
-            logger.LogInformation("Attempting to delete aggregate with BusinessID={AggregateId}", aggregateId);
-
-            var aggregate = await context.QuestionnaireTemplates
-                .FirstOrDefaultAsync(t => t.QuestionnaireTemplateBusinessID == aggregateId);
-
-            if (aggregate is null)
+            if (!string.IsNullOrWhiteSpace(aggregateId))
             {
-                logger.LogWarning("Delete aborted: aggregate not found. BusinessID={AggregateId}", aggregateId);
-                return;
+                logger.LogInformation("Attempting to delete aggregate with BusinessID={AggregateId}", aggregateId);
+
+                var aggregate = await context.QuestionnaireTemplates
+                    .FirstOrDefaultAsync(t => t.QuestionnaireTemplateBusinessID == aggregateId);
+
+                if (aggregate is null)
+                {
+                    logger.LogWarning("Delete aborted: aggregate not found. BusinessID={AggregateId}", aggregateId);
+                    return;
+                }
+
+                logger.LogDebug("Removing aggregate BusinessID={AggregateId}", aggregateId);
+
+                context.QuestionnaireTemplates.Remove(aggregate);
+                await context.SaveChangesAsync();
+
+                logger.LogInformation("Deleted aggregate BusinessID={AggregateId}", aggregateId);
             }
-
-            logger.LogDebug("Removing aggregate BusinessID={AggregateId}", aggregateId);
-
-            context.QuestionnaireTemplates.Remove(aggregate);
-            await context.SaveChangesAsync();
-
-            logger.LogInformation("Deleted aggregate BusinessID={AggregateId}", aggregateId);
+            else
+                throw new ArgumentException("Aggregate ID is required.", nameof(aggregateId));
         }
 
         public async Task<QuestionnaireTemplate?> RetrieveAggregateAsync(
@@ -108,26 +109,27 @@ namespace Infrastructure.Persistence
             string aggregateId,
             Action<QuestionnaireTemplate> applyChanges)
         {
-            if (string.IsNullOrWhiteSpace(aggregateId))
+            if (!string.IsNullOrWhiteSpace(aggregateId))
+            {
+                ArgumentNullException.ThrowIfNull(applyChanges);
+
+                logger.LogInformation("Updating aggregate BusinessID={AggregateId}", aggregateId);
+
+                var existing = await context.QuestionnaireTemplates
+                    .FirstOrDefaultAsync(t => t.QuestionnaireTemplateBusinessID == aggregateId)
+                    ?? throw new InvalidOperationException(
+                        $"Aggregate '{aggregateId}' was not found.");
+
+                logger.LogDebug("Applying changes to aggregate BusinessID={AggregateId}", aggregateId);
+
+                applyChanges(existing);
+
+                await context.SaveChangesAsync();
+
+                logger.LogInformation("Successfully updated aggregate BusinessID={AggregateId}", aggregateId);
+            }
+            else
                 throw new ArgumentException("Aggregate ID is required.", nameof(aggregateId));
-
-            if (applyChanges is null)
-                throw new ArgumentNullException(nameof(applyChanges));
-
-            logger.LogInformation("Updating aggregate BusinessID={AggregateId}", aggregateId);
-
-            var existing = await context.QuestionnaireTemplates
-                .FirstOrDefaultAsync(t => t.QuestionnaireTemplateBusinessID == aggregateId)
-                ?? throw new InvalidOperationException(
-                    $"Aggregate '{aggregateId}' was not found.");
-
-            logger.LogDebug("Applying changes to aggregate BusinessID={AggregateId}", aggregateId);
-
-            applyChanges(existing);
-
-            await context.SaveChangesAsync();
-
-            logger.LogInformation("Successfully updated aggregate BusinessID={AggregateId}", aggregateId);
         }
     }
 }

@@ -2,15 +2,17 @@
 using Infrastructure.ConfigurationAttributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Persistence.AggregateConfigurations
 {
     [AggregateConfiguration(ContainerName: "QuestionnaireResponses", Description: "Stores assigned questionnaire results")]
-    public sealed class QuestionnaireResponseStorageConfiguration
-        : IEntityTypeConfiguration<QuestionnaireResponse>
+    public sealed class QuestionnaireResponseStorageConfiguration(ILogger<QuestionnaireResponseStorageConfiguration> logger): IEntityTypeConfiguration<QuestionnaireResponse>
     {
         public void Configure(EntityTypeBuilder<QuestionnaireResponse> builder)
         {
+            logger.LogInformation("Configuring QuestionnaireResponse entity...");
+
             builder.ToContainer("QuestionnaireResponses");
 
             builder.HasKey(r => r.QuestionnaireResponseStorageID);
@@ -35,6 +37,8 @@ namespace Infrastructure.Persistence.AggregateConfigurations
             builder.Property(r => r.Tags);
 
             builder.OwnsMany(r => r.QuestionResponses);
+
+            logger.LogInformation("QuestionnaireResponse entity configured successfully.");
         }
     }
 }
