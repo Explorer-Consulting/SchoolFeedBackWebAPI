@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using ApplicationLayer.Attributes;
+using ApplicationLayer.DataTransferObjects;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
@@ -32,6 +34,8 @@ namespace FunctionsWorkerAPI.StudentFeedbackApplicationWorkers
             HttpStatusCode.NotFound,
             Summary = "Not Found",
             Description = "The specified questionnaire template was not found.")]
+
+        [ValidateRequest(typeof(QuestionnaireTemplateDTO))]
         public async Task<HttpResponseData> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "GET", Route = "v1/questionnaire-templates/{questionnaire-template-id}")]
             HttpRequestData request,
             Guid questionnaireTemplateId)

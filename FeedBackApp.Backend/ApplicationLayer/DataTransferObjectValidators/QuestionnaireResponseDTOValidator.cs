@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ApplicationLayer.DataTransferObjectValidators
 {
-    internal class QuestionnaireResponseDTOValidator
+    public sealed class QuestionnaireResponseDTOValidator
     {
     }
 }

@@ -8,7 +8,7 @@ using ULID = NUlid.Ulid;
 
 namespace Core.DomainModels
 {
-    public sealed class User() : IAggregateProperty
+    public sealed class User : IAggregateProperty
     {
         public required string UserStorageID { get; set; } = default!; // user ID for Cosmos
         public required string BusinessID { get; set; } = default!; // user ID for business logic

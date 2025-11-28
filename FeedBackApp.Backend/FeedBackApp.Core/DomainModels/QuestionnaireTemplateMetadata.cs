@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Core.DomainModels
 {
-    public sealed class QuestionnaireTemplateMetadata() : IAggregateProperty
+    public sealed class QuestionnaireTemplateMetadata : IAggregateProperty
     {
         // Title of the questionnaire template
         public string Title { get; set; } = default!;

@@ -18,6 +18,7 @@ builder.Services.AddDbContext<ApplicationDatabaseContext>(options =>
 builder.Services.AddScoped<IQuestionnaireResponseAggregateRepository, CosmosQuestionnaireResponseRepository>();
 builder.Services.AddScoped<IQuestionnaireTemplateAggregateRepository, CosmosQuestionnaireTemplateRepository>();
 
+
 builder.Services
     .AddApplicationInsightsTelemetryWorkerService()
     .ConfigureFunctionsApplicationInsights();
