@@ -1,39 +1,44 @@
 ﻿using ApplicationLayer.DataTransferObjects;
 using ApplicationLayer.Interfaces;
 using Core.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
 
 namespace ApplicationLayer.Services
 {
-    public sealed class QuestionnaireTemplateService(IQuestionnaireTemplateAggregateRepository aggregateRepository) : IAggregateService<QuestionnaireTemplateDTO>
+    public sealed class QuestionnaireTemplateService(ILogger<QuestionnaireTemplateService> logger, IQuestionnaireTemplateAggregateRepository aggregateRepository) : IAggregateService<QuestionnaireTemplateDTO>
     {
-        public Task ConstructAggreateInstanceAsync(Action<QuestionnaireTemplateDTO> configure)
+        public async Task ConstructAggreateInstanceAsync(Action<QuestionnaireTemplateDTO> configure)
         {
-            aggregateRepository.ConstructAggregateInstance(configure);
+            //validators and other business logic can be added here before constructing the aggregate
+
+            logger.LogInformation("[Service] Constructing a new QuestionnaireTemplate aggregate instance.");
+            await aggregateRepository.ConstructAggregateInstanceAsync(configure);
+            logger.LogInformation("[Service] QuestionnaireTemplate aggregate instance constructed successfully.");
         }
 
-        public Task DeleteAggregateAsync(string aggregateId)
+        public async Task DeleteAggregateAsync(string aggregateId)
         {
-            throw new NotImplementedException();
+            // validators and other business logic can be added here before deleting the aggregate
+            await aggregateRepository.DeleteAggregateAsync(aggregateId);
         }
 
-        public Task<QuestionnaireTemplateDTO?> RetrieveAggregateAsync(System.Linq.Expressions.Expression<Func<QuestionnaireTemplateDTO, bool>> predicate)
+        public async Task<QuestionnaireTemplateDTO?> RetrieveAggregateAsync(Expression<Func<QuestionnaireTemplateDTO, bool>> predicate)
         {
-            throw new NotImplementedException();
+            // validators and other business logic can be added here before retrieving the aggregate
+            await aggregateRepository.RetrieveAggregateAsync(predicate);
         }
 
-        public IAsyncEnumerable<QuestionnaireTemplateDTO> RetrieveAllAggregatesAsync(System.Linq.Expressions.Expression<Func<QuestionnaireTemplateDTO, bool>>? predicate = null)
+        public async IAsyncEnumerable<QuestionnaireTemplateDTO> RetrieveAllAggregatesAsync(Expression<Func<QuestionnaireTemplateDTO, bool>>? predicate = null)
+        // validators and other business logic can be added here before retrieving the aggregates
         {
-            throw new NotImplementedException();
+            await await aggregateRepository.RetrieveAllAggregatesAsync(predicate);
         }
 
-        public Task UpdateAggregateAsync(string aggregateId, Action<QuestionnaireTemplateDTO> configure)
+        public async Task UpdateAggregateAsync(string aggregateId, Action<QuestionnaireTemplateDTO> configure)
         {
-            throw new NotImplementedException();
+            // validators and other business logic can be added here before updating the aggregate
+            await aggregateRepository.UpdateAggregateAsync(aggregateId, configure);
         }
     }
 }
