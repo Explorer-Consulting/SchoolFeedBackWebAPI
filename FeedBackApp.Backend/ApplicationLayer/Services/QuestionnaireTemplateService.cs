@@ -11,7 +11,7 @@ namespace ApplicationLayer.Services
         public async Task ConstructAggreateInstanceAsync(Action<QuestionnaireTemplateDTO> configure)
         {
             //validators and other business logic can be added here before constructing the aggregate
-
+            
             logger.LogInformation("[Service] Constructing a new QuestionnaireTemplate aggregate instance.");
             await aggregateRepository.ConstructAggregateInstanceAsync(configure);
             logger.LogInformation("[Service] QuestionnaireTemplate aggregate instance constructed successfully.");
