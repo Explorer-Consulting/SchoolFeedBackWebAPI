@@ -1,44 +1,107 @@
 ﻿using ApplicationLayer.DataTransferObjects;
 using ApplicationLayer.Interfaces;
+using Core.DomainModels;
 using Core.Interfaces;
+using FluentValidation;
+using Mapster;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
-namespace ApplicationLayer.Services
+namespace ApplicationLayer.Services;
+
+public sealed class QuestionnaireTemplateService(
+    ILogger<QuestionnaireTemplateService> logger,
+    IQuestionnaireTemplateAggregateRepository aggregateRepository,
+    IValidator<QuestionnaireTemplateDTO> validator
+) : IAggregateService<QuestionnaireTemplateDTO, QuestionnaireTemplate>
 {
-    public sealed class QuestionnaireTemplateService(ILogger<QuestionnaireTemplateService> logger, IQuestionnaireTemplateAggregateRepository aggregateRepository) : IAggregateService<QuestionnaireTemplateDTO>
+    public async Task ConstructAggreateInstanceAsync(QuestionnaireTemplateDTO dto)
     {
-        public async Task ConstructAggreateInstanceAsync(Action<QuestionnaireTemplateDTO> configure)
+        logger.LogInformation("Creating QuestionnaireTemplate. Incoming DTO: {@DTO}", dto);
+
+        await validator.ValidateAndThrowAsync(dto);
+
+        var aggregate = dto.Adapt<QuestionnaireTemplate>();
+
+        await aggregateRepository.ConstructAggregateInstanceAsync(aggregate);
+
+        logger.LogInformation(
+            "QuestionnaireTemplate created. BusinessID={BusinessID}",
+            aggregate.QuestionnaireTemplateBusinessID);
+    }
+
+    public Task DeleteAggregateAsync(string aggregateId)
+    {
+        logger.LogInformation(
+            "Deleting QuestionnaireTemplate {BusinessID}",
+            aggregateId);
+
+        return aggregateRepository.DeleteAggregateAsync(aggregateId);
+    }
+
+    public async Task UpdateAggregateAsync(QuestionnaireTemplateDTO dto)
+    {
+        logger.LogInformation(
+            "Updating QuestionnaireTemplate. DTO BusinessID={BusinessID}, DTO={@DTO}",
+            dto.QuestionnaireTemplateBusinessID,
+            dto);
+
+        await validator.ValidateAndThrowAsync(dto);
+
+        var aggregate = dto.Adapt<QuestionnaireTemplate>();
+
+        await aggregateRepository.UpdateAggregateAsync(aggregate);
+
+        logger.LogInformation(
+            "QuestionnaireTemplate {BusinessID} updated.",
+            aggregate.QuestionnaireTemplateBusinessID);
+    }
+
+    public async Task<QuestionnaireTemplateDTO?> RetrieveAggregateAsync(
+        Expression<Func<QuestionnaireTemplate, bool>> predicate)
+    {
+        logger.LogInformation(
+            "Retrieving QuestionnaireTemplate with predicate {Predicate}",
+            predicate);
+
+        var aggregate = await aggregateRepository.RetrieveAggregateAsync(predicate);
+
+        if (aggregate is null)
         {
-            //validators and other business logic can be added here before constructing the aggregate
-            
-            logger.LogInformation("[Service] Constructing a new QuestionnaireTemplate aggregate instance.");
-            await aggregateRepository.ConstructAggregateInstanceAsync(configure);
-            logger.LogInformation("[Service] QuestionnaireTemplate aggregate instance constructed successfully.");
+            logger.LogWarning(
+                "No QuestionnaireTemplate found for predicate {Predicate}",
+                predicate);
+
+            return null;
         }
 
-        public async Task DeleteAggregateAsync(string aggregateId)
+        var dto = aggregate.Adapt<QuestionnaireTemplateDTO>();
+
+        logger.LogInformation(
+            "Retrieved QuestionnaireTemplate. BusinessID={BusinessID}",
+            aggregate.QuestionnaireTemplateBusinessID);
+
+        return dto;
+    }
+
+    public async IAsyncEnumerable<QuestionnaireTemplateDTO> RetrieveAllAggregatesAsync(
+        Expression<Func<QuestionnaireTemplate, bool>>? predicate = null)
+    {
+        logger.LogInformation(
+            "Retrieving all QuestionnaireTemplates. HasPredicate={HasPredicate}",
+            predicate is not null);
+
+        await foreach (var aggregate in aggregateRepository.RetrieveAllAggregatesAsync(predicate))
         {
-            // validators and other business logic can be added here before deleting the aggregate
-            await aggregateRepository.DeleteAggregateAsync(aggregateId);
+            var dto = aggregate.Adapt<QuestionnaireTemplateDTO>();
+
+            logger.LogDebug(
+                "Streaming QuestionnaireTemplate DTO. BusinessID={BusinessID}",
+                dto.QuestionnaireTemplateBusinessID);
+
+            yield return dto;
         }
 
-        public async Task<QuestionnaireTemplateDTO?> RetrieveAggregateAsync(Expression<Func<QuestionnaireTemplateDTO, bool>> predicate)
-        {
-            // validators and other business logic can be added here before retrieving the aggregate
-            await aggregateRepository.RetrieveAggregateAsync(predicate);
-        }
-
-        public async IAsyncEnumerable<QuestionnaireTemplateDTO> RetrieveAllAggregatesAsync(Expression<Func<QuestionnaireTemplateDTO, bool>>? predicate = null)
-        // validators and other business logic can be added here before retrieving the aggregates
-        {
-            await await aggregateRepository.RetrieveAllAggregatesAsync(predicate);
-        }
-
-        public async Task UpdateAggregateAsync(string aggregateId, Action<QuestionnaireTemplateDTO> configure)
-        {
-            // validators and other business logic can be added here before updating the aggregate
-            await aggregateRepository.UpdateAggregateAsync(aggregateId, configure);
-        }
+        logger.LogInformation("Finished streaming QuestionnaireTemplate DTOs.");
     }
 }

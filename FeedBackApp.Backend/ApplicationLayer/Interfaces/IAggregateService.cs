@@ -1,19 +1,23 @@
 ﻿using Core.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ApplicationLayer.Interfaces
+namespace ApplicationLayer.Interfaces;
+
+public interface IAggregateService<TAggregateDTO, TAggregate>
+    where TAggregateDTO : class, IAggregateDTORoot
+    where TAggregate : class, IAggregateRoot
 {
-    public interface IAggregateService<TAggregateDTO> where TAggregateDTO : class, IAggregateDTORoot
-    {
-        Task ConstructAggreateInstanceAsync(Action<TAggregateDTO> configure);
-        Task DeleteAggregateAsync(string aggregateId);
-        Task UpdateAggregateAsync(string aggregateId, Action<TAggregateDTO> configure);
-        Task<TAggregateDTO?> RetrieveAggregateAsync(Expression<Func<TAggregateDTO, bool>> predicate);
-        IAsyncEnumerable<TAggregateDTO> RetrieveAllAggregatesAsync(Expression<Func<TAggregateDTO, bool>>? predicate = null);
-    }
+    Task ConstructAggreateInstanceAsync(TAggregateDTO dto);
+
+    Task DeleteAggregateAsync(string aggregateId);
+
+    Task UpdateAggregateAsync(TAggregateDTO dto);
+
+    Task<TAggregateDTO?> RetrieveAggregateAsync(
+        Expression<Func<TAggregate, bool>> predicate);
+
+    IAsyncEnumerable<TAggregateDTO> RetrieveAllAggregatesAsync(
+        Expression<Func<TAggregate, bool>>? predicate = null);
 }

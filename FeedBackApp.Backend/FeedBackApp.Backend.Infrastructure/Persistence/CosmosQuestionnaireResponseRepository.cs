@@ -1,10 +1,8 @@
 ﻿using Core.DomainModels;
-using Core.DomainModels.Builders;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -25,37 +23,28 @@ namespace Infrastructure.Persistence
     ) : IQuestionnaireResponseAggregateRepository
     {
         /// <summary>
-        /// Constructs and persists a new <see cref="QuestionnaireResponse"/> aggregate using a builder.
+        /// Persists a new <see cref="QuestionnaireResponse"/> aggregate instance.
         /// </summary>
-        /// <param name="configure">
-        /// A delegate that configures the <see cref="QuestionnaireResponseBuilder"/> instance
-        /// before the aggregate is built and saved.
+        /// <param name="aggregate">
+        /// The <see cref="QuestionnaireResponse"/> aggregate to be saved. Cannot be <see langword="null"/>.
         /// </param>
         /// <returns>
         /// A task that represents the asynchronous operation.
         /// </returns>
         /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="configure"/> is <see langword="null"/>.
+        /// Thrown when <paramref name="aggregate"/> is <see langword="null"/>.
         /// </exception>
-        public async Task ConstructAggregateInstanceAsync(
-            Action<QuestionnaireResponseBuilder> configure)
+        public async Task ConstructAggregateInstanceAsync(QuestionnaireResponse aggregate)
         {
-            ArgumentNullException.ThrowIfNull(configure);
-
-            logger.LogInformation("Constructing new QuestionnaireResponse aggregate...");
-
-            var builder = new QuestionnaireResponseBuilder();
-            configure(builder);
-
-            logger.LogDebug("Building QuestionnaireResponse aggregate instance...");
-            var aggregate = await builder.BuildAggregateAsync();
+            ArgumentNullException.ThrowIfNull(aggregate);
 
             using var scope = logger.BeginScope(
                 "QuestionnaireResponse {BusinessID} / Template {TemplateBusinessID}",
                 aggregate.QuestionnaireResponseBusinessID,
                 aggregate.QuestionnaireTemplateBusinessID);
 
-            logger.LogInformation("Saving QuestionnaireResponse aggregate...");
+            logger.LogInformation("Persisting new QuestionnaireResponse aggregate...");
+
             await context.QuestionnaireResponses.AddAsync(aggregate);
             await context.SaveChangesAsync();
 
@@ -144,7 +133,9 @@ namespace Infrastructure.Persistence
         public IAsyncEnumerable<QuestionnaireResponse> RetrieveAllAggregatesAsync(
             Expression<Func<QuestionnaireResponse, bool>>? predicate = null)
         {
-            IQueryable<QuestionnaireResponse> query = context.QuestionnaireResponses.AsNoTracking();
+            IQueryable<QuestionnaireResponse> query = context
+                .QuestionnaireResponses
+                .AsNoTracking();
 
             if (predicate is not null)
             {
@@ -155,63 +146,36 @@ namespace Infrastructure.Persistence
         }
 
         /// <summary>
-        /// Updates an existing <see cref="QuestionnaireResponse"/> aggregate specified by its business ID.
+        /// Updates an existing <see cref="QuestionnaireResponse"/> aggregate.
         /// </summary>
-        /// <param name="aggregateId">
-        /// The business identifier of the aggregate to update. Cannot be <see langword="null"/>,
-        /// empty, or consist only of white-space characters.
-        /// </param>
-        /// <param name="configure">
-        /// A delegate that applies domain-level mutations to the retrieved aggregate instance.
+        /// <param name="aggregate">
+        /// The modified <see cref="QuestionnaireResponse"/> aggregate instance to persist.
         /// Cannot be <see langword="null"/>.
         /// </param>
         /// <returns>
         /// A task that represents the asynchronous update operation.
         /// </returns>
-        /// <remarks>
-        /// If an aggregate with the specified <paramref name="aggregateId"/> does not exist,
-        /// the method logs a warning and returns without applying any changes.
-        /// </remarks>
-        /// <exception cref="ArgumentException">
-        /// Thrown when <paramref name="aggregateId"/> is <see langword="null"/>, empty,
-        /// or consists only of white-space characters.
-        /// </exception>
         /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="configure"/> is <see langword="null"/>.
+        /// Thrown when <paramref name="aggregate"/> is <see langword="null"/>.
         /// </exception>
-        public async Task UpdateAggregateAsync(
-            string aggregateId,
-            Action<QuestionnaireResponse> configure)
+        public async Task UpdateAggregateAsync(QuestionnaireResponse aggregate)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(aggregateId);
-            ArgumentNullException.ThrowIfNull(configure);
-
-            logger.LogInformation(
-                "Updating QuestionnaireResponse with BusinessID={BusinessID}",
-                aggregateId);
-
-            var entity = await context.QuestionnaireResponses
-                .FirstOrDefaultAsync(r => r.QuestionnaireResponseBusinessID == aggregateId);
-
-            if (entity is null)
-            {
-                logger.LogWarning(
-                    "QuestionnaireResponse with BusinessID={BusinessID} not found. Update aborted.",
-                    aggregateId);
-                return;
-            }
+            ArgumentNullException.ThrowIfNull(aggregate);
 
             using var scope = logger.BeginScope(
                 "Updating QuestionnaireResponse {BusinessID}",
-                entity.QuestionnaireResponseBusinessID);
+                aggregate.QuestionnaireResponseBusinessID);
 
-            configure(entity);
+            logger.LogInformation(
+                "Updating QuestionnaireResponse with BusinessID={BusinessID}",
+                aggregate.QuestionnaireResponseBusinessID);
 
+            context.QuestionnaireResponses.Update(aggregate);
             await context.SaveChangesAsync();
 
             logger.LogInformation(
                 "QuestionnaireResponse with BusinessID={BusinessID} successfully updated.",
-                aggregateId);
+                aggregate.QuestionnaireResponseBusinessID);
         }
     }
 }
