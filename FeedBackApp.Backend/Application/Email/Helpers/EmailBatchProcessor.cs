@@ -10,9 +10,14 @@ namespace Application.Email.Helpers;
 /// </summary>
 public static class EmailBatchProcessor
 {
+
     /// <summary>
     /// Cleans up expired student surveys from the email document.
     /// </summary>
+    /// 
+    /*======================================================================================
+     I don't get the logic between the function's name and its implementation.
+     =======================================================================================*/
     public static void RemoveExpiredSurveys(EmailsToSend emailDocument, DateTime currentTime)
     {
         var expired = emailDocument.EmailsToSendList
@@ -28,6 +33,10 @@ public static class EmailBatchProcessor
     /// <summary>
     /// Gets active surveys that are ready to send.
     /// </summary>
+    /// 
+    /*
+     same shit here, the function name doesn't match its implementation
+     */
     public static List<CoreEmail> GetActiveSurveys(EmailsToSend emailDocument, DateTime currentTime)
     {
         return emailDocument.EmailsToSendList
@@ -73,5 +82,9 @@ public static class EmailBatchProcessor
             }
         }
     }
+
+    /*
+     Think about this class's responsibility again. It looks like a service not a helper, and there is some functions about which I have no idea why they are here.
+     */
 }
 

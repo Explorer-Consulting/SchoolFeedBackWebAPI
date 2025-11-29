@@ -9,6 +9,16 @@ namespace Application.Email.Helpers;
 /// </summary>
 public static class EmailCompilationHelper
 {
+    /*
+     ====================================================================
+     This is not a helper again. It is more like a service
+     I don't see any purpose of seperate implementations for teacher and admin email creations. I mean, why would u use two seperate functions for that?
+
+     Just a suggestion: You can try creating a generic type or just two type for an email message and one function.
+     U decide about the implementation
+     Or one tyepe with a recipient property.
+     ====================================================================
+     */
     /// <summary>
     /// Creates an Email entity for teachers from survey metadata.
     /// </summary>

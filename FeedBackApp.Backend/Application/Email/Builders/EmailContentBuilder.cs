@@ -9,6 +9,11 @@ namespace Application.Email.Builders;
 /// <summary>
 /// Builds email content for different recipient roles (Student, Teacher, Admin).
 /// </summary>
+/// 
+/*
+The name of the class is *Builder. The "Builder" suggests something more like a design pattern implementation, but this class has no business with that pattern. Try a factory or something else, but factory can be also an overkill, if it is overcomplicated.
+ 
+ */
 public class EmailContentBuilder : IEmailContentBuilder
 {
     private readonly IReportService _reportService;

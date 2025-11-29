@@ -14,6 +14,12 @@ namespace FeedBackApp.Backend.Infrastructure.Email;
 /// </summary>
 public sealed class SmtpEmailSender : IEmailSender
 {
+
+    /*
+     =====================================================================================================
+     use primary constructor and properties.
+     =====================================================================================================
+     */
     private readonly EmailConfiguration _configuration;
     private readonly ILogger<SmtpEmailSender> _logger;
 
@@ -37,7 +43,13 @@ public sealed class SmtpEmailSender : IEmailSender
     /// <returns>True if the email was sent successfully, false otherwise.</returns>
     public async Task<bool> SendEmailAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
-        if (message == null)
+
+        /*
+         ======================================================================================================
+         It is a good practice for ChatGPT to add CancellationToken for function parameters. It is not bad but in this case it's unnecessary, and not handled properly.
+        ======================================================================================================
+         */
+        if (message == null) /*=============== use gurads for simple null checks =============================*/
         {
             _logger.LogError("Cannot send email: message is null");
             return false;
@@ -119,6 +131,11 @@ public sealed class SmtpEmailSender : IEmailSender
             return false;
         }
     }
+    /*
+     ======================================================================================================
+    U return from the catch blocks but u do not handle the possible exceptions.
+     ======================================================================================================
+     */
 
     /// <summary>
     /// Creates a MimeMessage from an EmailMessage.
@@ -138,7 +155,7 @@ public sealed class SmtpEmailSender : IEmailSender
         
         // Body
         var bodyBuilder = new BodyBuilder();
-        if (message.IsHtml)
+        if (message.IsHtml) 
         {
             bodyBuilder.HtmlBody = message.Body;
         }
@@ -154,6 +171,7 @@ public sealed class SmtpEmailSender : IEmailSender
             {
                 var contentType = ContentType.Parse(attachment.ContentType);
                 bodyBuilder.Attachments.Add(attachment.FileName, attachment.Data, contentType);
+                /*we will not use files like attachments, we will send links with time*/
             }
         }
         

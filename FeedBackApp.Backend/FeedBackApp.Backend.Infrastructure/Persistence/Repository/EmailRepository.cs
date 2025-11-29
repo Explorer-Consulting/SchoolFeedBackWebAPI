@@ -16,6 +16,11 @@ public sealed class EmailRepository : IEmailRepository
         private readonly AppDBContext _context;
     private readonly ILogger<EmailRepository>? _logger;
 
+    /*
+     ====================================================================================================
+    1. Use primary constructor and property initialization where possible.
+     ====================================================================================================
+     */
     /// <summary>
     /// Initializes a new instance of the EmailRepository.
     /// </summary>
@@ -110,6 +115,9 @@ public sealed class EmailRepository : IEmailRepository
         }
         catch (DbUpdateConcurrencyException ex)
         {
+            /*   
+             Where u used optimistic cocurrency control, this exception is thrown when a concurrency conflict occurs.
+             */
             _logger?.LogError(
                 ex,
                 "Concurrency conflict while updating EmailsToSend document with ID: {DocumentId}. The document may have been modified by another process.",
@@ -134,5 +142,11 @@ public sealed class EmailRepository : IEmailRepository
                 ex.Message);
             throw;
         }
+
+        /*
+         =====================================================================================================
+            If no custom exception types are defined there is no point in throwing, it just throws the base exception.
+         =====================================================================================================
+         */
     }
 }

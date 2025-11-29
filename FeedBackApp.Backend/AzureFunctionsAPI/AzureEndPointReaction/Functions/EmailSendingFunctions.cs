@@ -34,7 +34,7 @@ public sealed class EmailSendingFunctions
             "Email batch processing function triggered at: {ExecutionTime} (UTC)", 
             executionTime);
 
-        if (myTimer.ScheduleStatus is not null)
+        if (myTimer.ScheduleStatus is not null) 
         {
             _logger.LogInformation(
                 "Next scheduled execution: {NextSchedule} (UTC)", 
@@ -70,6 +70,13 @@ public sealed class EmailSendingFunctions
             
             // Re-throw to ensure Azure Functions marks the execution as failed
             throw;
+            /*
+             Do not throw any exception inside an azure function. We usually use self-written wrapper classes like Result<T> or more frequently we use a packege for that like FluentResults. 
+             From this wrapper we can build the proper response body with the status code and futher information if needed.
+             Never use raw Ecxeption!.
+             Do not bother yourself with this for the time being, but keep in mind for the future.
+             
+             */
         }
     }
 
