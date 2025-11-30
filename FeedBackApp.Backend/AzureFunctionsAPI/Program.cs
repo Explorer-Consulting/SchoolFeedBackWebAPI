@@ -132,13 +132,6 @@ builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 // ─────────────────────────────────────────────────────
-// 7) Functions injection (DI-s function class-ok)
-// ─────────────────────────────────────────────────────
-builder.Services.AddScoped<QuestionnaireFunctions>();
-builder.Services.AddScoped<EvaluationFunctions>();
-builder.Services.AddScoped<ReportFunctions>();
-
-// ─────────────────────────────────────────────────────
 // 8) Validators
 // ─────────────────────────────────────────────────────
 builder.Services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
