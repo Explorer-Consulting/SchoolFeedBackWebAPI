@@ -10,7 +10,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware.Utils
     {
         private static ClaimsPrincipal? ValidateToken(string token)
         {
-            var secretKey = Environment.GetEnvironmentVariable("JwtSecretKey");
+            var secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey");
             if (string.IsNullOrEmpty(secretKey))
                 return null;
 

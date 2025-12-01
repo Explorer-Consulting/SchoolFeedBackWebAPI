@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
 {
-    public class AppDBContext : DbContext
+    public class AppDBContext(DbContextOptions<AppDBContext> options) : DbContext(options)
     {
         public DbSet<SurveyMetadata> Surveys { get; set; }
         public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -13,12 +13,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
         public DbSet<EmailsToSend> EmailsToSend { get; set; }
         public DbSet<StudentWhitelist> StudentWhitelist { get; set; }
 
-        private readonly string _containerName;
-        public AppDBContext(DbContextOptions<AppDBContext> options) : base(options)
-        {
-            _containerName = Environment.GetEnvironmentVariable("COSMOS_CONTAINER_NAME")
-                ?? throw new InvalidOperationException("COSMOS_CONTAINER_NAME not set in environment variables");
-        }
+        private readonly string _containerName = Environment.GetEnvironmentVariable("Cosmos:ContainerName")
+                ?? throw new InvalidOperationException("Cosmos ContainerName not set in environment variables");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,6 +48,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                 .HasPartitionKey(q => q.Id)
                 .HasKey(e => e.Id);
 
+            
             // encrypting
             modelBuilder.Entity<SurveyMetadata>()
                 .Property(s => s.Title)
@@ -103,11 +100,12 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                         c => JsonConvert.DeserializeObject<IList<QuestionAnswer>>(JsonConvert.SerializeObject(c))!
                     )
                 );
+            
 
-
-            modelBuilder.Entity<StudentWhitelist>()
+            /*modelBuilder.Entity<StudentWhitelist>()
                 .Property(w => w.StudentEmails)
                 .HasConversion(new RecursiveConverter<List<string>>());
+            */
 
             // discriminators
             modelBuilder.Entity<SurveyMetadata>()

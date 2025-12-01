@@ -19,13 +19,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var setById = metadata.StudentSets.ToDictionary(s => s.SetId);
             var template = metadata.QuestionTemplates;
 
-            QuestionnaireTemplate tempForSave = new QuestionnaireTemplate(metadata.Id.ToString(),metadata.Title, template);
+            QuestionnaireTemplate tempForSave =
+                new QuestionnaireTemplate(metadata.Id.ToString(), metadata.Title, template);
 
             _context.Add(metadata);
             _context.Add(tempForSave);
 
             var questionnaires = new List<Questionnaire>();
             var allEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            var questionnaireIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var param in metadata.CreationParams)
             {
@@ -37,9 +40,15 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     foreach (var studentEmail in set.StudentEmails)
                     {
                         allEmails.Add(studentEmail);
+
+                        var qId = $"{studentEmail}_{param.TeacherEmail}_{param.SubjectName}_{metadata.Id}";
+
+                        if (!questionnaireIds.Add(qId))
+                            continue;
+
                         var q = new Questionnaire
                         {
-                            Id = $"{studentEmail}_{param.TeacherEmail}_{param.SubjectName}_{metadata.Id}",
+                            Id = qId,
                             SurveyId = metadata.Id.ToString(),
                             TeacherEmail = param.TeacherEmail,
                             StudentEmail = studentEmail,
@@ -78,7 +87,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             if (emailDoc == null)
             {
-                // First time: create the document
                 emailDoc = new EmailsToSend
                 {
                     Id = "emailsToSend",
@@ -93,9 +101,9 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 _context.Update(emailDoc);
             }
 
-
             await _context.SaveChangesAsync();
         }
+
 
         public async Task<bool> DeleteQuestionnairesBySurveyIdAsync(Guid surveyId)
         {
