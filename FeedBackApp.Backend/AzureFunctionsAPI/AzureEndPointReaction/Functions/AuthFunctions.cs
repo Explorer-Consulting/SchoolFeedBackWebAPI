@@ -102,6 +102,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </list>
         /// </returns>
         [Function("LoginWithGoogle")]
+        [OpenApiOperation(operationId: "LoginWithGoogle", tags: ["Auth"])]
         public async Task<HttpResponseData> LoginWithGoogle(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {
@@ -153,7 +154,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                     data.IdToken,
                     new GoogleJsonWebSignature.ValidationSettings
                     {
-                        Audience = new[] { Environment.GetEnvironmentVariable("GoogleClientId") }
+                    Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
                     });
 
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
@@ -234,7 +235,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <exception cref="InvalidOperationException">Thrown when <c>JwtSecretKey</c> is not configured.</exception>
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey")
+            string secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."));
                 ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));

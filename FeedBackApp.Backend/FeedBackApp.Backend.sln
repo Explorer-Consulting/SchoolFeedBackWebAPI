@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+VisualStudioVersion = 18.0.11217.181 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Backend.Infrastructure", "FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj", "{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureFunctionsAPI", "AzureFunctionsAPI\AzureFunctionsAPI.csproj", "{510C8633-3AA1-4589-AC43-CD5DA17EA30E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApplicationEventWorkers", "AzureFunctionsAPI\ApplicationEventWorkers.csproj", "{510C8633-3AA1-4589-AC43-CD5DA17EA30E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}"
 EndProject

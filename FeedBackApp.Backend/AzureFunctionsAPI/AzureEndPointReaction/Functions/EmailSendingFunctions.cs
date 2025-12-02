@@ -54,11 +54,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
     /// <param name="emailService">Application email service responsible for batching and sending messages.</param>
     public sealed class EmailSendingFunctions(ILogger<EmailSendingFunctions> logger, IEmailService emailService)
     {
-        private readonly ILogger _logger = logger;
-        private readonly IEmailService _emailService = emailService;
 
-        /// <summary>
-        /// Executes the daily batch email sending workflow on a timer schedule.
+    [Function(nameof(EmailSendingFunctions))]
+    public async Task RunAsync([TimerTrigger("%Email:BatchSchedule%")] TimerInfo timer)
         /// </summary>
         /// <remarks>
         /// The function writes informational logs for the execution timestamp and the next scheduled run (if available),
@@ -68,24 +66,26 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <param name="myTimer">
         /// Timer metadata including last, next, and current schedule information as supplied by the Azure Functions host.
         /// </param>
-        [Function("EmailSendingFunctions")]
-        public async Task Run([TimerTrigger("0 0 0 * * *")] TimerInfo myTimer)
         {
-            _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
+        logger.LogInformation("EmailSendingTimer fired at {ExecutionTime}. IsPastDue = {IsPastDue}", DateTimeOffset.UtcNow, timer.IsPastDue);
 
-            if (myTimer.ScheduleStatus is not null)
+        if (timer.ScheduleStatus is not null)
             {
-                _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next);
+            logger.LogInformation("Last: {Last}, Next: {Next}, LastUpdated: {LastUpdated}",
+                timer.ScheduleStatus.Last,
+                timer.ScheduleStatus.Next,
+                timer.ScheduleStatus.LastUpdated);
             }
 
             try
             {
-                await _emailService.SendEmailBatchAsync();
-                _logger.LogInformation("Email processing finished successfully.");
+            await emailService.SendEmailBatchAsync();
+            logger.LogInformation("Email processing finished successfully.");
             }
-            catch (Exception ex)
+        catch (Exception ex) // some custom exception would be fain.
             {
-                _logger.LogError(ex, "Error while processing pending emails.");
+            logger.LogError(ex, "Error while processing pending emails.");
+            throw;
             }
         }
     }

@@ -87,9 +87,9 @@ namespace Application.Services
             IQuestionnaireRepository questionnaireRepository,
             IReportService reportService)
         {
-            _fromAddress = Environment.GetEnvironmentVariable("EMAIL_FROM_ADDRESS") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
-            _fromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
-            _appPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
+        _fromAddress = Environment.GetEnvironmentVariable("Email:FromAddress") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
+        _fromName = Environment.GetEnvironmentVariable("Email:FromName") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
+        _appPassword = Environment.GetEnvironmentVariable("Email:AppPassword") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
             _logger = logger;
             _emailRepository = emailRepository;
             _questionnaireRepository = questionnaireRepository;
@@ -122,7 +122,6 @@ namespace Application.Services
                 if (doc == null || !doc.EmailsToSendList.Any())
                     return false;
 
-                // Remove expired student invitations.
                 var expired = doc.EmailsToSendList
                     .Where(s => s.EndDate < DateTime.UtcNow && s.Role == FeedBackApp.Core.Model.Enum.Role.Student)
                     .ToList();
@@ -132,7 +131,7 @@ namespace Application.Services
                     doc.EmailsToSendList.Remove(survey);
                     _logger.LogInformation("Removed expired survey {SurveyName} ({SurveyId})", survey.SurveyName, survey.SurveyId);
                 }
-
+            
                 var activeSurveys = doc.EmailsToSendList
                     .Where(s => s.StartDate <= DateTime.UtcNow)
                     .ToList();
