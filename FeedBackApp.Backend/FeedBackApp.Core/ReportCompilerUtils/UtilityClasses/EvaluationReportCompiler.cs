@@ -121,22 +121,27 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// <summary>
         /// Collects multiple-choice responses (multiple indices encoded in a single field, separated by hyphens).
         /// </summary>
-        private static ImmutableArray<int> CollectMultipleChoiceData(
+        private static ImmutableArray<ImmutableArray<int>> CollectMultipleChoiceData(
             string id,
             IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var buf = new List<int>(list.Length * 3);
+            var builder = ImmutableArray.CreateBuilder<ImmutableArray<int>>();
+
             foreach (var a in list)
             {
                 if (string.IsNullOrWhiteSpace(a.Answer)) continue;
+
+                var options = ImmutableArray.CreateBuilder<int>();
                 foreach (var token in a.Answer.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     if (int.TryParse(token, out var v))
-                        buf.Add(v);
+                        options.Add(v);
+
+                builder.Add(options.ToImmutable());
             }
-            return [.. buf];
+            return [.. builder];
         }
 
         /// <summary>

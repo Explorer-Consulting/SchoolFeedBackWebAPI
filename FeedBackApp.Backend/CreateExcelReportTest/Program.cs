@@ -67,6 +67,16 @@ var questions = ImmutableArray.Create(
         Type = QuestionType.OpenEnded,
         Description = "Írd le mi véleményed őszintén"
     }
+    ,
+     new QuestionTemplate
+     {
+         Id = "q5",
+         Question = "Mit nem javítanál az órán?",
+         Category = "Visszajelzés",
+         AnswerOptions = new List<string>(),
+         Type = QuestionType.OpenEnded,
+         Description = "Írd le mi véleményed őszintén"
+     }
 );
 
 var answers = ImmutableArray.Create(
@@ -87,6 +97,7 @@ var answers = ImmutableArray.Create(
     new QuestionAnswer { QuestionId = "q2", Answer = "3" },
     new QuestionAnswer { QuestionId = "q2", Answer = "4" }, 
     new QuestionAnswer { QuestionId = "q2", Answer = "Rajzolni" },
+    new QuestionAnswer { QuestionId = "q2", Answer = "Futni" },
 
     new QuestionAnswer { QuestionId = "q3", Answer = "1" },
     new QuestionAnswer { QuestionId = "q3", Answer = "2" },
@@ -97,7 +108,11 @@ var answers = ImmutableArray.Create(
 
     new QuestionAnswer { QuestionId = "q4", Answer = "Több példát kellene hozni" },
     new QuestionAnswer { QuestionId = "q4", Answer = "Interaktívabb órák" },
-    new QuestionAnswer { QuestionId = "q4", Answer = "Kevesebb házi feladat" }
+    new QuestionAnswer { QuestionId = "q4", Answer = "Kevesebb házi feladat" },
+
+     new QuestionAnswer { QuestionId = "q5", Answer = "kevesebb példát kellene hozni" },
+    new QuestionAnswer { QuestionId = "q5", Answer = "Interaktívabb órák" },
+    new QuestionAnswer { QuestionId = "q5", Answer = "több házi feladat" }
     );
 // creating metadata
 var metadata = new ReportMetadata

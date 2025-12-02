@@ -15,7 +15,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     public sealed class MultipleChoiceEvaluationData(
         string questionStatement,
         ImmutableArray<string> answerOptions,
-        ImmutableArray<int> answers
+        ImmutableArray<ImmutableArray<int>> answers
     ) : EvaluationData
     {
         #region Inputs
@@ -36,7 +36,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// Each element represents the index of a selected option in the <see cref="AnswerOptions"/> array.
         /// </para>
         /// </summary>
-        public ImmutableArray<int> Answers { get; init; } = answers;
+        public ImmutableArray<ImmutableArray<int>> Answers { get; init; } = answers;
 
         #endregion
 
@@ -68,8 +68,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// </summary>
         public override EvaluationData EvaluateData()
         {
+            // Flatten the 2D array to calculate frequencies
+            var flattenedAnswers = Answers.SelectMany(respondent => respondent).ToImmutableArray();
+
             // 1) Absolute frequency (option name → count)
-            Frequencies = CalculateFrequency(AnswerOptions, Answers);
+            Frequencies = CalculateFrequency(AnswerOptions, flattenedAnswers);
 
             // 2) Relative frequency (%) – based on total count
             RelativeFrequenciesPercent = CalculateRelativeFrequencyPercent(Frequencies);

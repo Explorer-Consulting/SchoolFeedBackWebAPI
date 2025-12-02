@@ -2,7 +2,6 @@
 using Google.Apis.Auth;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -103,7 +102,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </list>
         /// </returns>
         [Function("LoginWithGoogle")]
+<<<<<<< HEAD
+=======
         [OpenApiOperation(operationId: "LoginWithGoogle", tags: ["Auth"])]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]
+>>>>>>> develop
         public async Task<HttpResponseData> LoginWithGoogle(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {
@@ -151,13 +154,20 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             GoogleJsonWebSignature.Payload payload;
             try
             {
+<<<<<<< HEAD
                 payload = await GoogleJsonWebSignature.ValidateAsync(
                     data.IdToken,
                     new GoogleJsonWebSignature.ValidationSettings
                     {
-                    Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                        Audience = new[] { Environment.GetEnvironmentVariable("GoogleClientId") }
                     });
 
+=======
+                payload = await GoogleJsonWebSignature.ValidateAsync(data.IdToken, new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                });
+>>>>>>> develop
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
             }
             catch (Exception ex)
@@ -236,9 +246,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <exception cref="InvalidOperationException">Thrown when <c>JwtSecretKey</c> is not configured.</exception>
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."))
+<<<<<<< HEAD
+            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey")
                 ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
 
+=======
+            string secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."));
+>>>>>>> develop
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
