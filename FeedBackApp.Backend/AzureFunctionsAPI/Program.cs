@@ -2,6 +2,7 @@
 using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
+using Application.Validation.Configuration;
 using Application.Validation.CreateValidation;
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
@@ -132,14 +133,20 @@ builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 // ─────────────────────────────────────────────────────
-// 8) Validators
+// 7) FluentValidation Configuration
 // ─────────────────────────────────────────────────────
-builder.Services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
-builder.Services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
-builder.Services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
-builder.Services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
-builder.Services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
-builder.Services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
+// Automatically discovers and registers all validators from the Application assembly
+builder.Services.AddFluentValidation();
+
+// Note: Manual validator registration is no longer needed as validators are auto-discovered.
+// The following validators are automatically registered:
+// - CreateSurveyMetadataValidator
+// - MetaTeacherValidator
+// - QuestionnaireCreationParamValidator
+// - QuestionnaireValidator
+// - QuestionTemplateValidator
+// - StudentSetValidator
+// - All other validators implementing IValidator<T>
 
 
 builder.Services.AddSingleton<AdminOnlyMiddleware>();
