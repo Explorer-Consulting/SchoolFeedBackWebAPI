@@ -1,25 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GIMI Anonymous Student Feedback</title>
-    <meta name="description" content="Secure, anonymous student feedback for teachers at GIMI. Role-based dashboards for students, teachers, admins, and management." />
-    <meta name="author" content="GIMI" />
-    <link rel="canonical" href="/" />
 
-    <meta property="og:title" content="GIMI Anonymous Student Feedback" />
-    <meta property="og:description" content="Collect and analyze anonymous student feedback with role-based access and secure reports." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GIMI Anonymous Student Feedback</title>
+  <meta name="description"
+    content="Secure, anonymous student feedback for teachers at GIMI. Role-based dashboards for students, teachers, admins, and management." />
+  <meta name="author" content="GIMI" />
+  <link rel="canonical" href="/" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+  <meta property="og:title" content="GIMI Anonymous Student Feedback" />
+  <meta property="og:description"
+    content="Collect and analyze anonymous student feedback with role-based access and secure reports." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@lovable_dev" />
+  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '1901571744049424', //ide kell a sajatom mikor majd menni fog
+        cookie: true,
+        xfbml: true,
+        version: 'v16.0'
+      });
+      FB.AppEvents.logPageView();
+    };
+  </script>
+</body>
+
 </html>

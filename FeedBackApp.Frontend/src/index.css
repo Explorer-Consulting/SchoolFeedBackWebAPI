@@ -109,3 +109,17 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .btn-social.facebook {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg w-full text-center;
+  }
+
+  .btn-social.microsoft {
+    @apply bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg w-full text-center;
+  }
+
+  .btn-social.linkedin {
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg w-full text-center;
+  }
+}

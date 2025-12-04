@@ -23,7 +23,124 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             _whitelistRepository = whitelistRepository;
         }
 
-        [Function("LoginWithGoogle")]
+        //
+        [Function ( "LoginWithFacebook" )]
+        [OpenApiOperation ( operationId: "LoginWithFacebook", tags: new[] { "Auth" } )]
+        [OpenApiRequestBody ( contentType: "application/json", bodyType: typeof ( FacebookLoginRequest ), Required = true, Description = "Facebook Access Token payload" )]
+        public async Task<HttpResponseData> LoginWithFacebook (
+    [HttpTrigger ( AuthorizationLevel.Anonymous, "post", "options", Route = "auth/facebook" )] HttpRequestData req )
+            {
+            _logger.LogInformation ( "LoginWithFacebook function triggered." );
+
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync ( );
+            var students = whitelist.StudentEmails;
+
+            var origin = req.Headers.TryGetValues ( "Origin", out var origins ) ? origins.FirstOrDefault ( ) : null;
+
+            // Handle CORS preflight
+            if (req.Method.Equals ( "OPTIONS", StringComparison.OrdinalIgnoreCase ))
+                {
+                var preflight = req.CreateResponse ( System.Net.HttpStatusCode.NoContent );
+                if (!string.IsNullOrEmpty ( origin ))
+                    {
+                    preflight.Headers.Add ( "Access-Control-Allow-Origin", origin );
+                    preflight.Headers.Add ( "Access-Control-Allow-Methods", "POST, OPTIONS" );
+                    preflight.Headers.Add ( "Access-Control-Allow-Headers", "Content-Type" );
+                    preflight.Headers.Add ( "Access-Control-Allow-Credentials", "true" );
+                    }
+                return preflight;
+                }
+
+            var body = await new StreamReader ( req.Body ).ReadToEndAsync ( );
+            var data = JsonConvert.DeserializeObject<FacebookLoginRequest> ( body );
+            if (data == null || string.IsNullOrWhiteSpace ( data.AccessToken ))
+                {
+                var badReq = req.CreateResponse ( System.Net.HttpStatusCode.BadRequest );
+                if (!string.IsNullOrEmpty ( origin ))
+                    {
+                    badReq.Headers.Add ( "Access-Control-Allow-Origin", origin );
+                    badReq.Headers.Add ( "Access-Control-Allow-Credentials", "true" );
+                    }
+                await badReq.WriteStringAsync ( "AccessToken is required" );
+                return badReq;
+                }
+
+            // Verify Facebook token
+            string fbAppId = Environment.GetEnvironmentVariable ( "FacebookAppId" );
+            string fbAppSecret = Environment.GetEnvironmentVariable ( "FacebookAppSecret" );
+
+            using var httpClient = new HttpClient ( );
+            var fbResponse = await httpClient.GetAsync (
+                $"https://graph.facebook.com/debug_token?input_token={data.AccessToken}&access_token={fbAppId}|{fbAppSecret}" );
+
+            var fbContent = await fbResponse.Content.ReadAsStringAsync ( );
+            dynamic fbResult = JsonConvert.DeserializeObject ( fbContent );
+
+            if (fbResult?.data?.is_valid != true)
+                {
+                var unauthorizedResp = req.CreateResponse ( System.Net.HttpStatusCode.Unauthorized );
+                if (!string.IsNullOrEmpty ( origin ))
+                    {
+                    unauthorizedResp.Headers.Add ( "Access-Control-Allow-Origin", origin );
+                    unauthorizedResp.Headers.Add ( "Access-Control-Allow-Credentials", "true" );
+                    }
+                await unauthorizedResp.WriteStringAsync ( "Invalid Facebook token" );
+                return unauthorizedResp;
+                }
+
+            // Get user info
+            var fbUserResponse = await httpClient.GetStringAsync (
+                $"https://graph.facebook.com/me?fields=id,name,email,first_name,last_name&access_token={data.AccessToken}" );
+            dynamic fbUser = JsonConvert.DeserializeObject ( fbUserResponse );
+            string email = fbUser.email;
+
+            var adminEmailsEnv = Environment.GetEnvironmentVariable ( "AdminEmails" ) ?? "";
+            var adminEmails = adminEmailsEnv.Split ( ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries );
+            bool isAdmin = adminEmails.Contains ( email, StringComparer.OrdinalIgnoreCase );
+
+            if (!students.Contains ( email, StringComparer.OrdinalIgnoreCase ) && !isAdmin)
+                {
+                var forbiddenResp = req.CreateResponse ( System.Net.HttpStatusCode.Forbidden );
+                if (!string.IsNullOrEmpty ( origin ))
+                    {
+                    forbiddenResp.Headers.Add ( "Access-Control-Allow-Origin", origin );
+                    forbiddenResp.Headers.Add ( "Access-Control-Allow-Credentials", "true" );
+                    }
+                await forbiddenResp.WriteStringAsync ( "User not found" );
+                return forbiddenResp;
+                }
+
+            var token = GenerateJwtToken ( email, isAdmin );
+
+            var response = req.CreateResponse ( System.Net.HttpStatusCode.OK );
+            if (!string.IsNullOrEmpty ( origin ))
+                {
+                response.Headers.Add ( "Access-Control-Allow-Origin", origin );
+                response.Headers.Add ( "Access-Control-Allow-Credentials", "true" );
+                }
+
+            response.Headers.Add ( "Set-Cookie", $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400" );
+
+            await response.WriteAsJsonAsync ( new
+                {
+                email,
+                firstName = fbUser.first_name,
+                lastName = fbUser.last_name,
+                role = isAdmin ? "Admin" : "Student"
+                } );
+
+            return response;
+            }
+
+        // Request payload
+        public class FacebookLoginRequest
+            {
+            public required string AccessToken { get; set; }
+            }
+
+        //
+
+        [Function ("LoginWithGoogle")]
         [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
         [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]
         public async Task<HttpResponseData> LoginWithGoogle(

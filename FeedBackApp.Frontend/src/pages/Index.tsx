@@ -5,6 +5,7 @@ import { useAuthStore } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { User } from '@/models/User'
+import { FaFacebookF, FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
 
 export default function SocialAuthApp() {
   const navigate = useNavigate()
@@ -48,9 +49,27 @@ export default function SocialAuthApp() {
   }
 
   const onFacebookLogin = () => {
-    const accessToken = "facebook_access_token" // Replace with real token from Facebook SDK
-    loginWithFacebook(accessToken, { onSuccess: handleSuccess, onError: handleError })
+  if (!window.FB) {
+    console.error("Facebook SDK not loaded yet.");
+    return;
   }
+
+  window.FB.getLoginStatus(function(response) {
+    window.FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken;
+          loginWithFacebook(accessToken, { onSuccess: handleSuccess, onError: handleError });
+        } else {
+          console.error("Facebook login failed");
+        }
+      },
+      { scope: 'email,public_profile' }
+    );
+  });
+};
+
+
 
   const onMicrosoftLogin = () => {
     const idToken = "microsoft_id_token" // Replace with real token from Microsoft auth
@@ -84,9 +103,29 @@ export default function SocialAuthApp() {
             logo_alignment="center"
             width="280"
           />
-          <button onClick={onFacebookLogin} className="btn-social facebook">Facebook</button>
-          <button onClick={onMicrosoftLogin} className="btn-social microsoft">Microsoft</button>
-          <button onClick={onLinkedInLogin} className="btn-social linkedin">LinkedIn</button>
+          <button
+            onClick={onFacebookLogin}
+            className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
+          >
+            <FaFacebookF className="w-5 h-5" />
+            Facebook
+          </button>
+
+          <button
+            onClick={onMicrosoftLogin}
+            className="flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
+          >
+            <FaMicrosoft className="w-5 h-5" />
+            Microsoft
+          </button>
+
+          <button
+            onClick={onLinkedInLogin}
+            className="flex items-center justify-center gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
+          >
+            <FaLinkedinIn className="w-5 h-5" />
+            LinkedIn
+          </button>
 
           {isLoggingIn && <Status text="Google bejelentkezés folyamatban…" />}
           {isLoggingInFacebook && <Status text="Facebook bejelentkezés folyamatban…" />}
