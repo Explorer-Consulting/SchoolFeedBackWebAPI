@@ -23,7 +23,7 @@ using QuestPDF.Infrastructure;
 using System.Text.Json;
 
 QuestPDF.Settings.License = LicenseType.Community;
-
+//megy
 // ──────────────────────────────────────────────────---
 // 1) Modern isolated builder
 // ─────────────────────────────────────────────────────
