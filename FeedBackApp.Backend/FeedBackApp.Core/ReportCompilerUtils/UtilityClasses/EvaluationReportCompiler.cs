@@ -224,8 +224,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             ImmutableArray<QuestionTemplate> rawQuestions,
             string surveyId)
         {
-            ArgumentNullException.ThrowIfNull(rawData);
-            ArgumentNullException.ThrowIfNull(rawQuestions);
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
             // 1) Teacher-specific PDFs
