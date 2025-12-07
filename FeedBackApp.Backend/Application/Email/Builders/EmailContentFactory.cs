@@ -7,21 +7,16 @@ using Microsoft.Extensions.Logging;
 namespace Application.Email.Builders;
 
 /// <summary>
-/// Builds email content for different recipient roles (Student, Teacher, Admin).
+/// Creates email content for different recipient roles (Student, Teacher, Admin).
 /// </summary>
-/// 
-/*
-The name of the class is *Builder. The "Builder" suggests something more like a design pattern implementation, but this class has no business with that pattern. Try a factory or something else, but factory can be also an overkill, if it is overcomplicated.
- 
- */
-public class EmailContentBuilder : IEmailContentBuilder
+public class EmailContentFactory : IEmailContentFactory
 {
     private readonly IReportService _reportService;
-    private readonly ILogger<EmailContentBuilder> _logger;
+    private readonly ILogger<EmailContentFactory> _logger;
 
-    public EmailContentBuilder(
+    public EmailContentFactory(
         IReportService reportService,
-        ILogger<EmailContentBuilder> logger)
+        ILogger<EmailContentFactory> logger)
     {
         _reportService = reportService;
         _logger = logger;

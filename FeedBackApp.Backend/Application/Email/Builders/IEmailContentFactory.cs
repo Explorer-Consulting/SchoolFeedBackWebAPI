@@ -4,9 +4,9 @@ using FeedBackApp.Core.Model.Enum;
 namespace Application.Email.Builders;
 
 /// <summary>
-/// Interface for building email content based on recipient role and survey information.
+/// Interface for creating email content based on recipient role and survey information.
 /// </summary>
-public interface IEmailContentBuilder
+public interface IEmailContentFactory
 {
     /// <summary>
     /// Builds an email message for the specified role and survey information.

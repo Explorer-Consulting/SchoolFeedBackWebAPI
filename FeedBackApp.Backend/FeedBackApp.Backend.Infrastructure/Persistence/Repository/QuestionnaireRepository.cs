@@ -1,4 +1,4 @@
-﻿using FeedBackApp.Backend.Infrastructure.Persistence.Context;
+using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -65,7 +65,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             }
 
             var emailDoc = await _context.EmailsToSend
-                .FirstOrDefaultAsync(e => e.Id == EmailRepositoryConstants.EmailsToSendDocumentId);
+                .FirstOrDefaultAsync(e => e.Id == "emailsToSend");
 
             var newEmailEntry = new CoreEmail
             {
@@ -82,7 +82,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 // First time: create the document
                 emailDoc = new EmailsToSend
                 {
-                    Id = EmailRepositoryConstants.EmailsToSendDocumentId,
+                    Id = "emailsToSend",
                     EmailsToSendList = new List<CoreEmail> { newEmailEntry }
                 };
 

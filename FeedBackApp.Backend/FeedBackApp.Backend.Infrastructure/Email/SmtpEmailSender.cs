@@ -12,28 +12,10 @@ namespace FeedBackApp.Backend.Infrastructure.Email;
 /// MailKit-based implementation of IEmailSender for sending emails via SMTP.
 /// This replaces the deprecated System.Net.Mail.SmtpClient with a modern, async-first library.
 /// </summary>
-public sealed class SmtpEmailSender : IEmailSender
+public sealed class SmtpEmailSender(EmailConfiguration configuration, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
-
-    /*
-     =====================================================================================================
-     use primary constructor and properties.
-     =====================================================================================================
-     */
-    private readonly EmailConfiguration _configuration;
-    private readonly ILogger<SmtpEmailSender> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the SmtpEmailSender.
-    /// </summary>
-    /// <param name="configuration">Email configuration settings.</param>
-    /// <param name="logger">Logger for tracking email operations.</param>
-    /// <exception cref="ArgumentNullException">Thrown when configuration or logger is null.</exception>
-    public SmtpEmailSender(EmailConfiguration configuration, ILogger<SmtpEmailSender> logger)
-    {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly EmailConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    private readonly ILogger<SmtpEmailSender> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Sends an email message asynchronously using MailKit SMTP client.
@@ -43,18 +25,8 @@ public sealed class SmtpEmailSender : IEmailSender
     /// <returns>True if the email was sent successfully, false otherwise.</returns>
     public async Task<bool> SendEmailAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
-
-        /*
-         ======================================================================================================
-         It is a good practice for ChatGPT to add CancellationToken for function parameters. It is not bad but in this case it's unnecessary, and not handled properly.
-        ======================================================================================================
-         */
-        if (message == null) /*=============== use gurads for simple null checks =============================*/
-        {
-            _logger.LogError("Cannot send email: message is null");
-            return false;
-        }
-
+        ArgumentNullException.ThrowIfNull(message);
+        
         if (string.IsNullOrWhiteSpace(message.To))
         {
             _logger.LogError("Cannot send email: recipient address is null or empty");
@@ -101,6 +73,7 @@ public sealed class SmtpEmailSender : IEmailSender
                 message.To,
                 ex.StatusCode,
                 ex.Message);
+            // Exception is logged, returning false to indicate failure
             return false;
         }
         catch (SmtpProtocolException ex)
@@ -110,6 +83,7 @@ public sealed class SmtpEmailSender : IEmailSender
                 "SMTP protocol error while sending email to {Recipient}. Error: {ErrorMessage}",
                 message.To,
                 ex.Message);
+            // Exception is logged, returning false to indicate failure
             return false;
         }
         catch (AuthenticationException ex)
@@ -119,6 +93,7 @@ public sealed class SmtpEmailSender : IEmailSender
                 "SMTP authentication failed while sending email to {Recipient}. Error: {ErrorMessage}",
                 message.To,
                 ex.Message);
+            // Exception is logged, returning false to indicate failure
             return false;
         }
         catch (Exception ex)
@@ -128,14 +103,10 @@ public sealed class SmtpEmailSender : IEmailSender
                 "Unexpected error while sending email to {Recipient}. Error: {ErrorMessage}",
                 message.To,
                 ex.Message);
+            // Exception is logged, returning false to indicate failure
             return false;
         }
     }
-    /*
-     ======================================================================================================
-    U return from the catch blocks but u do not handle the possible exceptions.
-     ======================================================================================================
-     */
 
     /// <summary>
     /// Creates a MimeMessage from an EmailMessage.
@@ -164,16 +135,7 @@ public sealed class SmtpEmailSender : IEmailSender
             bodyBuilder.TextBody = message.Body;
         }
         
-        // Attachments
-        foreach (var attachment in message.Attachments)
-        {
-            if (attachment.Data.Length > 0 && !string.IsNullOrWhiteSpace(attachment.FileName))
-            {
-                var contentType = ContentType.Parse(attachment.ContentType);
-                bodyBuilder.Attachments.Add(attachment.FileName, attachment.Data, contentType);
-                /*we will not use files like attachments, we will send links with time*/
-            }
-        }
+        // Note: Attachments are not used - links with time-limited access will be sent instead
         
         mimeMessage.Body = bodyBuilder.ToMessageBody();
         

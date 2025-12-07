@@ -1,4 +1,4 @@
-﻿using FeedBackApp.Backend.Infrastructure.Persistence.Context;
+using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -11,27 +11,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository;
 /// Handles retrieval and updates of the EmailsToSend document which contains
 /// all pending emails to be sent to students, teachers, and administrators.
 /// </summary>
-public sealed class EmailRepository : IEmailRepository
-    {
-        private readonly AppDBContext _context;
-    private readonly ILogger<EmailRepository>? _logger;
-
-    /*
-     ====================================================================================================
-    1. Use primary constructor and property initialization where possible.
-     ====================================================================================================
-     */
+public sealed class EmailRepository(AppDBContext context, ILogger<EmailRepository>? logger = null) : IEmailRepository
+{
+    private readonly AppDBContext _context = context ?? throw new ArgumentNullException(nameof(context));
+    private readonly ILogger<EmailRepository>? _logger = logger;
+    
     /// <summary>
-    /// Initializes a new instance of the EmailRepository.
+    /// The unique identifier for the EmailsToSend document in Cosmos DB.
+    /// This document contains all pending emails to be sent.
     /// </summary>
-    /// <param name="context">The database context for Cosmos DB operations.</param>
-    /// <param name="logger">Optional logger for tracking repository operations.</param>
-    /// <exception cref="ArgumentNullException">Thrown when context is null.</exception>
-    public EmailRepository(AppDBContext context, ILogger<EmailRepository>? logger = null)
-        {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger;
-        }
+    private const string EmailsToSendDocumentId = "emailsToSend";
 
     /// <summary>
     /// Retrieves the EmailsToSend document from Cosmos DB.
@@ -43,26 +32,26 @@ public sealed class EmailRepository : IEmailRepository
     /// <exception cref="InvalidOperationException">
     /// Thrown when a database operation fails or the context is disposed.
     /// </exception>
-        public async Task<EmailsToSend?> GetEmailsDocumentAsync()
-        {
+    public async Task<EmailsToSend?> GetEmailsDocumentAsync()
+    {
         try
         {
             var document = await _context.EmailsToSend
-                .FirstOrDefaultAsync(e => e.Id == EmailRepositoryConstants.EmailsToSendDocumentId);
+                .FirstOrDefaultAsync(e => e.Id == EmailsToSendDocumentId);
 
             if (document == null)
             {
                 _logger?.LogDebug(
                     "EmailsToSend document not found with ID: {DocumentId}",
-                    EmailRepositoryConstants.EmailsToSendDocumentId);
+                    EmailsToSendDocumentId);
             }
             else
             {
                 _logger?.LogDebug(
                     "Retrieved EmailsToSend document with ID: {DocumentId}. Email count: {EmailCount}",
-                    EmailRepositoryConstants.EmailsToSendDocumentId,
+                    EmailsToSendDocumentId,
                     document.EmailsToSendList?.Count ?? 0);
-        }
+            }
 
             return document;
         }
@@ -71,7 +60,7 @@ public sealed class EmailRepository : IEmailRepository
             _logger?.LogError(
                 ex,
                 "Error retrieving EmailsToSend document with ID: {DocumentId}. Error: {ErrorMessage}",
-                EmailRepositoryConstants.EmailsToSendDocumentId,
+                EmailsToSendDocumentId,
                 ex.Message);
             throw;
         }
@@ -86,7 +75,7 @@ public sealed class EmailRepository : IEmailRepository
     /// Thrown when a database operation fails, the context is disposed, or save changes fails.
     /// </exception>
     public async Task UpdateEmailsDocumentAsync(EmailsToSend doc)
-        {
+    {
         if (doc == null)
         {
             throw new ArgumentNullException(nameof(doc), "EmailsToSend document cannot be null.");
@@ -97,10 +86,10 @@ public sealed class EmailRepository : IEmailRepository
             // Ensure the document has the correct ID
             if (string.IsNullOrWhiteSpace(doc.Id))
             {
-                doc.Id = EmailRepositoryConstants.EmailsToSendDocumentId;
+                doc.Id = EmailsToSendDocumentId;
                 _logger?.LogDebug(
                     "Set document ID to: {DocumentId}",
-                    EmailRepositoryConstants.EmailsToSendDocumentId);
+                    EmailsToSendDocumentId);
             }
 
             _context.EmailsToSend.Update(doc);
@@ -115,9 +104,8 @@ public sealed class EmailRepository : IEmailRepository
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            /*   
-             Where u used optimistic cocurrency control, this exception is thrown when a concurrency conflict occurs.
-             */
+            // This exception is thrown when optimistic concurrency control detects a conflict.
+            // The document may have been modified by another process.
             _logger?.LogError(
                 ex,
                 "Concurrency conflict while updating EmailsToSend document with ID: {DocumentId}. The document may have been modified by another process.",
@@ -142,11 +130,5 @@ public sealed class EmailRepository : IEmailRepository
                 ex.Message);
             throw;
         }
-
-        /*
-         =====================================================================================================
-            If no custom exception types are defined there is no point in throwing, it just throws the base exception.
-         =====================================================================================================
-         */
     }
 }

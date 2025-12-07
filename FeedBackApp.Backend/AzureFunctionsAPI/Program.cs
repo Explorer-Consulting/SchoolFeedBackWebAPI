@@ -1,4 +1,4 @@
-﻿using Application.DTOs.Questionnaire;
+using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Email.Builders;
 using Application.Services;
@@ -88,8 +88,8 @@ var host = new HostBuilder()
         services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
             _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
         
-        // Email content builder: Creates email messages based on recipient roles (Student, Teacher, Admin)
-        services.AddScoped<IEmailContentBuilder, EmailContentBuilder>();
+        // Email content factory: Creates email messages based on recipient roles (Student, Teacher, Admin)
+        services.AddScoped<IEmailContentFactory, EmailContentFactory>();
         
         // Email sender: MailKit-based SMTP implementation (replaces System.Net.Mail.SmtpClient)
         services.AddScoped<IEmailSender, SmtpEmailSender>();

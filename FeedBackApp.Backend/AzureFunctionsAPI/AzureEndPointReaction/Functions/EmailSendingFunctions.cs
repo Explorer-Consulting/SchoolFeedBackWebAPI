@@ -68,15 +68,8 @@ public sealed class EmailSendingFunctions
                 executionTime, 
                 ex.Message);
             
-            // Re-throw to ensure Azure Functions marks the execution as failed
-            throw;
-            /*
-             Do not throw any exception inside an azure function. We usually use self-written wrapper classes like Result<T> or more frequently we use a packege for that like FluentResults. 
-             From this wrapper we can build the proper response body with the status code and futher information if needed.
-             Never use raw Ecxeption!.
-             Do not bother yourself with this for the time being, but keep in mind for the future.
-             
-             */
+            // Note: For future improvements, consider using Result<T> or FluentResults instead of throwing exceptions.
+            // This would allow building proper response bodies with status codes and further information.
         }
     }
 

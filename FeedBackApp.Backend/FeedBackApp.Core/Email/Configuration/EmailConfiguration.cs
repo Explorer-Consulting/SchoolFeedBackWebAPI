@@ -52,7 +52,7 @@ public class EmailConfiguration
                 ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set."),
             AppPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") 
                 ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set."),
-            LeaderEmails = Environment.GetEnvironmentVariable("LeaderEmail") ?? string.Empty
+            LeaderEmails = Environment.GetEnvironmentVariable("AdminEmails") ?? string.Empty
         };
     }
 }

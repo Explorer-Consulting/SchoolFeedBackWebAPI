@@ -9,16 +9,27 @@ namespace Application.Email.Helpers;
 /// </summary>
 public static class EmailCompilationHelper
 {
-    /*
-     ====================================================================
-     This is not a helper again. It is more like a service
-     I don't see any purpose of seperate implementations for teacher and admin email creations. I mean, why would u use two seperate functions for that?
+    /// <summary>
+    /// Creates an Email entity from survey metadata for the specified role.
+    /// </summary>
+    /// <param name="metadata">Survey metadata containing dates and title.</param>
+    /// <param name="surveyId">The survey identifier.</param>
+    /// <param name="role">The recipient role (Teacher or Admin).</param>
+    /// <param name="recipientEmails">List of email addresses for the recipients. For Teacher role, this is extracted from metadata.</param>
+    /// <returns>Configured CoreEmail instance.</returns>
+    public static CoreEmail CreateEmail(SurveyMetadata metadata, Guid surveyId, Role role, List<string> recipientEmails)
+    {
+        return new CoreEmail
+        {
+            Emails = recipientEmails,
+            StartDate = metadata.StartDate,
+            EndDate = metadata.EndDate,
+            Role = role,
+            SurveyId = surveyId.ToString(),
+            SurveyName = metadata.Title
+        };
+    }
 
-     Just a suggestion: You can try creating a generic type or just two type for an email message and one function.
-     U decide about the implementation
-     Or one tyepe with a recipient property.
-     ====================================================================
-     */
     /// <summary>
     /// Creates an Email entity for teachers from survey metadata.
     /// </summary>
@@ -26,18 +37,10 @@ public static class EmailCompilationHelper
     {
         var teachers = metadata.Teachers
             .Where(t => !string.IsNullOrWhiteSpace(t.Email))
-            .Select(t => t.Email)
+            .Select(t => t.Email!)
             .ToList();
 
-        return new CoreEmail
-        {
-            Emails = teachers,
-            StartDate = metadata.StartDate,
-            EndDate = metadata.EndDate,
-            Role = Role.Teacher,
-            SurveyId = surveyId.ToString(),
-            SurveyName = metadata.Title
-        };
+        return CreateEmail(metadata, surveyId, Role.Teacher, teachers);
     }
 
     /// <summary>
@@ -47,17 +50,10 @@ public static class EmailCompilationHelper
     {
         var leadersEmails = leaderEmails
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(email => !string.IsNullOrWhiteSpace(email))
             .ToList();
 
-        return new CoreEmail
-        {
-            Emails = leadersEmails,
-            StartDate = metadata.StartDate,
-            EndDate = metadata.EndDate,
-            Role = Role.Admin,
-            SurveyId = surveyId.ToString(),
-            SurveyName = metadata.Title
-        };
+        return CreateEmail(metadata, surveyId, Role.Admin, leadersEmails);
     }
 
     /// <summary>
