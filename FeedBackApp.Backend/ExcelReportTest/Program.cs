@@ -24,11 +24,11 @@ var questions = ImmutableArray.Create(
     new QuestionTemplate
     {
         Id = "q1",
-        Question = "Melyik a kedvenc tárgyad?",
-        Category = "Tantárgyak",
+        Question = "Melyik napod lenne szabad delutáni foglalkozásra?",
+        Category = "Delutáni foglalkozás",
         Type = QuestionType.MultipleChoice,
-        AnswerOptions = new List<string> { "Matematika", "Fizika", "Kémia", "Biológia", "Magyar", "Román", "Informatika" },
-        Description = "Válassz egy vagy több kedvenc tantárgyat"
+        AnswerOptions = new List<string> { "Hétfő", "Kedd", "Szerda", "Csütörtök","Péntek" },
+        Description = "Válassz egy vagy több napot"
     },
 
     // multiple choice other ex
@@ -66,17 +66,16 @@ var questions = ImmutableArray.Create(
         AnswerOptions = new List<string>(),
         Type = QuestionType.OpenEnded,
         Description = "Írd le mi véleményed őszintén"
+    },
+
+    new QuestionTemplate
+    {
+        Id = "q5",
+        Category = "Mi az amin nem változtatnál?",
+        AnswerOptions = new List<string>(),
+        Type = QuestionType.OpenEnded,
+        Description = "Írd le mi véleményed őszintén"
     }
-    ,
-     new QuestionTemplate
-     {
-         Id = "q5",
-         Question = "Mit nem javítanál az órán?",
-         Category = "Visszajelzés",
-         AnswerOptions = new List<string>(),
-         Type = QuestionType.OpenEnded,
-         Description = "Írd le mi véleményed őszintén"
-     }
 );
 
 var answers = ImmutableArray.Create(
@@ -86,9 +85,9 @@ var answers = ImmutableArray.Create(
     new QuestionAnswer { QuestionId = "q0", Answer = "4" },
     new QuestionAnswer { QuestionId = "q0", Answer = "5" },
 
-    new QuestionAnswer { QuestionId = "q1", Answer = "1-7" },
-    new QuestionAnswer { QuestionId = "q1", Answer = "6" },
-    new QuestionAnswer { QuestionId = "q1", Answer = "1-2" },
+    new QuestionAnswer { QuestionId = "q1", Answer = "1-5" },
+    new QuestionAnswer { QuestionId = "q1", Answer = "2" },
+    new QuestionAnswer { QuestionId = "q1", Answer = "2-3-4" },
     new QuestionAnswer { QuestionId = "q1", Answer = "3" },
     new QuestionAnswer { QuestionId = "q1", Answer = "4-5" },
 
@@ -105,14 +104,14 @@ var answers = ImmutableArray.Create(
     new QuestionAnswer { QuestionId = "q3", Answer = "2" },
     new QuestionAnswer { QuestionId = "q3", Answer = "3" },
 
-
     new QuestionAnswer { QuestionId = "q4", Answer = "Több példát kellene hozni" },
     new QuestionAnswer { QuestionId = "q4", Answer = "Interaktívabb órák" },
     new QuestionAnswer { QuestionId = "q4", Answer = "Kevesebb házi feladat" },
 
-     new QuestionAnswer { QuestionId = "q5", Answer = "kevesebb példát kellene hozni" },
-    new QuestionAnswer { QuestionId = "q5", Answer = "Interaktívabb órák" },
-    new QuestionAnswer { QuestionId = "q5", Answer = "több házi feladat" }
+    new QuestionAnswer { QuestionId = "q5", Answer = "Érthető magyarazátokon" },
+    new QuestionAnswer { QuestionId = "q5", Answer = "Közös házi javítások" },
+    new QuestionAnswer { QuestionId = "q5", Answer = "Délutáni foglalkozások" }
+
     );
 // creating metadata
 var metadata = new ReportMetadata
@@ -133,7 +132,8 @@ EvaluationReportCompiler.CreateRenderOfDocument(
     adminExcel,
     answers,
     out var compiledExcel,
-    out var renderTask);
+    out var renderTask
+);
 
 // waiting for the rendering to complete
 byte[] excelBytes = await renderTask;

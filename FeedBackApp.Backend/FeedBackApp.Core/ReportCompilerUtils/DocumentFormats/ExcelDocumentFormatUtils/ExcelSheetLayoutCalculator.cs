@@ -26,47 +26,29 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
 
         public static SheetLayoutConfig CalculateLayout(SheetModel model)
         {
-            // Calculate max answer columns
             int maxAnswerColumns = 0;
             int maxOptionColumns = 0;
 
             foreach (var block in model.Blocks)
             {
-                // MainRow: first element is question, rest are answers (+ optional metadata for Likert)
-                int answerCount = block.MainRow.Count - 1;  // -1 for question text
+                // Check header rows 
+                foreach (var row in block.HeaderRows)
+                    maxAnswerColumns = Math.Max(maxAnswerColumns, row.Count);
 
-                if (model.Type == QuestionType.LikertScaleOneToFive && answerCount > 0)
-                    answerCount--; // -1 for ValueMeanings at the end
+                // Check option rows
+                foreach (var row in block.OptionRows)
+                    maxOptionColumns = Math.Max(maxOptionColumns, row.Count);
 
-                maxAnswerColumns = Math.Max(maxAnswerColumns, answerCount);
-
-                // OptionsRow: first element is label ("Opciók"), rest are options
-                int optionCount = block.OptionsRow.Count > 0 ? block.OptionsRow.Count - 1 : 0;
-                maxOptionColumns = Math.Max(maxOptionColumns, optionCount);
+                // Check answer rows
+                foreach (var row in block.AnswerRows)
+                    maxAnswerColumns = Math.Max(maxAnswerColumns, row.Count);
             }
+
+            int totalColumns = Math.Max(maxAnswerColumns, maxOptionColumns);
 
             // Generate header row
-            var header = new List<string> { "Kérdés" };
-
-            if (model.Type == QuestionType.LikertScaleOneToFive)
-            {
-                for (int i = 0; i < maxAnswerColumns; i++)
-                    header.Add(string.Empty);
-
-                header.Add("Értékek jelentése");
-            }
-            else
-            {
-                for (int i = 0; i < maxAnswerColumns; i++)
-                    header.Add(string.Empty);
-            }
-
-            // Calculate total columns
-            int mainCols = 1 + maxAnswerColumns + (model.Type == QuestionType.LikertScaleOneToFive ? 1 : 0);
-            int optionCols = 1 + maxOptionColumns;
-            int totalCols = Math.Max(mainCols, optionCols);
-
-            while (header.Count < totalCols)
+            var header = new List<string>();
+            for (int i = 0; i < totalColumns; i++)
                 header.Add(string.Empty);
 
             return new SheetLayoutConfig
@@ -74,7 +56,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                 MaxAnswerColumns = maxAnswerColumns,
                 MaxOptionColumns = maxOptionColumns,
                 HeaderRow = header,
-                TotalColumns = totalCols
+                TotalColumns = totalColumns
             };
         }
 
@@ -88,23 +70,37 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         /// <param name="blocks">The question blocks to normalize.</param>
         /// <param name="layout">The layout configuration with target column counts.</param>
         /// <returns>Normalized blocks as tuples (for compatibility with rendering layer).</returns>
-        public static List<(List<string> Main, List<string> Opts)> NormalizeBlocks(
-        IReadOnlyList<QuestionBlock> blocks, SheetLayoutConfig layout)
+        public static List<List<string>> NormalizeBlocks(IReadOnlyList<QuestionBlock> blocks, SheetLayoutConfig layout)
         {
-            var normalized = new List<(List<string> Main, List<string> Opts)>(blocks.Count);
-
+            var normalized = new List<List<string>>();
             foreach (var block in blocks)
             {
-                var main = new List<string>(block.MainRow);
-                var opts = new List<string>(block.OptionsRow);
+                // Add all header rows
+                foreach (var row in block.HeaderRows)
+                {
+                    var normalizedRow = new List<string>(row);
+                    while (normalizedRow.Count < layout.TotalColumns)
+                        normalizedRow.Add(string.Empty);
+                    normalized.Add(normalizedRow);
+                }
 
-                // Pad to total columns
-                while (main.Count < layout.TotalColumns)
-                    main.Add(string.Empty);
-                while (opts.Count < layout.TotalColumns)
-                    opts.Add(string.Empty);
+                // Add all option rows
+                foreach (var row in block.OptionRows)
+                {
+                    var normalizedRow = new List<string>(row);
+                    while (normalizedRow.Count < layout.TotalColumns)
+                        normalizedRow.Add(string.Empty);
+                    normalized.Add(normalizedRow);
+                }
 
-                normalized.Add((main, opts));
+                // Add all answer rows
+                foreach (var row in block.AnswerRows)
+                {
+                    var normalizedRow = new List<string>(row);
+                    while (normalizedRow.Count < layout.TotalColumns)
+                        normalizedRow.Add(string.Empty);
+                    normalized.Add(normalizedRow);
+                }
             }
 
             return normalized;

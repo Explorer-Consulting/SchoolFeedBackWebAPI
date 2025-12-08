@@ -74,9 +74,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 // If sheetModels is empty, we create an "Empty" sheet
                 if (!sheetModels.Any())
                 {
-                    var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
+                    var emptyRows = new List<List<string>>
                     {
-                        (new List<string>{ "—" }, new List<string>())
+                        new List<string> { "Nincs adat" }
                     };
 
                     // Create the "Empty" sheet
@@ -86,7 +86,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         "Üres",
                         QuestionType.Unknown,
                         header: ["Kérdés"],
-                        blocks: emptyBlocks,
+                        rows: emptyRows,
                         explicitSheetId: null,
                         maxAnswerColumns: 0,
                         maxOptionColumns: 0

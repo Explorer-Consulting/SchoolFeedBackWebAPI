@@ -36,13 +36,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         /// Builds column widths by scanning the header and data rows.
         /// </summary>
         /// <param name="header">Header row.</param>
-        /// <param name="blocks">Data blocks (Main + Opts).</param>
-        /// <param name="sheetName">Sheet name (influences numeric column detection).</param>
+        /// <param name="rows">Normalized rows with type metadata.</param>
+        /// <param name="questionType">Question type (influences numeric column detection).</param>
         /// <param name="maxAnswerColumns">Number of numeric answer columns.</param>
         /// <returns><see cref="Columns"/> collection with per-column widths.</returns>
         internal static Columns CalculateColumnWidths(
             IReadOnlyList<string> header,
-            IReadOnlyList<(List<string> Main,List<string> Opts)> blocks,
+            IReadOnlyList<List<string>> rows,
             QuestionType questionType,
             int maxAnswerColumns)
         {
@@ -50,32 +50,37 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             var maxWidths = new double[colCount];
 
             bool IsNumericColumn(int columnIndex) =>
-                 questionType.HasNumericAnswers() &&  
-                 columnIndex >= 1 &&
-                 columnIndex <= maxAnswerColumns;
+                questionType.HasNumericAnswers() &&
+                columnIndex >= 1 &&
+                columnIndex <= maxAnswerColumns;
 
             // Header widths
             for (int c = 0; c < colCount; c++)
                 maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(header[c], c == 0, IsNumericColumn(c)));
 
             // Data row widths
-            foreach (var (Main, Opts) in blocks)
+            foreach (var row in rows)
             {
-                for (int c = 0; c < colCount; c++)
+                for (int c = 0; c < Math.Min(row.Count, colCount); c++)
                 {
-                    if (c < Main.Count)
-                        maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(Main[c], c == 0, IsNumericColumn(c)));
-                    if (c < Opts.Count)
-                        maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(Opts[c], c == 0, false));
+                    maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(row[c], c == 0, IsNumericColumn(c)));
                 }
             }
+
 
             // Build Columns (individual widths)
             var cols = new Columns();
             for (uint i = 0; i < colCount; i++)
             {
-                cols.Append(new Column { Min = i + 1, Max = i + 1, Width = maxWidths[i], CustomWidth = true });
+                cols.Append(new Column
+                {
+                    Min = i + 1,
+                    Max = i + 1,
+                    Width = maxWidths[i],
+                    CustomWidth = true
+                });
             }
+
             return cols;
         }
 

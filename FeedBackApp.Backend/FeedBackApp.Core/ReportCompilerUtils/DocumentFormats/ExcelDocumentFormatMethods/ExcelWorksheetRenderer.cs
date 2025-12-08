@@ -38,7 +38,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             string sheetName,
             QuestionType questionType,
             IReadOnlyList<string> header,
-            IReadOnlyList<(List<string> Main, List<string> Opts)> blocks,
+            IReadOnlyList<List<string>> rows,
             uint? explicitSheetId,
             int maxAnswerColumns,
             int maxOptionColumns)
@@ -47,7 +47,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             var sheetData = new SheetData();
 
             // Column width estimation based on content
-            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, blocks, questionType, maxAnswerColumns);
+            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, rows, questionType, maxAnswerColumns);
 
             // Freeze header (Pane)
             var views = new SheetViews(new SheetView
@@ -81,32 +81,23 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
 
             // Local predicate: is this a numeric column (based on sheet type and index)
             bool IsNumericColumn(int columnIndex) =>
-                questionType.HasNumericAnswers() && 
+                questionType.HasNumericAnswers() &&
                 columnIndex >= 1 &&
                 columnIndex <= maxAnswerColumns;
 
             // Write data rows
-            foreach (var (Main, Opts) in blocks)
+            foreach (var row in rows)
             {
-                var dataRow = new Row();
-                for (int c = 0; c < Main.Count; c++)
+                var excelRow = new Row();
+                for (int c = 0; c < row.Count; c++)
                 {
                     if (IsNumericColumn(c) &&
-                        double.TryParse(Main[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
-                        dataRow.Append(CreateNumberCell(num, styleIndex: 4));
+                        double.TryParse(row[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
+                        excelRow.Append(CreateNumberCell(num, styleIndex: 4));
                     else
-                        dataRow.Append(CreateTextCell(Main[c], styleIndex: 2));
+                        excelRow.Append(CreateTextCell(row[c], styleIndex: 2));
                 }
-                sheetData.Append(dataRow);
-
-                // Options row (if present)
-                if (Opts is { Count: > 1 })
-                {
-                    var optRow = new Row();
-                    for (int c = 0; c < Opts.Count; c++)
-                        optRow.Append(CreateTextCell(Opts[c], styleIndex: 3));
-                    sheetData.Append(optRow);
-                }
+                sheetData.Append(excelRow);
             }
         }
     }

@@ -28,7 +28,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             var blocksByQuestionID = new Dictionary<string, (QuestionType, List<QuestionBlock> Blocks)>();
 
             // Local helper: add a block to the given sheet
-            void AddBlock(string questionId, QuestionType type, IEnumerable<string> mainRow, IEnumerable<string>? optionsRow = null)
+            void AddBlock(string questionId, QuestionType type, IEnumerable<IEnumerable<string>> headerRows, IEnumerable<IEnumerable<string>> answerRows, IEnumerable<IEnumerable<string>>? optionRows = null)
             {
                 if (!blocksByQuestionID.TryGetValue(questionId, out var entry))
                 {
@@ -38,8 +38,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
 
                 entry.Blocks.Add(new QuestionBlock
                 {
-                    MainRow = mainRow.Select(x => x ?? string.Empty).ToList(),
-                    OptionsRow = optionsRow?.Select(x => x ?? string.Empty).ToList() ?? []
+                    HeaderRows = headerRows.Select(row => row.Select(cell => cell ?? string.Empty).ToList()).ToList(),
+                    OptionRows = optionRows?.Select(row => row.Select(cell => cell ?? string.Empty).ToList()).ToList() ?? [],
+                    AnswerRows = answerRows.Select(row => row.Select(cell => cell ?? string.Empty).ToList()).ToList(),
                 });
             }
 
@@ -53,136 +54,159 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                 {
                     case LikertScaleEvaluationData l:
                         {
-                            AddBlock(l.QuestionId, QuestionType.LikertScaleOneToFive, new List<string> { "Kérdés", l.QuestionStatement });
+                            var headerRows = new List<List<string>>
+                            {
+                                new List<string> { "Kérdés", l.QuestionStatement }
+                            };
 
                             var parsed = l.ValueMeanings
-                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                .Select(x => x.Trim())
-                                .Select(x =>
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Trim())
+                            .Select(x =>
+                            {
+                                var parts = x.Split('=', 2);
+                                return new
                                 {
-                                    var parts = x.Split('=', 2);
-                                    return new
-                                    {
-                                        Index = parts[0].Trim(),
-                                        Text = parts[1].Trim()
-                                    };
-                                })
-                                .OrderBy(x => int.Parse(x.Index))
-                                .ToList();
+                                    Index = parts[0].Trim(),
+                                    Text = parts[1].Trim()
+                                };
+                            })
+                            .OrderBy(x => int.Parse(x.Index))
+                            .ToList();
 
+                            var optionRows = new List<List<string>>
+                            {
+                                new List<string> { "Opciók:", parsed[0].Index, parsed[0].Text }
+                            };
 
-                            AddBlock(l.QuestionId, QuestionType.LikertScaleOneToFive, new List<string> { "Opciók: ", parsed[0].Index, parsed[0].Text });
 
                             for (int i = 1; i < parsed.Count; i++)
                             {
-                                AddBlock(
-                                    l.QuestionId,
-                                    QuestionType.LikertScaleOneToFive,
-                                    new List<string> { "", parsed[i].Index, parsed[i].Text }
-                                );
+                                optionRows.Add(new List<string> { string.Empty, parsed[i].Index, parsed[i].Text });
                             }
 
-                            AddBlock(l.QuestionId, QuestionType.LikertScaleOneToFive, new List<string> { "Sorszám", " Választott opciók" });
+                            var answerRows = new List<List<string>>
+                            {
+                                new List<string> { "Sorszám", "Választott opciók" }
+                            };
 
                             int j = 1;
                             foreach (var answer in l.Answers)
                             {
-                                AddBlock(l.QuestionId, QuestionType.LikertScaleOneToFive, new List<string> { j.ToString(), answer.ToString(CultureInfo.InvariantCulture) });
+                                answerRows.Add(new List<string> { j.ToString(), answer.ToString(CultureInfo.InvariantCulture) });
                                 j++;
                             }
+
+                            AddBlock(l.QuestionId, QuestionType.LikertScaleOneToFive, headerRows, answerRows,optionRows);
                             break;
                         }
-
+                        
                     case SingleChoiceEvaluationData s when s.Type == SingleChoice.REGULAR:
                         {
-                            AddBlock(s.QuestionId, QuestionType.MultinomialSingleChoice, new List<string> { "Kérdés", s.QuestionStatement });
+                            var headerRows = new List<List<string>>
+                            {
+                                new List<string> { "Kérdés", s.QuestionStatement }
+                            };
 
-
-                            AddBlock(s.QuestionId, QuestionType.MultinomialSingleChoice, new List<string> { "Opciók: ", "1", s.QuestionOptions[0] });
-
+                            var optionRows = new List<List<string>>
+                            {
+                                new List<string> { "Opciók:","1", s.QuestionOptions[0] }
+                            };
+        
                             for (int i = 1; i < s.QuestionOptions.Length; i++)
                             {
-                                AddBlock(
-                                    s.QuestionId,
-                                    QuestionType.MultinomialSingleChoice,
-                                    new List<string> { string.Empty, $"{i + 1}", s.QuestionOptions[i] }
-                                );
+                                optionRows.Add(new List<string> { string.Empty, $"{i + 1}", s.QuestionOptions[i] });
+
                             }
 
-
-
-                            AddBlock(s.QuestionId, QuestionType.MultinomialSingleChoice, new List<string> { "Sorszám", " Választott opciókk" });
+                            var answerRows = new List<List<string>>
+                            {
+                                new List<string> { "Sorszám", "Választott opciók" }
+                            };
                             int j = 1;
                             foreach (var answer in s.QuestionOptionAnswers)
                             {
-                                AddBlock(s.QuestionId, QuestionType.MultinomialSingleChoice, new List<string> { j.ToString(), answer.ToString(CultureInfo.InvariantCulture) });
+                                answerRows.Add( new List<string> { j.ToString(), answer.ToString(CultureInfo.InvariantCulture) });
                                 j++;
                             }
 
+                            AddBlock(s.QuestionId, QuestionType.MultinomialSingleChoice, headerRows, answerRows, optionRows);
                             break;
                         }
 
                     case SingleChoiceEvaluationData s:
                         {
 
-                            AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, new List<string> { "Kérdés", s.QuestionStatement });
+                            var headerRows = new List<List<string>>
+                            {
+                                new List<string> { "Kérdés", s.QuestionStatement }
+                            };
 
-                            AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, new List<string> { "Opciók: ", "1", s.QuestionOptions[0] });
+                            var optionRows = new List<List<string>>
+                            {
+                                new List<string> { "Opciók:","1", s.QuestionOptions[0] }
+                            };
 
                             for (int i = 1; i < s.QuestionOptions.Length; i++)
                             {
-                                AddBlock(
-                                    s.QuestionId,
-                                    QuestionType.MultiNomialSingleChoiceOther,
-                                    new List<string> { string.Empty, $"{i + 1}", s.QuestionOptions[i] }
-                                );
+                                optionRows.Add(new List<string> { string.Empty, $"{i + 1}", s.QuestionOptions[i] });
                             }
-
+                
                             int otherIndex = s.QuestionOptions.Length + 1;
                             int nextRow = 1;
 
-                            AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, new List<string> { string.Empty, otherIndex.ToString(), "Other" });
+                            optionRows.Add(new List<string> { string.Empty, otherIndex.ToString(), "Egyébb" });
 
-                            AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, new List<string> { "Sorszám", "Választott opciók", "Válaszott szöveg" });
-
-
+                            var answerRows = new List<List<string>>
+                            {
+                                new List<string> { "Sorszám", "Választott opciók","Szöveg" }
+                            };
 
                             foreach (var answer in s.QuestionOptionAnswers)
                             {
-                                AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, new List<string> { nextRow.ToString(), answer.ToString(), string.Empty });
+                                answerRows.Add(new List<string> { nextRow.ToString(), answer.ToString(), string.Empty });
                                 nextRow++;
                             }
 
                             foreach (var text in s.QuestionOpenAnswers)
                             {
-                                AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, new List<string> { nextRow.ToString(), otherIndex.ToString(), text });
+                                answerRows.Add(new List<string> { nextRow.ToString(), otherIndex.ToString(), text });
                                 nextRow++;
                             }
 
+                            AddBlock(s.QuestionId, QuestionType.MultiNomialSingleChoiceOther, headerRows, answerRows, optionRows);
                             break;
                         }
-
+                     
                     case MultipleChoiceEvaluationData m:
                         {
 
-                            AddBlock(m.QuestionId, QuestionType.MultipleChoice, new List<string> { "Kérdés", m.QuestionStatement });
-                            AddBlock(m.QuestionId, QuestionType.MultipleChoice, new List<string> { "Opciók: ", "1", m.AnswerOptions[0] });
+                            var headerRows = new List<List<string>>
+                            {
+                                new List<string> { "Kérdés", m.QuestionStatement }
+                            };
+
+                      
+                            var optionRows = new List<List<string>>
+                            {
+                                new List<string> { "Opciók:", "1", m.AnswerOptions[0] }
+                            };
 
                             for (int i = 1; i < m.AnswerOptions.Length; i++)
                             {
-                                AddBlock(
-                                    m.QuestionId,
-                                    QuestionType.MultipleChoice,
-                                    new List<string> { string.Empty, $"{i + 1}", m.AnswerOptions[i] }
-                                );
+                                optionRows.Add(new List<string> { string.Empty, (i + 1).ToString(), m.AnswerOptions[i] });
                             }
 
-                            var headerRow = new List<string> { "Opciók" };
+                            var matrixHeader = new List<string> {"Sorszám/Opciók" };
                             for (int i = 1; i <= m.AnswerOptions.Length; i++)
                             {
-                                headerRow.Add(i.ToString());
+                                matrixHeader.Add(i.ToString());
                             }
-                            AddBlock(m.QuestionId, QuestionType.MultipleChoice, headerRow);
+
+                            var answerRows = new List<List<string>>
+                            {
+                                matrixHeader 
+                            };
 
                             int respondentNumber = 1;
                             foreach (var respondentAnswers in m.Answers)
@@ -195,27 +219,36 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                                     row.Add(selected ? "1" : string.Empty);
                                 }
 
-                                AddBlock(m.QuestionId, QuestionType.MultipleChoice, row);
+                                answerRows.Add(row);
                                 respondentNumber++;
                             }
-                        }
-                        break;
+                    
 
+                            AddBlock(m.QuestionId, QuestionType.MultipleChoice, headerRows, answerRows, optionRows);
+                            break;
+                        }
+                       
                     case OpenEndedEvaluationData o:
                         {
+                            var headerRows = new List<List<string>>
+                            {
+                                new List<string> { "Kérdés", o.QuestionStatement }
+                            };
 
-                            AddBlock(o.QuestionId, QuestionType.OpenEnded, new List<string> { "Kérdés", o.QuestionStatement });
-
-                            AddBlock(o.QuestionId, QuestionType.OpenEnded, new List<string> { "Sorszám", " Szöveg" });
+                            var answerRows = new List<List<string>>
+                            {
+                                new List<string> { "Sorszám", "Szöveg" }
+                            };
 
                             int i = 1;
                             foreach (var answer in o.Answers)
                             {
-                                AddBlock(o.QuestionId, QuestionType.OpenEnded, new List<string> { i.ToString(), answer });
+                                answerRows.Add( new List<string> { i.ToString(), answer });
                                 i++;
                             }
+                            AddBlock(o.QuestionId, QuestionType.OpenEnded, headerRows, answerRows);
                             break;
-                        }
+                        }                   
                 }
             }
 
