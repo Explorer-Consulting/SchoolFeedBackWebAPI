@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
+﻿using DocumentFormat.OpenXml.Office.SpreadSheetML.Y2023.MsForms;
+using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using QuestPDF.Infrastructure;
 using System.Collections.Immutable;
 
@@ -13,12 +14,15 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// </para>
     /// </summary>
     public sealed class MultipleChoiceEvaluationData(
+        string questionId,
         string questionStatement,
         ImmutableArray<string> answerOptions,
         ImmutableArray<ImmutableArray<int>> answers
     ) : EvaluationData
     {
         #region Inputs
+
+        public string QuestionId { get; init; } = questionId;
 
         /// <summary>
         /// The text of the question.

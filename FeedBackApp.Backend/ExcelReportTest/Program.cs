@@ -86,16 +86,16 @@ var answers = ImmutableArray.Create(
     new QuestionAnswer { QuestionId = "q0", Answer = "4" },
     new QuestionAnswer { QuestionId = "q0", Answer = "5" },
 
-    new QuestionAnswer { QuestionId = "q1", Answer = "1-7" },        
-    new QuestionAnswer { QuestionId = "q1", Answer = "6" },          
-    new QuestionAnswer { QuestionId = "q1", Answer = "1-2" },        
-    new QuestionAnswer { QuestionId = "q1", Answer = "3" },          
+    new QuestionAnswer { QuestionId = "q1", Answer = "1-7" },
+    new QuestionAnswer { QuestionId = "q1", Answer = "6" },
+    new QuestionAnswer { QuestionId = "q1", Answer = "1-2" },
+    new QuestionAnswer { QuestionId = "q1", Answer = "3" },
     new QuestionAnswer { QuestionId = "q1", Answer = "4-5" },
 
-    new QuestionAnswer { QuestionId = "q2", Answer = "1" },          
-    new QuestionAnswer { QuestionId = "q2", Answer = "2" },         
+    new QuestionAnswer { QuestionId = "q2", Answer = "1" },
+    new QuestionAnswer { QuestionId = "q2", Answer = "2" },
     new QuestionAnswer { QuestionId = "q2", Answer = "3" },
-    new QuestionAnswer { QuestionId = "q2", Answer = "4" }, 
+    new QuestionAnswer { QuestionId = "q2", Answer = "4" },
     new QuestionAnswer { QuestionId = "q2", Answer = "Rajzolni" },
     new QuestionAnswer { QuestionId = "q2", Answer = "Futni" },
 

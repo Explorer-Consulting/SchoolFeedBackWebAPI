@@ -12,6 +12,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// </summary>
     public abstract class EvaluationData
     {
+
+        /// <summary>
+        /// The unique identifier of the question this evaluation data belongs to.
+        /// </summary>
+        public string QuestionId { get; init; } = string.Empty;
+
         /// <summary>Default constructor.</summary>
         public EvaluationData() { }
 
