@@ -8,6 +8,7 @@ using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMe
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
@@ -74,9 +75,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 // If sheetModels is empty, we create an "Empty" sheet
                 if (!sheetModels.Any())
                 {
-                    var emptyRows = new List<List<string>>
+                    var emptyRows = new List<(List<string>, RowType)>
                     {
-                        new List<string> { "Nincs adat" }
+                        (new List<string> { "Nincs adat" }, RowType.Header)
                     };
 
                     // Create the "Empty" sheet

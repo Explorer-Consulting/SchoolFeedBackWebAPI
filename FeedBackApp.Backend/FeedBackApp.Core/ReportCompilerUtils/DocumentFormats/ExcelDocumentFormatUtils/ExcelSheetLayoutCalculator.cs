@@ -1,6 +1,5 @@
-﻿
-using FeedBackApp.Core.Model.Enum;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
+﻿using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils
 {
@@ -49,7 +48,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             // Generate header row
             var header = new List<string>();
             for (int i = 0; i < totalColumns; i++)
-                header.Add(string.Empty);
+                header.Add("");
 
             return new SheetLayoutConfig
             {
@@ -70,9 +69,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         /// <param name="blocks">The question blocks to normalize.</param>
         /// <param name="layout">The layout configuration with target column counts.</param>
         /// <returns>Normalized blocks as tuples (for compatibility with rendering layer).</returns>
-        public static List<List<string>> NormalizeBlocks(IReadOnlyList<QuestionBlock> blocks, SheetLayoutConfig layout)
+        public static List<(List<string> Row, RowType Type)> NormalizeBlocks(IReadOnlyList<QuestionBlock> blocks, SheetLayoutConfig layout)
         {
-            var normalized = new List<List<string>>();
+            var normalized = new List<(List<string>, RowType)>();
             foreach (var block in blocks)
             {
                 // Add all header rows
@@ -81,7 +80,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                     var normalizedRow = new List<string>(row);
                     while (normalizedRow.Count < layout.TotalColumns)
                         normalizedRow.Add(string.Empty);
-                    normalized.Add(normalizedRow);
+                    normalized.Add((normalizedRow, RowType.Header));
                 }
 
                 // Add all option rows
@@ -90,7 +89,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                     var normalizedRow = new List<string>(row);
                     while (normalizedRow.Count < layout.TotalColumns)
                         normalizedRow.Add(string.Empty);
-                    normalized.Add(normalizedRow);
+                    normalized.Add((normalizedRow, RowType.Option));
                 }
 
                 // Add all answer rows
@@ -99,7 +98,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                     var normalizedRow = new List<string>(row);
                     while (normalizedRow.Count < layout.TotalColumns)
                         normalizedRow.Add(string.Empty);
-                    normalized.Add(normalizedRow);
+                    normalized.Add((normalizedRow, RowType.Answer));
                 }
             }
 

@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.Model.Enum;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils
@@ -42,7 +43,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         /// <returns><see cref="Columns"/> collection with per-column widths.</returns>
         internal static Columns CalculateColumnWidths(
             IReadOnlyList<string> header,
-            IReadOnlyList<List<string>> rows,
+            IReadOnlyList<(List<string> Row, RowType Type)> rows,
             QuestionType questionType,
             int maxAnswerColumns)
         {
@@ -59,7 +60,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                 maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(header[c], c == 0, IsNumericColumn(c)));
 
             // Data row widths
-            foreach (var row in rows)
+            foreach (var (row, rowType) in rows)
             {
                 for (int c = 0; c < Math.Min(row.Count, colCount); c++)
                 {
