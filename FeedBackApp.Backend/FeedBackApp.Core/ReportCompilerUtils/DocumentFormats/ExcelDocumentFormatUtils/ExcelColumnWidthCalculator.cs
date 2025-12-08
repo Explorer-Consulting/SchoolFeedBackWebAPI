@@ -36,18 +36,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
         /// <summary>
         /// Builds column widths by scanning the header and data rows.
         /// </summary>
-        /// <param name="header">Header row.</param>
         /// <param name="rows">Normalized rows with type metadata.</param>
         /// <param name="questionType">Question type (influences numeric column detection).</param>
         /// <param name="maxAnswerColumns">Number of numeric answer columns.</param>
         /// <returns><see cref="Columns"/> collection with per-column widths.</returns>
         internal static Columns CalculateColumnWidths(
-            IReadOnlyList<string> header,
             IReadOnlyList<(List<string> Row, RowType Type)> rows,
             QuestionType questionType,
             int maxAnswerColumns)
         {
-            int colCount = header.Count;
+            int colCount = rows.Max(r => r.Row.Count);
             var maxWidths = new double[colCount];
 
             bool IsNumericColumn(int columnIndex) =>
@@ -55,16 +53,13 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                 columnIndex >= 1 &&
                 columnIndex <= maxAnswerColumns;
 
-            // Header widths
-            for (int c = 0; c < colCount; c++)
-                maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(header[c], c == 0, IsNumericColumn(c)));
-
             // Data row widths
             foreach (var (row, rowType) in rows)
             {
                 for (int c = 0; c < Math.Min(row.Count, colCount); c++)
                 {
-                    maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(row[c], c == 0, IsNumericColumn(c)));
+                    bool isNumeric = rowType != RowType.Option && IsNumericColumn(c);
+                    maxWidths[c] = Math.Max(maxWidths[c], EstimateColumnWidth(row[c], c == 0, isNumeric));
                 }
             }
 

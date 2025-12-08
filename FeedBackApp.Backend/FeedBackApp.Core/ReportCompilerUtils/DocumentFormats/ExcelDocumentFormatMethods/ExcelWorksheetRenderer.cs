@@ -38,7 +38,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             Sheets sheets,
             string sheetName,
             QuestionType questionType,
-            IReadOnlyList<string> header,
             IReadOnlyList<(List<string> Row, RowType Type)> rows,
             uint? explicitSheetId,
             int maxAnswerColumns,
@@ -48,7 +47,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             var sheetData = new SheetData();
 
             // Column width estimation based on content
-            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, rows, questionType, maxAnswerColumns);
+            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(rows, questionType, maxAnswerColumns);
 
             // Freeze header (Pane)
             var views = new SheetViews(new SheetView
@@ -74,12 +73,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             };
             sheets.Append(sheet);
 
-            // Header (style 1)
-            var headerRow = new Row();
-            foreach (var text in header)
-                headerRow.Append(CreateTextCell(text, styleIndex: 1));
-            sheetData.Append(headerRow);
-
             // Local predicate: is this a numeric column (based on sheet type and index)
             bool IsNumericColumn(int columnIndex) =>
                 questionType.HasNumericAnswers() &&
@@ -92,14 +85,16 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 var excelRow = new Row();
                 for (int c = 0; c < row.Count; c++)
                 {
-                    uint styleIndex;
 
                     // Determine style based on row type
-                    if (rowType == RowType.Option)
+                    if (rowType == RowType.Header)
+                    {
+                        excelRow.Append(CreateTextCell(row[c], styleIndex: 1));
+                    }
+                    else if (rowType == RowType.Option)
                     {
                         // Options always get style 3 (italic, light background)
-                        styleIndex = 3;
-                        excelRow.Append(CreateTextCell(row[c], styleIndex));
+                        excelRow.Append(CreateTextCell(row[c], styleIndex: 3));
                     }
                     else if (IsNumericColumn(c) &&
                              double.TryParse(row[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
@@ -107,7 +102,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                         // Numeric data in answer/header rows
                         excelRow.Append(CreateNumberCell(num, styleIndex: 4));
                     }
-                    else
+                    else if (rowType == RowType.Answer)
                     {
                         // Text data in answer/header rows
                         excelRow.Append(CreateTextCell(row[c], styleIndex: 2));

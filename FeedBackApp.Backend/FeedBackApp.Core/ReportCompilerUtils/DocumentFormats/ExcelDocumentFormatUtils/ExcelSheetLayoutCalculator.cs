@@ -45,16 +45,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
 
             int totalColumns = Math.Max(maxAnswerColumns, maxOptionColumns);
 
-            // Generate header row
-            var header = new List<string>();
-            for (int i = 0; i < totalColumns; i++)
-                header.Add("");
-
             return new SheetLayoutConfig
             {
                 MaxAnswerColumns = maxAnswerColumns,
                 MaxOptionColumns = maxOptionColumns,
-                HeaderRow = header,
                 TotalColumns = totalColumns
             };
         }
@@ -93,12 +87,22 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                 }
 
                 // Add all answer rows
+                bool firstAnswerRow = true;
                 foreach (var row in block.AnswerRows)
                 {
                     var normalizedRow = new List<string>(row);
                     while (normalizedRow.Count < layout.TotalColumns)
                         normalizedRow.Add(string.Empty);
-                    normalized.Add((normalizedRow, RowType.Answer));
+                    
+                    if (firstAnswerRow)
+                    {
+                        normalized.Add((normalizedRow, RowType.Header));
+                        firstAnswerRow = false;
+                    }
+                    else
+                    {
+                        normalized.Add((normalizedRow, RowType.Answer));
+                    }
                 }
             }
 

@@ -17,12 +17,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model
         /// </summary>
         public int MaxOptionColumns { get; init; }
 
-
-        /// <summary>
-        /// The header row for the Excel sheet.
-        /// </summary>
-        public IReadOnlyList<string> HeaderRow { get; init; } = [];
-
         /// <summary>
         /// Total number of columns in the sheet.
         /// </summary>

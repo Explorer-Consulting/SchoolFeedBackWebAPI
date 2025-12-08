@@ -17,7 +17,7 @@ var questions = ImmutableArray.Create(
         Category = "Osztálytermi tevékenység",
         Type = QuestionType.LikertScaleOneToFive,
         AnswerOptions = new List<string>(),
-        Description = "1 = egyáltalán nem értek egyet,2 = Inkább nem értek egyet,3 = Részben egyetértek,4 = Inkább egyetértek, 5 = teljes mértékben egyetértek"
+        Description = "1 = Egyáltalán nem értek egyet,2 = Inkább nem értek egyet,3 = Részben egyetértek,4 = Inkább egyetértek, 5 = Teljes mértékben egyetértek"
     },
 
     // multiple choice ex
@@ -50,9 +50,9 @@ var questions = ImmutableArray.Create(
         Category = "Iskola utáni tevékenység",
         Type = QuestionType.MultinomialSingleChoice,
         AnswerOptions = new List<string> {
-             "magánórára, egyéni felkészítőre járok",
-             "csoportos felkészülésen veszek részt",
-             "nem veszek részt iskolán kívüli oktatásban ebből a tantárgyból"
+             "Magánórára, egyéni felkészítőre járok",
+             "Csoportos felkészülésen veszek részt",
+             "Nem veszek részt iskolán kívüli oktatásban ebből a tantárgyból"
        },
         Description = "Válasz egy rád jellemző választ"
     },
@@ -71,10 +71,12 @@ var questions = ImmutableArray.Create(
     new QuestionTemplate
     {
         Id = "q5",
-        Category = "Mi az amin nem változtatnál?",
+        Question = "Mi az amin nem változtatnál?",
+        Category = "Visszajelzés",
         AnswerOptions = new List<string>(),
         Type = QuestionType.OpenEnded,
         Description = "Írd le mi véleményed őszintén"
+
     }
 );
 
