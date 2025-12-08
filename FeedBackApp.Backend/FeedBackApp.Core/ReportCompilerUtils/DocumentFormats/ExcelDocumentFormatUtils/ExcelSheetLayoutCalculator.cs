@@ -86,6 +86,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                     normalized.Add((normalizedRow, RowType.Option));
                 }
 
+                var emptyRow = new List<string>();
+                for (int i = 0; i < layout.TotalColumns; i++)
+                    emptyRow.Add(string.Empty);
+                normalized.Add((emptyRow, RowType.Empty));
+
                 // Add all answer rows
                 bool firstAnswerRow = true;
                 foreach (var row in block.AnswerRows)
@@ -93,7 +98,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                     var normalizedRow = new List<string>(row);
                     while (normalizedRow.Count < layout.TotalColumns)
                         normalizedRow.Add(string.Empty);
-                    
+
                     if (firstAnswerRow)
                     {
                         normalized.Add((normalizedRow, RowType.Header));

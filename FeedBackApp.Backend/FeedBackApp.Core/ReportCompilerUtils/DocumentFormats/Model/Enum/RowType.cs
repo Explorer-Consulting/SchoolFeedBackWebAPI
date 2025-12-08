@@ -21,6 +21,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum
         /// <summary>
         /// Answer row containing actual respondent answers.
         /// </summary>
-        Answer
+        Answer,
+
+        Empty
+
+
     }
 }
