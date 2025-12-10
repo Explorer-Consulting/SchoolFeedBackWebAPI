@@ -12,6 +12,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
     /// <summary>
     /// Provides static factory methods for creating Excel cell objects with specified content and formatting.
     /// </summary>
+    /// 
+    #region Factory Stuff
+        //You have two type of cell types. No need for a factory class.
+    #endregion
     internal class ExcelCellFactory
     {
         /// <summary>
