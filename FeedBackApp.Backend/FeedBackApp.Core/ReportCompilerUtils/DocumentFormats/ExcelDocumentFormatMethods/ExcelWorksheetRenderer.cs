@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 using System.Globalization;
 using static FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils.ExcelCellFactory;
 
@@ -37,8 +38,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             Sheets sheets,
             string sheetName,
             QuestionType questionType,
-            IReadOnlyList<string> header,
-            IReadOnlyList<(List<string> Main, List<string> Opts)> blocks,
+            IReadOnlyList<(List<string> Row, RowType Type)> rows,
             uint? explicitSheetId,
             int maxAnswerColumns,
             int maxOptionColumns)
@@ -47,7 +47,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             var sheetData = new SheetData();
 
             // Column width estimation based on content
-            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(header, blocks, questionType, maxAnswerColumns);
+            var cols = ExcelColumnWidthCalculator.CalculateColumnWidths(rows, questionType, maxAnswerColumns);
 
             // Freeze header (Pane)
             var views = new SheetViews(new SheetView
@@ -73,40 +73,42 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
             };
             sheets.Append(sheet);
 
-            // Header (style 1)
-            var headerRow = new Row();
-            foreach (var text in header)
-                headerRow.Append(CreateTextCell(text, styleIndex: 1));
-            sheetData.Append(headerRow);
-
             // Local predicate: is this a numeric column (based on sheet type and index)
             bool IsNumericColumn(int columnIndex) =>
-                questionType.HasNumericAnswers() && 
+                questionType.HasNumericAnswers() &&
                 columnIndex >= 1 &&
                 columnIndex <= maxAnswerColumns;
 
             // Write data rows
-            foreach (var (Main, Opts) in blocks)
+            foreach (var (row, rowType) in rows)
             {
-                var dataRow = new Row();
-                for (int c = 0; c < Main.Count; c++)
+                var excelRow = new Row();
+                for (int c = 0; c < row.Count; c++)
                 {
-                    if (IsNumericColumn(c) &&
-                        double.TryParse(Main[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
-                        dataRow.Append(CreateNumberCell(num, styleIndex: 4));
-                    else
-                        dataRow.Append(CreateTextCell(Main[c], styleIndex: 2));
-                }
-                sheetData.Append(dataRow);
 
-                // Options row (if present)
-                if (Opts is { Count: > 1 })
-                {
-                    var optRow = new Row();
-                    for (int c = 0; c < Opts.Count; c++)
-                        optRow.Append(CreateTextCell(Opts[c], styleIndex: 3));
-                    sheetData.Append(optRow);
+                    // Determine style based on row type
+                    if (rowType == RowType.Header)
+                    {
+                        excelRow.Append(CreateTextCell(row[c], styleIndex: 1));
+                    }
+                    else if (rowType == RowType.Option)
+                    {
+                        // Options always get style 3 (italic, light background)
+                        excelRow.Append(CreateTextCell(row[c], styleIndex: 3));
+                    }
+                    else if (IsNumericColumn(c) &&
+                             double.TryParse(row[c], NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
+                    {
+                        // Numeric data in answer/header rows
+                        excelRow.Append(CreateNumberCell(num, styleIndex: 4));
+                    }
+                    else if (rowType == RowType.Answer)
+                    {
+                        // Text data in answer/header rows
+                        excelRow.Append(CreateTextCell(row[c], styleIndex: 2));
+                    }
                 }
+                sheetData.Append(excelRow);
             }
         }
     }

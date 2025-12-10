@@ -14,6 +14,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// The <see cref="CompileComponent"/> method returns the corresponding QuestPDF component.
     /// </summary>
     public sealed class LikertScaleEvaluationData(
+        string questionId,
         string questionStatement,
         ImmutableArray<int> answers,
         string valueMeanings,
@@ -21,7 +22,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         int maximumScale
     ) : EvaluationData
     {
-        #region Question-specific properties
+
+        #region Inputs
+
+        public string QuestionId { get; init; } = questionId;
 
         /// <summary>
         /// The question text (e.g., "The teacher explained clearly").
@@ -48,6 +52,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// </summary>
         public int MaximumScale { get; init; } = maximumScale;
 
+        #endregion
+
+        #region Outputs
         /// <summary>Mean.</summary>
         public double MeanValue { get; private set; }
 

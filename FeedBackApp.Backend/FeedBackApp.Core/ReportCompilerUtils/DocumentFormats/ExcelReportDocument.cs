@@ -8,6 +8,7 @@ using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMe
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
+using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
@@ -74,9 +75,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 // If sheetModels is empty, we create an "Empty" sheet
                 if (!sheetModels.Any())
                 {
-                    var emptyBlocks = new List<(List<string> Main, List<string> Opts)>
+                    var emptyRows = new List<(List<string>, RowType)>
                     {
-                        (new List<string>{ "—" }, new List<string>())
+                        (new List<string> { "Nincs adat" }, RowType.Header)
                     };
 
                     // Create the "Empty" sheet
@@ -85,8 +86,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                         sheets,
                         "Üres",
                         QuestionType.Unknown,
-                        header: ["Kérdés"],
-                        blocks: emptyBlocks,
+                        rows: emptyRows,
                         explicitSheetId: null,
                         maxAnswerColumns: 0,
                         maxOptionColumns: 0
@@ -119,7 +119,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                             sheets,
                             sheetName,
                             model.Type,
-                            layout.HeaderRow.ToList(),
                             normalized,
                             sheetId++,
                             layout.MaxAnswerColumns,

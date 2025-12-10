@@ -58,9 +58,22 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
 
         private static Fonts CreateFonts() =>
             new(
-                new Font(),
-                new Font(new Bold()),
-                new Font(new Italic())
+                new Font(
+                    new FontSize { Val = 11 },
+                    new FontName { Val = "Calibri" }
+                ),
+
+                new Font(
+                    new FontSize { Val = 11 },
+                    new FontName { Val = "Calibri" },
+                    new Bold()
+                ),
+
+                new Font(
+                    new FontSize { Val = 11 },
+                    new FontName { Val = "Calibri" },
+                    new Italic()
+                )
             )
             { Count = 3 };
 
