@@ -1,9 +1,10 @@
 ﻿using Application.DTOs.Questionnaire;
+using Application.Validation.Base;
 using FluentValidation;
 
 namespace Application.Validation.CreateValidation
 {
-    public class QuestionnaireValidator : AbstractValidator<QuestionnaireDTO>
+    public class QuestionnaireValidator : BaseValidator<QuestionnaireDTO>
     {
         public QuestionnaireValidator()
         {

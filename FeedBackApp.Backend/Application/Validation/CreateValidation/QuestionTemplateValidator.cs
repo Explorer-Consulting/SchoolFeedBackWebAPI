@@ -1,10 +1,11 @@
 ﻿using Application.DTOs.Questionnaire;
+using Application.Validation.Base;
 using FeedBackApp.Core.Model.Enum;
 using FluentValidation;
 
 namespace Application.Validation.CreateValidation
 {
-    public class QuestionTemplateValidator : AbstractValidator<QuestionTemplateDTO>
+    public class QuestionTemplateValidator : BaseValidator<QuestionTemplateDTO>
     {
         public QuestionTemplateValidator()
         {

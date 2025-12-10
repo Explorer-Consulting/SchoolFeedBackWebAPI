@@ -1,11 +1,12 @@
 ﻿using Application.DTOs.Evaluation;
+using Application.Validation.Base;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FluentValidation;
 
 namespace Application.Validation.UpdateValidation
 {
-    public class QuestionUpdateValidator : AbstractValidator<QuestionResultDTO>
+    public class QuestionUpdateValidator : BaseValidator<QuestionResultDTO>
     {
         public QuestionUpdateValidator(IList<QuestionTemplate> templates)
         {

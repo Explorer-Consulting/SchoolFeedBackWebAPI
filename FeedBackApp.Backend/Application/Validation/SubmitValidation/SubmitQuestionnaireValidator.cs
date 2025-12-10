@@ -1,10 +1,11 @@
 ﻿using Application.DTOs.Evaluation;
+using Application.Validation.Base;
 using FeedBackApp.Core.Model;
 using FluentValidation;
 
 namespace Application.Validation.SubmitValidation
 {
-    public class SubmitQuestionnaireValidator : AbstractValidator<SubmitQuestionnaireDTO>
+    public class SubmitQuestionnaireValidator : BaseValidator<SubmitQuestionnaireDTO>
     {
         public SubmitQuestionnaireValidator(IList<QuestionTemplate> templates)
         {

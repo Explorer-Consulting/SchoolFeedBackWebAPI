@@ -1,9 +1,10 @@
 ﻿using Application.DTOs.Survey;
+using Application.Validation.Base;
 using FluentValidation;
 
 namespace Application.Validation.CreateValidation
 {
-    public class CreateSurveyMetadataValidator : AbstractValidator<CreateSurveyMetadataDTO>
+    public class CreateSurveyMetadataValidator : BaseValidator<CreateSurveyMetadataDTO>
     {
         public CreateSurveyMetadataValidator()
         {
