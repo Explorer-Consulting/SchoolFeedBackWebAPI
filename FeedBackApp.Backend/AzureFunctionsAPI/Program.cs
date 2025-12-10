@@ -3,6 +3,7 @@ using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
+using ApplicationEventWorkers.SelfOptIn; 
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
@@ -90,6 +91,25 @@ builder.Services.AddSingleton<IBlobContext>(sp =>
     return new BlobContext(serviceClient, containerName);
 });
 
+// ─────────────────────────────────────────────────────
+// Self Opt-In
+// ─────────────────────────────────────────────────────
+
+builder.Services.AddOptions<SelfOptInJwtOptions>()
+    .Configure<IConfiguration>((opt, cfg) =>
+    {
+        // pulled from "SelfOptInJwtOptions"
+        opt.Enabled = true;
+        opt.Issuer = "feedback-app.optin";          // source
+        opt.Audience = "feedback-app.optin";        // destination
+        opt.SigningKey = cfg["Jwt:SecretKey"]!;     // reuse existing secret
+        opt.TokenTtlMinutes = 7 * 24 * 60;          // 7 days
+    })
+    .Validate(o => !string.IsNullOrWhiteSpace(o.SigningKey) && o.SigningKey.Length >= 32,
+        "SelfOptInJwt: SigningKey must be >= 32 chars")
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IOptInTokenService, OptInJwtService>();
 // ─────────────────────────────────────────────────────
 // 5) Egyéb config ellenőrzés (JWT, Google, Email, AdminEmails)
 // ─────────────────────────────────────────────────────
