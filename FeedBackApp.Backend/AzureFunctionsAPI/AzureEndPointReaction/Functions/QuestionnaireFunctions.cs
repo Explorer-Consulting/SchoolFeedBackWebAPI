@@ -3,6 +3,7 @@ using Application.DTOs.Survey;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -14,11 +15,16 @@ using System.Security.Claims;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
 
-public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireService, ILogger<QuestionnaireFunctions> logger, ISurveyService surveyService)
+public sealed class QuestionnaireFunctions(
+    IQuestionnaireService questionnaireService, 
+    ILogger<QuestionnaireFunctions> logger, 
+    ISurveyService surveyService,
+    IValidator<CreateSurveyMetadataDTO> createSurveyValidator)
 {
     private readonly IQuestionnaireService _questionnaireService = questionnaireService;
     private readonly ILogger<QuestionnaireFunctions> _logger = logger;
     private readonly ISurveyService _surveyService = surveyService;
+    private readonly IValidator<CreateSurveyMetadataDTO> _createSurveyValidator = createSurveyValidator;
 
     [RequireAdmin]
     [Function("PerformQuestionnaireCompilation")]
@@ -36,21 +42,30 @@ public sealed class QuestionnaireFunctions(IQuestionnaireService questionnaireSe
             contentType: "application/json",
             bodyType: typeof(CreationResponseDTO)
             )]
+    [OpenApiResponseWithBody(
+            statusCode: HttpStatusCode.BadRequest,
+            contentType: "application/json",
+            bodyType: typeof(Application.DTOs.ValidationErrorResponseDTO)
+            )]
     public async Task<HttpResponseData> PerformQuestionnaireCompilation([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "surveys")] HttpRequestData request)
     {
         try
         {
-            var dto = await JsonUtil.ReadFromJsonAsync<CreateSurveyMetadataDTO>(request);
+            // VALIDATION POINT: Read and validate DTO before processing
+            // This ensures the DTO is valid before reaching business logic
+            var (dto, validationError) = await ValidationUtil.ReadAndValidateAsync<CreateSurveyMetadataDTO>(
+                request,
+                _createSurveyValidator,
+                _logger);
 
-            if (dto == null)
+            // If validation failed, return standardized error response immediately
+            if (validationError != null)
             {
-                _logger.LogError("Invalid or empty JSON body");
-                var badResponse = request.CreateResponse(HttpStatusCode.BadRequest);
-                await badResponse.WriteStringAsync("Invalid or empty JSON body.");
-                return badResponse;
+                return validationError;
             }
 
-            var result = await _questionnaireService.CompileAndSaveAsync(dto);
+            // At this point, dto is guaranteed to be valid (not null and passes all validation rules)
+            var result = await _questionnaireService.CompileAndSaveAsync(dto!);
 
             if (!result.Success)
             {
