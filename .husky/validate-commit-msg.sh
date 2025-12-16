@@ -34,8 +34,8 @@ esac
 # Allowed types (official 1.0.0 + extended)
 ALLOWED_TYPES="build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test"
 
-# Strict regex per spec
-PATTERN="^(${ALLOWED_TYPES})(\([a-z0-9._-]+\))?(!)?: [^\s].{0,71}$"
+# Strict regex per spec (line length külön kezelve)
+PATTERN="^(${ALLOWED_TYPES})(\([a-z0-9._-]+\))?(!)?: [^\s].*$"
 
 if ! printf '%s' "$FIRST_LINE" | grep -Eq "$PATTERN"; then
   echo -e "${RED}Invalid commit message format.${RESET}"
@@ -64,8 +64,8 @@ if ! printf '%s' "$FIRST_LINE" | grep -Eq "$PATTERN"; then
   echo -e "${YELLOW}Hints:${RESET}"
   echo "   • Must start with a valid lowercase type"
   echo "   • Scope (if any) must be lowercase, no spaces"
-  echo "   • Subject must start with lowercase and be ≤72 chars"
-  echo "   • Subject cannot end with a period"
+  echo "   • Subject should be ≤256 chars"
+  echo "   • Subject must not end with a period"
   echo "   • Use BREAKING CHANGE: footer for major changes"
   echo
   exit 1
@@ -90,12 +90,6 @@ if [[ -n "$SCOPE" ]] && [[ "$SCOPE" =~ [A-Z\ ] ]]; then
   exit 1
 fi
 
-# 3. Subject starts lowercase
-FIRST_CHAR=$(printf '%s' "$SUBJECT" | cut -c1)
-if [[ "$FIRST_CHAR" =~ [A-Z] ]]; then
-  echo -e "${YELLOW}Subject should start with lowercase (recommended by spec): ${RESET}$SUBJECT"
-fi
-
 # 4. Subject cannot end with period
 if [[ "$SUBJECT" =~ \.$ ]]; then
   echo -e "${RED}Subject must not end with a period.${RESET}"
@@ -109,13 +103,16 @@ if [[ "$SUBJECT" == *"..."* ]]; then
   exit 1
 fi
 
-# 6. No meaningless subjects
-if echo "$SUBJECT" | grep -Eiq '(^|[^a-z])fix([^a-z]|$)'; then
+# 6. No meaningless subjects: 'fix' / 'bugfix' csak akkor tiltott,
+#    ha a subject EGYEDÜL ez (scope utáni rész, trimmelve)
+TRIMMED_SUBJECT="$(echo "$SUBJECT" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+
+if echo "$TRIMMED_SUBJECT" | grep -Eiq '^fix$'; then
   echo -e "${RED}Subject must not be just 'fix' — describe what was fixed.${RESET}"
   exit 1
 fi
-if echo "$SUBJECT" | grep -Eiq '(^|[^a-z])bugfix([^a-z]|$)'; then
-  echo -e "${RED}Avoid using 'bugfix' in subject — use 'fix:' type and describe what was fixed.${RESET}"
+if echo "$TRIMMED_SUBJECT" | grep -Eiq '^bugfix$'; then
+  echo -e "${RED}Avoid using 'bugfix' alone in subject — use 'fix:' type and describe what was fixed.${RESET}"
   exit 1
 fi
 
@@ -130,17 +127,23 @@ if echo "$FIRST_LINE" | grep -Eq '[^[:print:]]'; then
   exit 1
 fi
 
-# 9. Max length
-if [ "$SUBJECT_LEN" -gt 72 ]; then
-  echo -e "${RED}Subject too long (${SUBJECT_LEN}/72).${RESET}"
+# 9. Max length (full first line)
+if [ "$SUBJECT_LEN" -gt 256 ]; then
+  echo -e "${RED}Subject too long (${SUBJECT_LEN}/256).${RESET}"
   echo "   $FIRST_LINE"
   echo "   → Move details into the body."
   exit 1
 fi
 
-# 10. Disallow WIP/draft/temp
-if echo "$FIRST_LINE" | grep -Eiq '(wip|draft|temp|temporary)'; then
-  echo -e "${RED}Work-in-progress or temporary commits are not allowed.${RESET}"
+# 10. Disallow WIP/draft, 'temporary' csak külön szóként tiltott
+if echo "$FIRST_LINE" | grep -Eiq '(wip|draft)'; then
+  echo -e "${RED}Work-in-progress or draft commits are not allowed.${RESET}"
+  exit 1
+fi
+
+# Block only 'temporary' as its own word
+if echo "$FIRST_LINE" | grep -Eiq '(^|[^a-zA-Z])temporary([^a-zA-Z]|$)'; then
+  echo -e "${RED}Temporary commits are not allowed — clean up before committing.${RESET}"
   exit 1
 fi
 
@@ -148,6 +151,78 @@ fi
 if echo "$FIRST_LINE" | grep -q '!:' && ! grep -iq 'BREAKING CHANGE:' "$MSG_FILE"; then
   echo -e "${YELLOW}'!' used but no 'BREAKING CHANGE:' footer found.${RESET}"
   echo "   Add a footer line: BREAKING CHANGE: <description>"
+fi
+
+# === Smart suggestions ===
+
+lower_subject="$(echo "$SUBJECT" | tr 'A-Z' 'a-z')"
+
+# A) Scope-suggestion, ha nincs scope, de a subject alapján tippelhető
+if [[ -z "$SCOPE" ]]; then
+  SUGGESTED_SCOPE=""
+
+  if echo "$lower_subject" | grep -Eq 'controller|endpoint|api|http|rest'; then
+    SUGGESTED_SCOPE="api"
+  elif echo "$lower_subject" | grep -Eq 'service|handler|use case|usecase|domain'; then
+    SUGGESTED_SCOPE="core"
+  elif echo "$lower_subject" | grep -Eq 'ui|page|view|component|tsx|css|layout'; then
+    SUGGESTED_SCOPE="ui"
+  elif echo "$lower_subject" | grep -Eq 'db|database|sql|schema|migration|repository|repo'; then
+    SUGGESTED_SCOPE="db"
+  elif echo "$lower_subject" | grep -Eq 'config|configuration|env|settings|options'; then
+    SUGGESTED_SCOPE="config"
+  elif echo "$lower_subject" | grep -Eq 'test|spec|assert|coverage|fixture'; then
+    SUGGESTED_SCOPE="test"
+  fi
+
+  if [[ -n "$SUGGESTED_SCOPE" ]]; then
+    echo
+    echo -e "${CYAN}Scope suggestion:${RESET}"
+    echo -e "   Based on your subject, you might use:"
+    echo -e "   ${BOLD}${TYPE}(${SUGGESTED_SCOPE}):${RESET} $SUBJECT"
+    echo
+  fi
+fi
+
+# B) Ige-javaslat, ha van scope (C# PascalCase neveket is engedünk a subjectben)
+if [[ -n "$SCOPE" ]]; then
+  VERB_SUGGESTION=""
+
+  case "$TYPE" in
+    feat)
+      VERB_SUGGESTION="add, implement, introduce, create"
+      ;;
+    fix)
+      VERB_SUGGESTION="fix, resolve, handle, prevent"
+      ;;
+    refactor)
+      VERB_SUGGESTION="refactor, extract, simplify, cleanup"
+      ;;
+    perf)
+      VERB_SUGGESTION="optimize, improve, reduce, speed up"
+      ;;
+    chore|build|ci)
+      VERB_SUGGESTION="update, configure, bump, align"
+      ;;
+    docs)
+      VERB_SUGGESTION="document, update docs for, clarify"
+      ;;
+    style)
+      VERB_SUGGESTION="reformat, align, tidy, fix style in"
+      ;;
+    test)
+      VERB_SUGGESTION="add tests for, improve tests for, fix tests for"
+      ;;
+    revert)
+      VERB_SUGGESTION="revert, rollback"
+      ;;
+  esac
+
+  if [[ -n "$VERB_SUGGESTION" ]]; then
+    echo -e "${CYAN}Verb ideas for the subject:${RESET}"
+    echo -e "   Try starting with: ${BOLD}${VERB_SUGGESTION}${RESET}"
+    echo
+  fi
 fi
 
 # Passed

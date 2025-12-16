@@ -22,79 +22,8 @@ using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
 
-/// <summary>
-/// Bootstraps the Azure Functions (.NET isolated worker) host for the School Feedback application.
-/// </summary>
-/// <remarks>
-/// <para>
-/// <b>Configuration pipeline</b><br/>
-/// Loads hierarchical configuration from <c>appsettings.json</c>, environment-specific overrides
-/// (<c>appsettings.&lt;Environment&gt;.json</c>), and environment variables. Settings are made
-/// available to the DI container and framework components.
-/// </para>
-/// <para>
-/// <b>Serialization</b><br/>
-/// Configures the Functions worker to use <see cref="JsonObjectSerializer"/> with camelCase
-/// property naming to ensure consistent request/response payload shapes across endpoints.
-/// </para>
-/// <para>
-/// <b>Observability</b><br/>
-/// Registers Application Insights worker telemetry for traces, metrics, and logs emitted
-/// by Functions and services.
-/// </para>
-/// <para>
-/// <b>Data layer (Cosmos DB via EF Core)</b><br/>
-/// Registers <see cref="AppDBContext"/> against Azure Cosmos DB using the
-/// <c>ConnectionString</c> environment variable and the logical database name <c>SchoolDatabase</c>.
-/// Database creation is ensured during startup via <see cref="DbContext.Database.EnsureCreatedAsync()"/>.
-/// </para>
-/// <para>
-/// <b>Blob storage</b><br/>
-/// Provides a singleton <see cref="BlobServiceClient"/> using <c>AZURE_REPORT_BLOB_STORAGE</c>.
-/// Binds an <see cref="IBlobContext"/> backed by a container named via <c>AZURE_REPORTS_CONTAINER</c>.
-/// The container is created (if missing) in the <see cref="BlobContext"/> constructor,
-/// enabling report artifact storage.
-/// </para>
-/// <para>
-/// <b>Domain services &amp; repositories</b><br/>
-/// Wires application services (<see cref="ISurveyService"/>, <see cref="IEvaluationService"/>,
-/// <see cref="IQuestionnaireService"/>, <see cref="IEmailService"/>, <see cref="IReportService"/>)
-/// and their repositories (questionnaire, evaluation, whitelist, email, report) with scoped lifetimes.
-/// </para>
-/// <para>
-/// <b>HTTP Functions</b><br/>
-/// Registers the function classes (<see cref="QuestionnaireFunctions"/>, <see cref="EvaluationFunctions"/>,
-/// <see cref="ReportFunctions"/>), enabling DI for their dependencies.
-/// </para>
-/// <para>
-/// <b>Validation</b><br/>
-/// Adds FluentValidation validators for survey/questionnaire creation DTOs to enforce
-/// input integrity at the application boundary.
-/// </para>
-/// <para>
-/// <b>Middleware</b><br/>
-/// Configures custom middleware for authorization and user-context population:
-/// <list type="bullet">
-///   <item><description><see cref="AdminOnlyMiddleware"/></description></item>
-///   <item><description><see cref="StudentOnlyMiddleware"/></description></item>
-///   <item><description><see cref="MiddlewareSelector"/> (entry point that routes to the appropriate guard)</description></item>
-/// </list>
-/// The selector is inserted into the Functions pipeline via <see cref="IFunctionsWorkerApplicationBuilder.UseMiddleware{T}"/>.
-/// </para>
-/// <para>
-/// <b>Host lifecycle</b><br/>
-/// Ensures data store readiness, then starts the Functions host to process triggers.
-/// </para>
-/// <para>
-/// <b>Licensing</b><br/>
-/// Initializes QuestPDF community license for document generation features used by reporting.
-/// </para>
-/// </remarks>
-
-// testing commit validation finally works
-// testing commit validation from user interface
 QuestPDF.Settings.License = LicenseType.Community;
-
+//megy
 // ──────────────────────────────────────────────────---
 // 1) Modern isolated builder
 // ─────────────────────────────────────────────────────
