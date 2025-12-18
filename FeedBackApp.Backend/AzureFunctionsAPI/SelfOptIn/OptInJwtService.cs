@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using NUlid;
 
 namespace ApplicationEventWorkers.SelfOptIn;
 
@@ -39,7 +40,7 @@ public sealed class OptInJwtService : IOptInTokenService
             throw new InvalidOperationException("SelfOptInJwtOptions.SigningKey must be at least 32 characters.");
     }
 
-    public string CreateToken(Guid questionnaireId, string tag, DateTimeOffset expiresAtUtc)
+    public string CreateToken(Ulid questionnaireId, string tag, DateTimeOffset expiresAtUtc)
     {
         var claims = new[]
         {
@@ -56,9 +57,9 @@ public sealed class OptInJwtService : IOptInTokenService
         {
             Subject = new ClaimsIdentity(claims),
             NotBefore = now.AddMinutes(-1),
-            Expires = expiresAtUtc.UtcDateTime,
-            Issuer = _opt.Issuer,
-            Audience = _opt.Audience,
+            Expires   = expiresAtUtc.UtcDateTime,
+            Issuer    = _opt.Issuer,
+            Audience  = _opt.Audience,
             SigningCredentials = creds
         };
 
@@ -86,15 +87,15 @@ public sealed class OptInJwtService : IOptInTokenService
 
             if (st is not JwtSecurityToken jwt ||
                 !jwt.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.Ordinal))
-                return new(false, Guid.Empty, string.Empty, null, "bad_algorithm");
+                return new(false, default, string.Empty, null, "bad_algorithm");
 
             var purpose = principal.FindFirst("purpose")?.Value;
             if (!string.Equals(purpose, "optin", StringComparison.Ordinal))
-                return new(false, Guid.Empty, string.Empty, null, "wrong_purpose");
+                return new(false, default, string.Empty, null, "wrong_purpose");
 
-            var qidStr = principal.FindFirst("qid")?.Value;
-            if (!Guid.TryParse(qidStr, out var qid))
-                return new(false, Guid.Empty, string.Empty, null, "bad_qid");
+            var qidText = principal.FindFirst("qid")?.Value;
+            if (!Ulid.TryParse(qidText, out var qid))
+                return new(false, default, string.Empty, null, "bad_qid");
 
             var tag = principal.FindFirst("tag")?.Value ?? string.Empty;
 
@@ -105,10 +106,10 @@ public sealed class OptInJwtService : IOptInTokenService
 
             return new(true, qid, tag, exp, null);
         }
-        catch (SecurityTokenExpiredException)          { return new(false, Guid.Empty, "", null, "expired"); }
-        catch (SecurityTokenInvalidAudienceException)  { return new(false, Guid.Empty, "", null, "wrong_audience"); }
-        catch (SecurityTokenInvalidIssuerException)    { return new(false, Guid.Empty, "", null, "wrong_issuer"); }
-        catch (SecurityTokenInvalidSignatureException) { return new(false, Guid.Empty, "", null, "bad_signature"); }
-        catch                                          { return new(false, Guid.Empty, "", null, "invalid_token"); }
+        catch (SecurityTokenExpiredException)          { return new(false, default, "", null, "expired"); }
+        catch (SecurityTokenInvalidAudienceException)  { return new(false, default, "", null, "wrong_audience"); }
+        catch (SecurityTokenInvalidIssuerException)    { return new(false, default, "", null, "wrong_issuer"); }
+        catch (SecurityTokenInvalidSignatureException) { return new(false, default, "", null, "bad_signature"); }
+        catch                                          { return new(false, default, "", null, "invalid_token"); }
     }
 }

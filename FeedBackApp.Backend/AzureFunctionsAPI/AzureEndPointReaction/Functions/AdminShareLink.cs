@@ -2,6 +2,7 @@ using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using NUlid;
 
 /*
  * A simple HTTP GET function to generate a shareable opt-in link for testing/admin usage.
@@ -20,7 +21,6 @@ namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 public class AdminShareLink
 {
     private readonly IOptInTokenService _tokens;
-
     public AdminShareLink(IOptInTokenService tokens) => _tokens = tokens;
 
     [Function("ShareOptInLink")]
@@ -29,14 +29,15 @@ public class AdminShareLink
     {
         var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
 
-        if (!Guid.TryParse(qs.Get("qid"), out var qid))
+        var qidRaw = qs.Get("qid");
+        if (!Ulid.TryParse(qidRaw, out var qid))
         {
             var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            await bad.WriteStringAsync("Missing/invalid qid");
+            await bad.WriteStringAsync("Missing/invalid qid (expected ULID).");
             return bad;
         }
 
-        var tag = qs.Get("tag") ?? "@course-abc-open";
+        var tag = qs.Get("tag") ?? "@templateID";
         var minutes = int.TryParse(qs.Get("minutes"), out var m) ? m : 60;
         var exp = DateTimeOffset.UtcNow.AddMinutes(minutes);
 
