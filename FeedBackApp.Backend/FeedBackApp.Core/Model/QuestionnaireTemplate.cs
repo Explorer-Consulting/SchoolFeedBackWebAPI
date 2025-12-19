@@ -22,5 +22,7 @@ namespace FeedBackApp.Core.Model
             }
             QuestionTemplates = questionTemplates;
         }
+
+        public bool SelfEnrollmentAllowed { get; set; } = false;
     }
 }
