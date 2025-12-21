@@ -222,5 +222,12 @@ namespace StudentFeedbackSurveyApplication.Infrastructure.Repositories
             }
         }
 
+        public async Task<IReadOnlyList<QuestionnaireTemplateDocument>> RetrieveAllAggregateEntities()
+        {
+            return await context.QuestionnaireTemplateCollection
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
     }
 }
