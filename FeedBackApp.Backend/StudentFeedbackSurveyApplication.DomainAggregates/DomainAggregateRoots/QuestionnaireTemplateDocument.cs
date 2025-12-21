@@ -17,10 +17,6 @@ namespace StudentFeedbackSurveyApplication.Domain.DomainAggregateRoots
         /// </summary>
         public required ULID Id { get; set; }
         /// <summary>
-        /// Gets or sets the partition key that uniquely identifies the logical partition for the entity.
-        /// </summary>
-        public required ULID PartitionKey { get; set; }
-        /// <summary>
         /// Gets or sets the title associated with the object.
         /// </summary>
         public required string Title { get; set; }
