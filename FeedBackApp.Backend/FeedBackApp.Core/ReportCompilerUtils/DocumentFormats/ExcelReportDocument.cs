@@ -1,19 +1,11 @@
 ﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Office2013.Drawing.Chart;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
-using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
-using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
-using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
 {
@@ -105,7 +97,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     {
 
                         // Generate a unique sheet name
-                        var sheetName = NameUtils.MakeUniqueName(model.DisplayName, usedNames, invalidChars);
+                        var sheetName = MakeUniqueName(model.DisplayName, usedNames, invalidChars);
 
                         // Calculate layout configuration for the sheet
                         var layout = ExcelSheetLayoutCalculator.CalculateLayout(model);
@@ -135,5 +127,42 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
             return Task.FromResult(Data);
         }
 
+        /// <summary>
+        /// Normalizes a name by removing invalid characters, trimming to a max length,
+        /// and ensuring uniqueness inside the provided name set.
+        /// </summary>
+        /// <param name="raw">Original name to normalize.</param>
+        /// <param name="usedNames">Set of already used names (checked for uniqueness).</param>
+        /// <param name="invalidChars">Characters to remove from the input name.</param>
+        /// <param name="maxLength">Maximum allowed length after trimming.</param>
+        /// <param name="defaultName">Fallback name if the input becomes empty.</param>
+        /// <returns>Safe, unique sheet name.</returns>
+        /// </summary>
+        private static string MakeUniqueName(
+            string raw,
+            ISet<string> usedNames,
+            IEnumerable<char> invalidChars,
+            int maxLength = 31,
+            string defaultName = "Sheet")
+        {
+            // if raw is null or whitespace, use default
+            if (string.IsNullOrWhiteSpace(raw)) raw = defaultName;
+            var name = new string(raw.Where(ch => !invalidChars.Contains(ch)).ToArray());
+            // if name is empty after removing invalid chars, use default
+            if (string.IsNullOrWhiteSpace(name)) name = defaultName;
+            // if name exceeds max length, trim it
+            if (name.Length > maxLength)
+                name = name[..maxLength];
+            var uniqueName = name;
+            int counter = 2;
+            // ensure uniqueness
+            while (!usedNames.Add(name))
+            {
+                string suffix = $" ({counter})";
+                int allowedLength = Math.Min(maxLength - suffix.Length, uniqueName.Length);
+                name = uniqueName[..allowedLength] + suffix;
+            }
+            return name;
+        }
     }
 }

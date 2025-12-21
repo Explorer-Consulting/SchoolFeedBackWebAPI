@@ -1,6 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 
-namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils
+namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods
 {
     internal class ExcelStylesheetBuilder
     {

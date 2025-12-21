@@ -77,6 +77,16 @@ var questions = ImmutableArray.Create(
         Type = QuestionType.OpenEnded,
         Description = "Írd le mi véleményed őszintén"
 
+    },
+    new QuestionTemplate
+    { 
+            Id = "q6",
+            Question = "Mi az amin nem változtatnál?",
+            Category = "Visszajelzés",
+            AnswerOptions = new List<string>(),
+            Type = QuestionType.OpenEnded,
+            Description = "Írd le mi véleményed őszintén"
+
     }
 );
 

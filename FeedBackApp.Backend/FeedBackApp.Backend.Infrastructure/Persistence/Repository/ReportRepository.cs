@@ -77,8 +77,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             // 2) In-memory Status filter
             var questionnaires = questionnairesRaw.Where(q => q.Status == true).ToList();
-            if (questionnaires.Count == 0)
-                return;
+            //if (questionnaires.Count == 0)
+            //    return;
 
             // 3) Normalize under teacher–subject key + project the inner collection in-memory
             var rows = questionnaires
@@ -89,8 +89,8 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 })
                 .ToList();
 
-            if (rows.Count == 0)
-                return;
+            //if (rows.Count == 0)
+             //   return;
 
             // 4) Aggregate under teacher–subject key
             var answerCollection = rows

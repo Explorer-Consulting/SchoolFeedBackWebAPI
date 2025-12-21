@@ -1,7 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
-using System.Globalization;
 
 namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils
 {

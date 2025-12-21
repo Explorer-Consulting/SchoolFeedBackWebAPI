@@ -1,26 +1,23 @@
-<<<<<<< HEAD
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+# Visual Studio Version 17
+VisualStudioVersion = 18.0.11217.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Backend.Infrastructure", "FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj", "{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureFunctionsAPI", "AzureFunctionsAPI\AzureFunctionsAPI.csproj", "{510C8633-3AA1-4589-AC43-CD5DA17EA30E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApplicationEventWorkers", "AzureFunctionsAPI\ApplicationEventWorkers.csproj", "{510C8633-3AA1-4589-AC43-CD5DA17EA30E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Core", "FeedBackApp.Core\FeedBackApp.Core.csproj", "{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelReportTest", "ExcelReportTest\ExcelReportTest.csproj", "{D71DB7D8-7410-46EF-A6FC-52C42CB54795}"
+	ProjectSection(ProjectDependencies) = postProject
+		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08} = {18F0BB4B-6108-6B83-AE39-33FB4B32CF08}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreateExcelReportTest", "CreateExcelReportTest\CreateExcelReportTest.csproj", "{F089FE12-D777-4958-8568-3B8349FA90C1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,10 +32,6 @@ Global
 		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -47,10 +40,10 @@ Global
 		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F089FE12-D777-4958-8568-3B8349FA90C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F089FE12-D777-4958-8568-3B8349FA90C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F089FE12-D777-4958-8568-3B8349FA90C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F089FE12-D777-4958-8568-3B8349FA90C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D71DB7D8-7410-46EF-A6FC-52C42CB54795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D71DB7D8-7410-46EF-A6FC-52C42CB54795}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D71DB7D8-7410-46EF-A6FC-52C42CB54795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D71DB7D8-7410-46EF-A6FC-52C42CB54795}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,54 +52,3 @@ Global
 		SolutionGuid = {FC6A2B49-F29F-4E80-A5AF-AE71119CF39D}
 	EndGlobalSection
 EndGlobal
-=======
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.0.11217.181 d18.0
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Backend.Infrastructure", "FeedBackApp.Backend.Infrastructure\FeedBackApp.Backend.Infrastructure.csproj", "{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApplicationEventWorkers", "AzureFunctionsAPI\ApplicationEventWorkers.csproj", "{510C8633-3AA1-4589-AC43-CD5DA17EA30E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Core", "FeedBackApp.Core\FeedBackApp.Core.csproj", "{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B82E7AA0-8ADE-4BFC-BD97-1AC216FAA2F7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{510C8633-3AA1-4589-AC43-CD5DA17EA30E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ED638BF0-22E3-4D1A-9549-185CFDDCD9DC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5B01D230-9DAC-418E-88DE-09BDEB3CBEFE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{18F0BB4B-6108-6B83-AE39-33FB4B32CF08}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {FC6A2B49-F29F-4E80-A5AF-AE71119CF39D}
-	EndGlobalSection
-EndGlobal
->>>>>>> develop

@@ -4,9 +4,9 @@ using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 using System.Globalization;
-using static FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils.ExcelCellFactory;
 
-namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtils
+
+namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods
 {
     internal static class ExcelWorksheetRenderer
     {
@@ -111,5 +111,32 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentUtil
                 sheetData.Append(excelRow);
             }
         }
+
+        /// <summary>
+        /// Creates a text cell (InlineString) with the given style index.
+        /// </summary>
+        /// <param name="text">Cell text (empty string if null).</param>
+        /// <param name="styleIndex">Cell format style index.</param>
+        private static Cell CreateTextCell(string? text, uint styleIndex = 0) =>
+            new()
+            {
+                DataType = CellValues.InlineString,
+                InlineString = new InlineString(new Text(text ?? string.Empty)),
+                StyleIndex = styleIndex
+            };
+
+        /// <summary>
+        /// Creates a numeric cell (Number) using InvariantCulture formatting.
+        /// </summary>
+        /// <param name="value">The numeric value.</param>
+        /// <param name="styleIndex">Cell format style index.</param>
+        internal static Cell CreateNumberCell(double value, uint styleIndex = 0) =>
+            new()
+            {
+                CellValue = new CellValue(value.ToString(CultureInfo.InvariantCulture)),
+                DataType = CellValues.Number,
+                StyleIndex = styleIndex
+            };
+
     }
 }

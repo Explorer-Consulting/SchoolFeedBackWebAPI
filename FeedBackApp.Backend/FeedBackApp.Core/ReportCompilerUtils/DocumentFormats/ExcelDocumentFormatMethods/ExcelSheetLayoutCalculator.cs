@@ -1,7 +1,7 @@
 ﻿using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
 using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model.Enum;
 
-namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils
+namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatMethods
 {
     /// <summary>
     /// Utility class for calculating Excel worksheet layout configuration.

@@ -166,13 +166,13 @@ builder
 // 10) Build, DB init, Run
 // ─────────────────────────────────────────────────────
 var app = builder.Build();
-
+/*
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     await db.Database.EnsureCreatedAsync();
 }
-
+*/
 app.Run();
 /// Starts the Azure Functions host.
 /// </summary>
