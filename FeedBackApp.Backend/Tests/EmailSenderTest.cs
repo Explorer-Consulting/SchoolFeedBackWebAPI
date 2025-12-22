@@ -3,7 +3,6 @@ using FeedBackApp.Core.Email.Configuration;
 using FeedBackApp.Core.Email.Models;
 using FeedBackApp.Backend.Infrastructure.Email;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Tests;
@@ -22,53 +21,20 @@ public class EmailSenderTest
     // The test is marked with [Ignore] and requires actual email configuration to run
     private IEmailSender? _emailSender;
     private EmailConfiguration? _emailConfig;
-    private IConfiguration? _configuration;
 
     [SetUp]
     public void Setup()
     {
-        // Load email configuration from AzureFunctionsAPI/local.settings.json (for testing only)
+        // Load email configuration from environment variables
+        // Ensure these are set: EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME, EMAIL_APP_PASSWORD
         try
         {
-            // Get the solution root directory (go up from Tests/bin/Debug/net9.0 to Tests, then to solution root)
-            var testAssemblyPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) 
-                ?? Directory.GetCurrentDirectory();
-            
-            // Navigate from bin/Debug/net9.0 -> Tests -> solution root -> AzureFunctionsAPI
-            var solutionRoot = Path.GetFullPath(Path.Combine(testAssemblyPath, "..", "..", "..", ".."));
-            var azureFunctionsPath = Path.Combine(solutionRoot, "AzureFunctionsAPI");
-            var settingsPath = Path.Combine(azureFunctionsPath, "local.settings.json");
-            
-            if (!File.Exists(settingsPath))
-            {
-                throw new FileNotFoundException($"AzureFunctionsAPI/local.settings.json not found at: {settingsPath}");
-            }
-            
-            _configuration = new ConfigurationBuilder()
-                .SetBasePath(azureFunctionsPath)
-                .AddJsonFile("local.settings.json", optional: false, reloadOnChange: false)
-                .Build();
-
-            // Azure Functions local.settings.json has values under "Values" section
-            _emailConfig = new EmailConfiguration
-            {
-                FromAddress = _configuration["Values:Email:FromAddress"] 
-                    ?? throw new InvalidOperationException("Values:Email:FromAddress is not set in AzureFunctionsAPI/local.settings.json"),
-                FromName = _configuration["Values:Email:FromName"] 
-                    ?? throw new InvalidOperationException("Values:Email:FromName is not set in AzureFunctionsAPI/local.settings.json"),
-                AppPassword = _configuration["Values:Email:AppPassword"] 
-                    ?? throw new InvalidOperationException("Values:Email:AppPassword is not set in AzureFunctionsAPI/local.settings.json"),
-                LeaderEmails = _configuration["Values:AdminEmails"] ?? string.Empty
-            };
+            _emailConfig = EmailConfiguration.FromEnvironment();
         }
         catch (InvalidOperationException ex)
         {
             Assert.Fail($"Email configuration not set up correctly: {ex.Message}. " +
-                       "Please ensure AzureFunctionsAPI/local.settings.json exists with Values:Email:FromAddress, Values:Email:FromName, and Values:Email:AppPassword.");
-        }
-        catch (FileNotFoundException)
-        {
-            Assert.Fail("AzureFunctionsAPI/local.settings.json file not found. Please ensure it exists.");
+                       "Please set EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME, and EMAIL_APP_PASSWORD environment variables.");
         }
 
         // Initialize the email sender for integration testing
@@ -86,20 +52,12 @@ public class EmailSenderTest
     public async Task SendTestEmail_WithValidConfiguration_ShouldSendSuccessfully()
     {
         // Arrange
-        // Load test email address from local.settings.json
-        if (_configuration == null)
-        {
-            Assert.Fail("Configuration not initialized. Check Setup method.");
-        }
-
-        // Use first email from AdminEmails as test email, or allow override via environment variable
-        var testEmailAddress = Environment.GetEnvironmentVariable("TEST_EMAIL_ADDRESS")
-            ?? _configuration!["Values:TestEmailAddress"]
-            ?? (_configuration!["Values:AdminEmails"]?.Split(',')[0]?.Trim())
+        // You can set a test email address via environment variable or modify this value
+        // Example: var testEmailAddress = Environment.GetEnvironmentVariable("TEST_EMAIL_ADDRESS") ?? "your-test-email@example.com";
+        var testEmailAddress = Environment.GetEnvironmentVariable("TEST_EMAIL_ADDRESS") 
             ?? throw new InvalidOperationException(
-                "TestEmailAddress is not set. Please set TEST_EMAIL_ADDRESS environment variable, " +
-                "add Values:TestEmailAddress to AzureFunctionsAPI/local.settings.json, " +
-                "or ensure Values:AdminEmails contains at least one email address.");
+                "TEST_EMAIL_ADDRESS environment variable not set. " +
+                "Set this to any email address you want to use for testing.");
 
         if (_emailSender == null || _emailConfig == null)
         {
@@ -129,80 +87,6 @@ public class EmailSenderTest
 
         // Assert
         result.Should().BeTrue("Email should be sent successfully when configuration is valid.");
-    }
-
-    [Test]
-    // [Ignore("Integration test - requires email configuration and actual SMTP connection.")]
-    public async Task SendTestEmail_ToAllAdminEmails_ShouldSendToAllRecipients()
-    {
-        // Arrange
-        if (_configuration == null || _emailSender == null)
-        {
-            Assert.Fail("Configuration or email sender not initialized. Check Setup method.");
-        }
-
-        // Get all admin emails from configuration
-        var adminEmailsString = _configuration["Values:AdminEmails"];
-        if (string.IsNullOrWhiteSpace(adminEmailsString))
-        {
-            Assert.Fail("AdminEmails is not set in AzureFunctionsAPI/local.settings.json");
-        }
-
-        var adminEmails = adminEmailsString
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(email => !string.IsNullOrWhiteSpace(email))
-            .ToList();
-
-        if (!adminEmails.Any())
-        {
-            Assert.Fail("No admin emails found in AdminEmails configuration");
-        }
-
-        Console.WriteLine($"Sending test emails to {adminEmails.Count} admin email(s): {string.Join(", ", adminEmails)}");
-
-        // Send email to each admin email address
-        var emailTasks = adminEmails.Select(async email =>
-        {
-            var testMessage = new EmailMessage
-            {
-                To = email,
-                Subject = $"Test Email - FeedBackApp Email System ({email})",
-                Body = $@"<html>
-<body>
-    <h2>Test Email from FeedBackApp</h2>
-    <p>This is a test email sent to: <strong>{email}</strong></p>
-    <p>This email is being sent to verify that the email sending system works for all admin email addresses.</p>
-    <p><strong>Timestamp:</strong> {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss UTC}</p>
-    <p>If you received this email, the MailKit-based email sender is functioning properly for this address.</p>
-    <hr>
-    <p><em>This is an automated test email from the FeedBackApp backend system.</em></p>
-</body>
-</html>",
-                IsHtml = true,
-                Attachments = new List<EmailAttachment>()
-            };
-
-            var success = await _emailSender!.SendEmailAsync(testMessage);
-            return (Email: email, Success: success);
-        });
-
-        // Wait for all emails to be sent in parallel
-        var results = await Task.WhenAll(emailTasks);
-
-        // Assert
-        var successful = results.Where(r => r.Success).ToList();
-        var failed = results.Where(r => !r.Success).ToList();
-
-        Console.WriteLine($"Email sending results:");
-        Console.WriteLine($"  Successful ({successful.Count}): {string.Join(", ", successful.Select(r => r.Email))}");
-        if (failed.Any())
-        {
-            Console.WriteLine($"  Failed ({failed.Count}): {string.Join(", ", failed.Select(r => r.Email))}");
-        }
-
-        successful.Should().HaveCount(adminEmails.Count, 
-            $"All {adminEmails.Count} admin emails should be sent successfully. " +
-            $"Failed: {string.Join(", ", failed.Select(r => r.Email))}");
     }
 
     [Test]

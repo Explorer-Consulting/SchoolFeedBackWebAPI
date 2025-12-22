@@ -10,27 +10,6 @@ namespace Application.Email.Helpers;
 public static class EmailCompilationHelper
 {
     /// <summary>
-    /// Creates an Email entity from survey metadata for the specified role.
-    /// </summary>
-    /// <param name="metadata">Survey metadata containing dates and title.</param>
-    /// <param name="surveyId">The survey identifier.</param>
-    /// <param name="role">The recipient role (Teacher or Admin).</param>
-    /// <param name="recipientEmails">List of email addresses for the recipients. For Teacher role, this is extracted from metadata.</param>
-    /// <returns>Configured CoreEmail instance.</returns>
-    public static CoreEmail CreateEmail(SurveyMetadata metadata, Guid surveyId, Role role, List<string> recipientEmails)
-    {
-        return new CoreEmail
-        {
-            Emails = recipientEmails,
-            StartDate = metadata.StartDate,
-            EndDate = metadata.EndDate,
-            Role = role,
-            SurveyId = surveyId.ToString(),
-            SurveyName = metadata.Title
-        };
-    }
-
-    /// <summary>
     /// Creates an Email entity for teachers from survey metadata.
     /// </summary>
     public static CoreEmail CreateTeacherEmail(SurveyMetadata metadata, Guid surveyId)
@@ -40,7 +19,17 @@ public static class EmailCompilationHelper
             .Select(t => t.Email!)
             .ToList();
 
-        return CreateEmail(metadata, surveyId, Role.Teacher, teachers);
+        var email = new CoreEmail
+        {
+            Emails = teachers,
+            StartDate = metadata.StartDate,
+            EndDate = metadata.EndDate,
+            Role = Role.Teacher,
+            SurveyId = surveyId.ToString(),
+            SurveyName = metadata.Title
+        };
+
+        return email;
     }
 
     /// <summary>
@@ -53,7 +42,17 @@ public static class EmailCompilationHelper
             .Where(email => !string.IsNullOrWhiteSpace(email))
             .ToList();
 
-        return CreateEmail(metadata, surveyId, Role.Admin, leadersEmails);
+        var email = new CoreEmail
+        {
+            Emails = leadersEmails,
+            StartDate = metadata.StartDate,
+            EndDate = metadata.EndDate,
+            Role = Role.Admin,
+            SurveyId = surveyId.ToString(),
+            SurveyName = metadata.Title
+        };
+
+        return email;
     }
 
     /// <summary>

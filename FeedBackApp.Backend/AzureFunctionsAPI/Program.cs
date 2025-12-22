@@ -1,6 +1,5 @@
 using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
-using Application.Email.Builders;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
@@ -21,6 +20,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
 using Azure.Identity;
@@ -88,10 +88,22 @@ var host = new HostBuilder()
         services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
             _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
         
-        // Email content factory: Creates email messages based on recipient roles (Student, Teacher, Admin)
-        services.AddScoped<IEmailContentFactory, EmailContentFactory>();
+        // Email templates: Loaded at startup and cached in memory
+        // Templates are loaded once and reused for all email rendering operations
+        services.AddSingleton<IReadOnlyDictionary<string, Application.Email.Templates.EmailTemplate>>(sp =>
+        {
+            var config = sp.GetRequiredService<IConfiguration>();
+            var logger = sp.GetRequiredService<ILogger<Program>>();
+            return Application.Email.Templates.EmailTemplateLoader.LoadTemplates(config, logger);
+        });
         
-        // Email sender: MailKit-based SMTP implementation (replaces System.Net.Mail.SmtpClient)
+        // Email template service: Renders templates with token replacement
+        services.AddScoped<Application.Email.Templates.IEmailTemplateService, Application.Email.Templates.EmailTemplateService>();
+        
+        // Email content service: Creates email messages using templates (replaces Factory pattern)
+        services.AddScoped<Application.Email.IEmailContentService, Application.Email.EmailContentService>();
+        
+        // Email sender: MailKit-based SMTP implementation
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         
         // Email service: Orchestrates email batch processing and compilation

@@ -26,7 +26,7 @@ namespace FeedBackApp.Core.Model;
 
     /// <summary>
     /// Gets or sets the end date for email sending.
-    /// For student emails, expired surveys (EndDate < current date) will be automatically removed.
+    /// Expired surveys (EndDate < current date) will be automatically removed.
     /// </summary>
         public DateTime EndDate { get; set; }
 

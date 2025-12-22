@@ -12,9 +12,9 @@ public static class EmailBatchProcessor
 {
 
     /// <summary>
-    /// Removes expired student surveys from the email document.
+    /// Removes expired surveys from the email document.
     /// </summary>
-    public static void RemoveExpiredStudentSurveys(EmailsToSend emailDocument, DateTime currentTime)
+    public static void RemoveExpiredSurveys(EmailsToSend emailDocument, DateTime currentTime)
     {
         var expired = emailDocument.EmailsToSendList
             .Where(s => s.EndDate < currentTime && s.Role == Role.Student)

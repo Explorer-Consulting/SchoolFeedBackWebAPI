@@ -1,42 +1,41 @@
-using Application.Email.Builders;
+using Application.Email;
 using Application.Email.Helpers;
+using Application.Email.Models;
 using Application.Services.Interfaces;
 using FeedBackApp.Core.Email;
 using FeedBackApp.Core.Email.Configuration;
 using FeedBackApp.Core.Email.Constants;
+using FeedBackApp.Core.Email.Models;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace Application.Services;
 
 /// <summary>
 /// Service for managing email sending operations including batch processing and email compilation.
 /// </summary>
-public class EmailService : IEmailService
+public class EmailService(
+    ILogger<EmailService> logger,
+    IEmailRepository emailRepository,
+    IQuestionnaireRepository questionnaireRepository,
+    IEmailContentService emailContentService,
+    IEmailSender emailSender,
+    EmailConfiguration emailConfig) : IEmailService
 {
-    private readonly EmailConfiguration _emailConfig;
-    private readonly ILogger<EmailService> _logger;
-    private readonly IEmailRepository _emailRepository;
-    private readonly IQuestionnaireRepository _questionnaireRepository;
-    private readonly IEmailContentFactory _emailContentFactory;
-    private readonly IEmailSender _emailSender;
+    private readonly ILogger<EmailService> _logger = logger;
+    private readonly IEmailRepository _emailRepository = ValidateAndAssign(emailRepository);
+    private readonly IQuestionnaireRepository _questionnaireRepository = ValidateAndAssign(questionnaireRepository);
+    private readonly IEmailContentService _emailContentService = ValidateAndAssign(emailContentService);
+    private readonly IEmailSender _emailSender = ValidateAndAssign(emailSender);
+    private readonly EmailConfiguration _emailConfig = ValidateAndAssign(emailConfig);
 
-    public EmailService(
-        ILogger<EmailService> logger,
-        IEmailRepository emailRepository,
-        IQuestionnaireRepository questionnaireRepository,
-        IEmailContentFactory emailContentFactory,
-        IEmailSender emailSender,
-        EmailConfiguration emailConfig)
+    private static T ValidateAndAssign<T>(T value) where T : class
     {
-        _emailConfig = emailConfig ?? throw new ArgumentNullException(nameof(emailConfig));
-        _logger = logger;
-        _emailRepository = emailRepository;
-        _questionnaireRepository = questionnaireRepository;
-        _emailContentFactory = emailContentFactory;
-        _emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
+        ArgumentNullException.ThrowIfNull(value);
+        return value;
     }
 
     /// <summary>
@@ -53,10 +52,8 @@ public class EmailService : IEmailService
                 return false;
             }
 
-            // Clean up expired student surveys
-            EmailBatchProcessor.RemoveExpiredStudentSurveys(doc, DateTime.UtcNow);
+            EmailBatchProcessor.RemoveExpiredSurveys(doc, DateTime.UtcNow);
             
-            // Get surveys ready to send
             var activeSurveys = EmailBatchProcessor.GetSurveysReadyToSend(doc, DateTime.UtcNow);
             if (!activeSurveys.Any())
             {
@@ -64,7 +61,6 @@ public class EmailService : IEmailService
                 return false;
             }
 
-            // Create batch respecting daily limit
             var batch = EmailBatchProcessor.CreateBatch(activeSurveys, EmailConstants.DailyEmailLimit);
             if (!batch.Any())
             {
@@ -76,68 +72,58 @@ public class EmailService : IEmailService
                                    batch.Count,
                                    string.Join(", ", batch.Where(e => e.Role == Role.Admin).Select(e => e.Email)));
 
-            // Send emails using IEmailSender (MailKit implementation) - in parallel with concurrency limit
-            // Use semaphore to limit concurrent SMTP connections (Gmail allows ~10 concurrent connections)
-            var semaphore = new SemaphoreSlim(10, 10);
-            var emailTasks = batch.Select(async entry =>
+            // Parallelism is needed because SMTP operations are I/O-bound and can be performed concurrently.
+            // This significantly improves throughput when sending multiple emails.
+            // Gmail allows ~10 concurrent SMTP connections, so we limit concurrency to avoid rate limiting.
+            var results = new ConcurrentBag<(bool Success, string Email)>();
+            var parallelOptions = new ParallelOptions
             {
-                await semaphore.WaitAsync();
+                MaxDegreeOfParallelism = 10
+            };
+
+            await Parallel.ForEachAsync(batch, parallelOptions, async (entry, ct) =>
+            {
                 try
                 {
-                    // Build email content based on role
-                    var emailMessage = await _emailContentFactory.BuildEmailAsync(
-                        entry.Email,
-                        entry.SurveyName,
-                        entry.SurveyId,
-                        entry.Role);
-
-                    // Send email using the email sender implementation
+                    var emailMessage = await CreateEmailMessageAsync(entry);
                     var success = await _emailSender.SendEmailAsync(emailMessage);
                     
                     if (success)
                     {
                         _logger.LogInformation("Sent email to {Email} for survey {SurveyName} (Role: {Role})",
                                                entry.Email, entry.SurveyName, entry.Role);
-                        return (Success: true, Email: entry.Email);
                     }
                     else
                     {
                         _logger.LogWarning("Failed to send email to {Email} for survey {SurveyName} (Role: {Role})",
                                           entry.Email, entry.SurveyName, entry.Role);
-                        return (Success: false, Email: entry.Email);
                     }
+                    
+                    results.Add((success, entry.Email));
                 }
-                catch (Exception ex)
+                catch (InvalidOperationException ex)
                 {
-                    _logger.LogError(ex, "Exception while sending email to {Email} for survey {SurveyName}",
+                    _logger.LogError(ex, "Invalid operation while sending email to {Email} for survey {SurveyName}",
                                      entry.Email, entry.SurveyName);
-                    // Continue with next email instead of failing entire batch
-                    return (Success: false, Email: entry.Email);
+                    results.Add((false, entry.Email));
                 }
-                finally
+                catch (TimeoutException ex)
                 {
-                    semaphore.Release();
+                    _logger.LogError(ex, "Timeout while sending email to {Email} for survey {SurveyName}",
+                                     entry.Email, entry.SurveyName);
+                    results.Add((false, entry.Email));
+                }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                    _logger.LogError(ex, "Network error while sending email to {Email} for survey {SurveyName}",
+                                     entry.Email, entry.SurveyName);
+                    results.Add((false, entry.Email));
                 }
             });
 
-            // Wait for all emails to be sent in parallel
-            var results = await Task.WhenAll(emailTasks);
             var successCount = results.Count(r => r.Success);
+            LogAdminEmailResults(batch, results);
             
-            // Log detailed results for admin emails
-            var adminBatchEntries = batch.Where(e => e.Role == Role.Admin).ToList();
-            var adminResults = results.Where(r => adminBatchEntries.Any(e => e.Email == r.Email)).ToList();
-            if (adminResults.Any())
-            {
-                _logger.LogInformation("Admin email sending results: {SuccessCount} successful, {FailedCount} failed. " +
-                                       "Successful: {SuccessfulEmails}, Failed: {FailedEmails}",
-                                       adminResults.Count(r => r.Success),
-                                       adminResults.Count(r => !r.Success),
-                                       string.Join(", ", adminResults.Where(r => r.Success).Select(r => r.Email)),
-                                       string.Join(", ", adminResults.Where(r => !r.Success).Select(r => r.Email)));
-            }
-
-            // Remove sent emails from the document
             EmailBatchProcessor.RemoveSentEmails(doc, batch);
             await _emailRepository.UpdateEmailsDocumentAsync(doc);
 
@@ -149,9 +135,14 @@ public class EmailService : IEmailService
             
             return successCount > 0;
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
-            _logger.LogError(ex, "Error sending batch of emails");
+            _logger.LogError(ex, "Invalid operation error sending batch of emails");
+            return false;
+        }
+        catch (TimeoutException ex)
+        {
+            _logger.LogError(ex, "Timeout error sending batch of emails");
             return false;
         }
     }
@@ -168,37 +159,35 @@ public class EmailService : IEmailService
             return;
         }
 
-        // Check if there are any teachers with email addresses
-        var teachers = metadata.Teachers
-            .Where(t => !string.IsNullOrWhiteSpace(t.Email))
-            .Select(t => t.Email)
-            .ToList();
-
-        if (!teachers.Any())
-        {
-            _logger.LogInformation("No teachers with email addresses found for survey {SurveyId}", surveyId);
-            return;
-        }
-
-        // Get or create email document
         var emailDocument = await _emailRepository.GetEmailsDocumentAsync();
         emailDocument = EmailCompilationHelper.EnsureEmailDocument(emailDocument);
 
-        // Add teacher emails
-        var teacherEmail = EmailCompilationHelper.CreateTeacherEmail(metadata, surveyId);
-        emailDocument.EmailsToSendList.Add(teacherEmail);
-        _logger.LogInformation("Added {Count} teacher emails for survey {SurveyId}", 
-                               teacherEmail.Emails.Count, surveyId);
+        AddTeacherEmails(emailDocument, metadata, surveyId);
+        AddAdminEmails(emailDocument, metadata, surveyId);
 
-        // Add admin/leader emails
-        _logger.LogInformation("Compiling admin emails for survey {SurveyId}. LeaderEmails config value: '{LeaderEmails}'", 
-                               surveyId, 
-                               _emailConfig.LeaderEmails ?? "(null)");
-        
-        var adminEmail = EmailCompilationHelper.CreateAdminEmail(
-            metadata, 
-            surveyId, 
-            _emailConfig.LeaderEmails ?? string.Empty);
+        await _emailRepository.UpdateEmailsDocumentAsync(emailDocument);
+        _logger.LogInformation("Successfully compiled report emails for survey {SurveyId}", surveyId);
+    }
+
+    private void AddTeacherEmails(EmailsToSend emailDocument, SurveyMetadata metadata, Guid surveyId)
+    {
+        var teacherEmail = EmailCompilationHelper.CreateTeacherEmail(metadata, surveyId);
+        if (teacherEmail.Emails.Any())
+        {
+            emailDocument.EmailsToSendList.Add(teacherEmail);
+            _logger.LogInformation("Added {Count} teacher emails for survey {SurveyId}", 
+                                   teacherEmail.Emails.Count, surveyId);
+        }
+        else
+        {
+            _logger.LogInformation("No teachers with email addresses found for survey {SurveyId}", surveyId);
+        }
+    }
+
+    private void AddAdminEmails(EmailsToSend emailDocument, SurveyMetadata metadata, Guid surveyId)
+    {
+        var leaderEmails = _emailConfig.LeaderEmails ?? string.Empty;
+        var adminEmail = EmailCompilationHelper.CreateAdminEmail(metadata, surveyId, leaderEmails);
         
         if (adminEmail.Emails.Any())
         {
@@ -211,11 +200,39 @@ public class EmailService : IEmailService
         else
         {
             _logger.LogWarning("No admin emails to add for survey {SurveyId}. LeaderEmails config: '{LeaderEmails}'", 
-                               surveyId, 
-                               _emailConfig.LeaderEmails ?? "(null)");
+                               surveyId, leaderEmails);
         }
+    }
 
-        await _emailRepository.UpdateEmailsDocumentAsync(emailDocument);
-        _logger.LogInformation("Successfully compiled report emails for survey {SurveyId}", surveyId);
+    private void LogAdminEmailResults(List<EmailBatchEntry> batch, ConcurrentBag<(bool Success, string Email)> results)
+    {
+        var adminBatchEntries = batch.Where(e => e.Role == Role.Admin).ToList();
+        if (!adminBatchEntries.Any())
+            return;
+
+        var adminResults = results.Where(r => adminBatchEntries.Any(e => e.Email == r.Email)).ToList();
+        if (adminResults.Any())
+        {
+            _logger.LogInformation("Admin email sending results: {SuccessCount} successful, {FailedCount} failed. " +
+                                   "Successful: {SuccessfulEmails}, Failed: {FailedEmails}",
+                                   adminResults.Count(r => r.Success),
+                                   adminResults.Count(r => !r.Success),
+                                   string.Join(", ", adminResults.Where(r => r.Success).Select(r => r.Email)),
+                                   string.Join(", ", adminResults.Where(r => !r.Success).Select(r => r.Email)));
+        }
+    }
+
+    private Task<EmailMessage> CreateEmailMessageAsync(EmailBatchEntry entry)
+    {
+        return entry.Role switch
+        {
+            Role.Student => _emailContentService.CreateSurveyInvitationEmailAsync(
+                entry.Email, entry.SurveyName),
+            Role.Teacher => _emailContentService.CreateReportEmailAsync(
+                entry.Email, entry.SurveyName, entry.SurveyId),
+            Role.Admin => _emailContentService.CreateAdminSummaryEmailAsync(
+                entry.Email, entry.SurveyName, entry.SurveyId),
+            _ => throw new ArgumentException($"Unsupported role for email creation: {entry.Role}", nameof(entry))
+        };
     }
 }
