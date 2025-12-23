@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
 {
@@ -51,10 +50,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                 .HasPartitionKey(s => s.Id)
                 .HasKey(s => s.Id);
 
-            
-            
-            /*modelBuilder.Entity<StudentWhitelist>()
-            */
             modelBuilder.Entity<SurveyMetadata>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<SurveyMetadata>("Survey");
@@ -74,7 +69,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
             modelBuilder.Entity<StudentWhitelist>()
                 .HasDiscriminator<string>("DocumentType")
                 .HasValue<StudentWhitelist>("StudentWhitelist");
-
             // --- DateTime <-> string conversion for Cosmos (StartDate / EndDate) ---
             var dtConverter = new ValueConverter<DateTime, string>(
                 v => v.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture), // ISO "O" with Z
