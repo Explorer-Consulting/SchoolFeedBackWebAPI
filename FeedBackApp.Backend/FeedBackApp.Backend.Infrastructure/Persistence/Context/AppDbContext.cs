@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.Model;
+﻿using FeedBackApp.Backend.Infrastructure.Persistence.DocumentConfigurations;
+using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
@@ -20,52 +21,57 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
 
             modelBuilder.HasDefaultContainer(_containerName);
 
-            // basic setup
+
+            modelBuilder.ApplyConfiguration(new SurveyMetadataConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new QuestionnaireConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new QuestionnaireTemplateConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new EmailsToSendConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new StudentWhiteListConfiguration { ContainerName = _containerName });
+
+            /*
+             modelBuilder.Entity<SurveyMetadata>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(m => m.Id)
+                 .HasKey(m => m.Id);
+
+             modelBuilder.Entity<Questionnaire>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(q => q.Id);
+
+             modelBuilder.Entity<QuestionnaireTemplate>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(q => q.Id);
+
+             modelBuilder.Entity<EmailsToSend>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(e => e.Id);
+
+             modelBuilder.Entity<StudentWhitelist>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(e => e.Id);
+            */
+            /*
             modelBuilder.Entity<SurveyMetadata>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(m => m.Id)
-                .HasKey(m => m.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<Questionnaire>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(q => q.Id)
-                .HasKey(q => q.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<QuestionnaireTemplate>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(q => q.Id)
-                .HasKey(q => q.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<EmailsToSend>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(q => q.Id)
-                .HasKey(e => e.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<StudentWhitelist>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(q => q.Id)
-                .HasKey(e => e.Id);
-
-            // discriminators
-            modelBuilder.Entity<SurveyMetadata>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<SurveyMetadata>("Survey");
-
-            modelBuilder.Entity<Questionnaire>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<Questionnaire>("Questionnaire");
-
-            modelBuilder.Entity<QuestionnaireTemplate>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<QuestionnaireTemplate>("QuestionTemplate");
-
-            modelBuilder.Entity<EmailsToSend>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<EmailsToSend>("EmailsToSend");
-
-            modelBuilder.Entity<StudentWhitelist>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<StudentWhitelist>("StudentWhitelist");
+                .HasDiscriminator<string>("DocumentType");
+            */
+            
         }
+       
     }
 }
