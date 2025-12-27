@@ -26,54 +26,35 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var surveyId = surveyGuid.ToString("D");
             var templateDocId = fullTemplateId;
 
-            // 1) Questionnaires (kész értékelések) betöltése
-            var questionnairesQuery = EntityFrameworkQueryableExtensions.AsNoTracking(_context.Questionnaires);
-
-            var questionnaires = await questionnairesQuery
-                .Where(q => q.SurveyId == surveyId && q.Status == true)
-                .Select(q => new
-                {
-                    q.TeacherEmail,
-                    q.SubjectName,
-                    Results = q.QuestionnaireResults
-                })
+            #region FIXING RESULT QUERIES
+            var questionnaires = await _context.Questionnaires
+                .AsNoTracking()
+                .Where(q => q.SurveyId == surveyId && q.Status)
                 .ToListAsync();
 
-            if (questionnaires.Count == 0)
-                return;
-
-            var rows = questionnaires
-                .Select(q => new
-                {
-                    Teacher = new Teacher(q.TeacherEmail ?? string.Empty, q.SubjectName ?? string.Empty),
-                    Results = (q.Results ?? []).ToImmutableArray()
-                })
-                .Where(x => x.Results.Length > 0)
-                .ToList();
-
-            if (rows.Count == 0)
-                return;
-
-            var answerCollection = rows
-                .GroupBy(x => x.Teacher)
-                .ToImmutableDictionary(
-                    g => g.Key,
-                    g => g.SelectMany(x => x.Results).ToImmutableArray()
-                );
-
-            // 2) Template kérdések betöltése (Cosmos: point-read, ha Id a PK)
-            var templatesQuery = EntityFrameworkQueryableExtensions.AsNoTracking(_context.QuestionnaireTemplates);
-
-            // FindAsync akkor a legjobb, ha a key/PK az Id (nálad ez van)
-            var template = await templatesQuery
-                .Where(x => x.Id == templateDocId)
-                .SingleOrDefaultAsync();
-
-            var questions = (template?.QuestionTemplates ?? new List<QuestionTemplate>()).ToImmutableArray();
-            if (questions.IsDefaultOrEmpty)
-                return;
-
+            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> answerCollection =
+                questionnaires
+                    .GroupBy(q => new Teacher(
+                        q.TeacherEmail,
+                        q.SubjectName
+                    ))
+                    .ToImmutableDictionary(
+                        g => g.Key,
+                        g => g.SelectMany(q => q.QuestionnaireResults)
+                            .ToImmutableArray()
+                    );
+            
+            ImmutableArray<QuestionTemplate> questions;
+            {
+                var template = await _context.QuestionnaireTemplates
+                    .AsNoTracking()
+                    .Where(x => x.Id == templateDocId)
+                    .SingleOrDefaultAsync();
+                questions = [.. (template?.QuestionTemplates ?? [])];
+            }
+            #endregion
             // 3) Generálás + feltöltés
+
             await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId))
             {
                 var fileName = $"{surveyId}_{document.Metadata.FileName}";
@@ -87,6 +68,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     await _blob.UploadTeacherAsync(document.Recipient.EmailAddress, fileName, document.Data, document.Metadata.MimeType);
                 }
             }
+            
         }
     }
 }
