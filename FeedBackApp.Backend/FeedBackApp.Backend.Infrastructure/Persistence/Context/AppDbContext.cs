@@ -1,12 +1,10 @@
-﻿using System.Globalization;
+﻿using FeedBackApp.Backend.Infrastructure.Persistence.DocumentConfigurations;
 using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
 {
     public class AppDBContext(DbContextOptions<AppDBContext> options) : DbContext(options)
-    /// Entity Framework Core DbContext configured for Azure Cosmos DB (EF Core provider).
-    /// </summary>
     {
         public DbSet<SurveyMetadata> Surveys { get; set; }
         public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -24,52 +22,56 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
             // All entities mapped to the same Cosmos container
             modelBuilder.HasDefaultContainer(_containerName);
 
-            // --- Entity mappings & partition keys ---
+
+            modelBuilder.ApplyConfiguration(new SurveyMetadataConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new QuestionnaireConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new QuestionnaireTemplateConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new EmailsToSendConfiguration { ContainerName = _containerName });
+            modelBuilder.ApplyConfiguration(new StudentWhiteListConfiguration { ContainerName = _containerName });
+
+            /*
+             modelBuilder.Entity<SurveyMetadata>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(m => m.Id)
+                 .HasKey(m => m.Id);
+
+             modelBuilder.Entity<Questionnaire>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(q => q.Id);
+
+             modelBuilder.Entity<QuestionnaireTemplate>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(q => q.Id);
+
+             modelBuilder.Entity<EmailsToSend>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(e => e.Id);
+
+             modelBuilder.Entity<StudentWhitelist>()
+                 .ToContainer(_containerName)
+                 .HasPartitionKey(q => q.Id)
+                 .HasKey(e => e.Id);
+            */
+            /*
             modelBuilder.Entity<SurveyMetadata>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(m => m.Id)
-                .HasKey(m => m.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<Questionnaire>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(q => q.Id)
-                .HasKey(q => q.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<QuestionnaireTemplate>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(q => q.Id)
-                .HasKey(q => q.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<EmailsToSend>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(e => e.Id)
-                .HasKey(e => e.Id);
+                .HasDiscriminator<string>("DocumentType");
 
             modelBuilder.Entity<StudentWhitelist>()
-                .ToContainer(_containerName)
-                .HasPartitionKey(s => s.Id)
-                .HasKey(s => s.Id);
-
-            modelBuilder.Entity<SurveyMetadata>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<SurveyMetadata>("Survey");
-
-            modelBuilder.Entity<Questionnaire>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<Questionnaire>("Questionnaire");
-
-            modelBuilder.Entity<QuestionnaireTemplate>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<QuestionnaireTemplate>("QuestionTemplate");
-
-            modelBuilder.Entity<EmailsToSend>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<EmailsToSend>("EmailsToSend");
-
-            modelBuilder.Entity<StudentWhitelist>()
-                .HasDiscriminator<string>("DocumentType")
-                .HasValue<StudentWhitelist>("StudentWhitelist");
-            // --- DateTime <-> string conversion for Cosmos (StartDate / EndDate) ---
+                .HasDiscriminator<string>("DocumentType");
+            */
+            
             var dtConverter = new ValueConverter<DateTime, string>(
                 v => v.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture), // ISO "O" with Z
                 s => DateTime.SpecifyKind(
@@ -95,5 +97,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                 .Ignore(x => x.QuestionTemplates)
                 .Ignore(x => x.CreationParams);
         }
+       
     }
 }

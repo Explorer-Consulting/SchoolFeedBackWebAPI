@@ -28,11 +28,6 @@ QuestPDF.Settings.License = LicenseType.Community;
 // 1) Modern isolated builder
 // ─────────────────────────────────────────────────────
 var builder = FunctionsApplication.CreateBuilder(args);
-        /// Adds layered configuration sources: base JSON, environment-specific JSON, and environment variables.
-        /// </summary>
-        /// <summary>
-        /// Enables Application Insights telemetry for the isolated worker.
-        /// </summary>
 
 builder.Configuration.AddEnvironmentVariables();
 
@@ -85,8 +80,6 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddSingleton<IBlobContext>(sp =>
-        /// Binds IBlobContext to a concrete BlobContext with container from AZURE_REPORTS_CONTAINER.
-        /// </summary>
 {
     var serviceClient = sp.GetRequiredService<BlobServiceClient>();
     var containerName = builder.Configuration["ReportStorage:ContainerName"];
@@ -105,7 +98,6 @@ _ = builder.Configuration["Jwt:SecretKey"]
 
 _ = builder.Configuration["Google:ClientId"]
     ?? throw new InvalidOperationException("Missing Google:ClientId");
-        /// </summary>
 
 var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
 var adminEmails = rawAdminEmails
@@ -113,14 +105,9 @@ var adminEmails = rawAdminEmails
 
 _ = builder.Configuration["Email:FromAddress"]
     ?? throw new InvalidOperationException("Missing Email:FromAddress");
-        /// </summary>
 
 _ = builder.Configuration["Email:FromName"]
     ?? throw new InvalidOperationException("Missing Email:FromName");
-        /// </summary>
-        /// <summary>
-        /// Inserts the middleware selector into the Functions request pipeline.
-        /// </summary>
 
 _ = builder.Configuration["Email:AppPassword"]
     ?? throw new InvalidOperationException("Missing Email:AppPassword");
@@ -143,6 +130,8 @@ builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // ─────────────────────────────────────────────────────
 // 8) Validators
@@ -166,13 +155,11 @@ builder
 // 10) Build, DB init, Run
 // ─────────────────────────────────────────────────────
 var app = builder.Build();
-/*
+
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
     await db.Database.EnsureCreatedAsync();
 }
-*/
+
 app.Run();
-/// Starts the Azure Functions host.
-/// </summary>
