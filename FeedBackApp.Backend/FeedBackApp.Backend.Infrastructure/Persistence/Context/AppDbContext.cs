@@ -72,30 +72,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
                 .HasDiscriminator<string>("DocumentType");
             */
             
-            var dtConverter = new ValueConverter<DateTime, string>(
-                v => v.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture), // ISO "O" with Z
-                s => DateTime.SpecifyKind(
-                        DateTime.Parse(
-                            (s ?? string.Empty).Trim('\"'), // handle accidentally quoted values
-                            CultureInfo.InvariantCulture,
-                            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
-                        DateTimeKind.Utc)
-            );
-
-            modelBuilder.Entity<SurveyMetadata>()
-                .Property(x => x.StartDate)
-                .HasConversion(dtConverter);
-
-            modelBuilder.Entity<SurveyMetadata>()
-                .Property(x => x.EndDate)
-                .HasConversion(dtConverter);
-
-            // --- Unblock: ignore list properties stored with inconsistent shapes in Cosmos ---
-            modelBuilder.Entity<SurveyMetadata>()
-                .Ignore(x => x.Teachers)
-                .Ignore(x => x.StudentSets)
-                .Ignore(x => x.QuestionTemplates)
-                .Ignore(x => x.CreationParams);
         }
        
     }
