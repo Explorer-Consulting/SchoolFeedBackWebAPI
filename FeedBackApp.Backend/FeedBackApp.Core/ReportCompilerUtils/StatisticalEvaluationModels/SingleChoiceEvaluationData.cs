@@ -17,6 +17,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// </para>
     /// </summary>
     public sealed class SingleChoiceEvaluationData(
+        string questionId,
         string questionStatement,
         ImmutableArray<string> questionOptions,
         SingleChoice type,
@@ -24,7 +25,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         ImmutableArray<string> questionOpenAnswers
     ) : EvaluationData
     {
-        #region Question-specific properties
+        #region Inputs
+
+        public string QuestionId { get; init; } = questionId;
 
         /// <summary>The text of the question.</summary>
         public string QuestionStatement { get; init; } = questionStatement;
@@ -45,6 +48,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// <summary>The type of the question: <see cref="SingleChoice.REGULAR"/> or <see cref="SingleChoice.CUSTOM"/>.</summary>
         public SingleChoice Type = type;
 
+        #endregion
+
+        #region Outputs
         /// <summary>Mean value (for both REGULAR and CUSTOM numeric answers).</summary>
         public double MeanValue { get; private set; }
 

@@ -19,6 +19,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
         {
             base.OnModelCreating(modelBuilder);
 
+            // All entities mapped to the same Cosmos container
             modelBuilder.HasDefaultContainer(_containerName);
 
 
