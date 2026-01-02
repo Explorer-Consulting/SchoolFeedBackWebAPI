@@ -93,7 +93,8 @@ public sealed class OptInJwtService : IOptInTokenService
             if (!string.Equals(purpose, "optin", StringComparison.Ordinal))
                 return new(false, default, string.Empty, null, "wrong_purpose");
 
-            var tidText = principal.FindFirst("tid")?.Value;
+            var tidText = principal.FindFirst("tid")?.Value
+                        ?? principal.FindFirst("qid")?.Value; // just in case
             if (!Ulid.TryParse(tidText, out var tid))
                 return new(false, default, "", null, "bad_tid");
 

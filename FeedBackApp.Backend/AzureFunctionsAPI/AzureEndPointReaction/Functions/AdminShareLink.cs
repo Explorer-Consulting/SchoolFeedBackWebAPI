@@ -23,29 +23,29 @@ public class AdminShareLink
     private readonly IOptInTokenService _tokens;
     public AdminShareLink(IOptInTokenService tokens) => _tokens = tokens;
 
-    [Function("ShareOptInLink")] // or AdminShareLink
+    [Function("ShareOptInLink")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "optin/share-link")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get",
+            Route = "optin/share-link/{tid}")] HttpRequestData req, string tid)
     {
-        var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
-
-        var tidRaw = qs.Get("tid");
-        if (!Ulid.TryParse(tidRaw, out var tid))
+        if (!Ulid.TryParse(tid, out var templateId))
         {
             var bad = req.CreateResponse(HttpStatusCode.BadRequest);
             await bad.WriteStringAsync("Missing/invalid tid (expected ULID).");
             return bad;
         }
 
-        var tag = qs.Get("tag") ?? "@templateID";
+        var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
         var minutes = int.TryParse(qs.Get("minutes"), out var m) ? m : 60;
+        var tag = qs.Get("tag") ?? "@template-id";
         var exp = DateTimeOffset.UtcNow.AddMinutes(minutes);
 
-        var token = _tokens.CreateToken(tid, tag, exp);
-        var url = $"http://localhost:7071/api/questionnaires/{tid}/preview?optin={Uri.EscapeDataString(token)}";
+        var token = _tokens.CreateToken(templateId, tag, exp);
+        var url = $"http://localhost:7071/api/templates/{tid}/preview?optin={Uri.EscapeDataString(token)}";
 
         var ok = req.CreateResponse(HttpStatusCode.OK);
         await ok.WriteAsJsonAsync(new { url, expiresAt = exp });
         return ok;
     }
+
 }
