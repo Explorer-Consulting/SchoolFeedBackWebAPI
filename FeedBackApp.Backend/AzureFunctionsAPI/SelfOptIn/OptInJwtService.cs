@@ -45,7 +45,7 @@ public sealed class OptInJwtService : IOptInTokenService
         var claims = new[]
         {
             new Claim("purpose", "optin"),
-            new Claim("qid", questionnaireId.ToString()),
+            new Claim("tid", questionnaireId.ToString()),
             new Claim("tag", tag ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
@@ -93,9 +93,9 @@ public sealed class OptInJwtService : IOptInTokenService
             if (!string.Equals(purpose, "optin", StringComparison.Ordinal))
                 return new(false, default, string.Empty, null, "wrong_purpose");
 
-            var qidText = principal.FindFirst("qid")?.Value;
-            if (!Ulid.TryParse(qidText, out var qid))
-                return new(false, default, string.Empty, null, "bad_qid");
+            var tidText = principal.FindFirst("tid")?.Value;
+            if (!Ulid.TryParse(tidText, out var tid))
+                return new(false, default, "", null, "bad_tid");
 
             var tag = principal.FindFirst("tag")?.Value ?? string.Empty;
 
@@ -104,7 +104,7 @@ public sealed class OptInJwtService : IOptInTokenService
             if (long.TryParse(expClaim, out var expSec))
                 exp = DateTimeOffset.FromUnixTimeSeconds(expSec);
 
-            return new(true, qid, tag, exp, null);
+            return new(true, tid, tag, exp, null);
         }
         catch (SecurityTokenExpiredException)          { return new(false, default, "", null, "expired"); }
         catch (SecurityTokenInvalidAudienceException)  { return new(false, default, "", null, "wrong_audience"); }
