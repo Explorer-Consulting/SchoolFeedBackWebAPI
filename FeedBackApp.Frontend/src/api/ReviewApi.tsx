@@ -86,3 +86,7 @@ export const VerifyOTP = async (email: string, code: string): Promise<unknown> =
     return data;
 };
 
+export const GetQuestionnaireTemplatePreview = async (templateId) => {
+    const { data } = await apiClient.get(`/questionnairetemplate/${templateId}/preview`); 
+    return data;
+};
