@@ -1,7 +1,9 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.EntityFrameworkCore;
 using NUlid;
 
 /*
@@ -28,6 +30,7 @@ public class AdminShareLink
         [HttpTrigger(AuthorizationLevel.Anonymous, "get",
             Route = "optin/share-link/{tid}")] HttpRequestData req, string tid)
     {
+        
         if (!Ulid.TryParse(tid, out var templateId))
         {
             var bad = req.CreateResponse(HttpStatusCode.BadRequest);
@@ -42,6 +45,7 @@ public class AdminShareLink
 
         var token = _tokens.CreateToken(templateId, tag, exp);
         var url = $"http://localhost:7071/api/templates/{tid}/preview?optin={Uri.EscapeDataString(token)}";
+        
 
         var ok = req.CreateResponse(HttpStatusCode.OK);
         await ok.WriteAsJsonAsync(new { url, expiresAt = exp });
