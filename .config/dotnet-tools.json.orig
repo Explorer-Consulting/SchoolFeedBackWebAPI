@@ -1,0 +1,28 @@
+<<<<<<< HEAD
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "husky": {
+      "version": "0.7.2",
+      "commands": [
+        "husky"
+      ],
+      "rollForward": false
+    }
+  }
+=======
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "husky": {
+      "version": "0.8.0",
+      "commands": [
+        "husky"
+      ],
+      "rollForward": false
+    }
+  }
+>>>>>>> develop
+}

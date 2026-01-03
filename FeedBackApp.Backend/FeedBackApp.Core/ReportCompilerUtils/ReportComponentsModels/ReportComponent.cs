@@ -23,13 +23,18 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
     /// <item>Implement the <see cref="Compose(IContainer)"/> method to define the component’s visual layout.</item>
     /// </list>
     /// </remarks>
-    public abstract class ReportComponent<T>(T dataSource) : IComponent
+    public abstract class ReportComponent<T>(T dataSource) : IReportComponent
         where T : EvaluationData
     {
         /// <summary>
         /// The data model associated with this component (e.g. Likert-scale data, open-ended responses).
         /// </summary>
         public T DataSource { get; } = dataSource;
+
+        /// <summary>
+        /// Non-generic view of <see cref="DataSource"/> used by infrastructure code.
+        /// </summary>
+        public EvaluationData DataSourceUntyped => DataSource;
 
         /// <summary>
         /// Defines how the component is rendered.
@@ -41,4 +46,17 @@ namespace FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels
         /// <param name="container">The QuestPDF container into which the component is rendered.</param>
         public abstract void Compose(IContainer container);
     }
+
+    /// <summary>
+    /// Non-generic abstraction for all report components used in the export pipeline.
+    /// Exposes the underlying evaluation data without knowing its concrete type.
+    /// </summary>
+    public interface IReportComponent : IComponent
+    {
+        /// <summary>
+        /// Gets the component's data source as a base <see cref="EvaluationData"/> instance.
+        /// </summary>
+        EvaluationData DataSourceUntyped { get; }
+    }
+
 }

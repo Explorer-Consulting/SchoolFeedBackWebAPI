@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
+﻿using DocumentFormat.OpenXml.Office.SpreadSheetML.Y2023.MsForms;
+using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using QuestPDF.Infrastructure;
 using System.Collections.Immutable;
 
@@ -13,12 +14,15 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// </para>
     /// </summary>
     public sealed class MultipleChoiceEvaluationData(
+        string questionId,
         string questionStatement,
         ImmutableArray<string> answerOptions,
-        ImmutableArray<int> answers
+        ImmutableArray<ImmutableArray<int>> answers
     ) : EvaluationData
     {
         #region Inputs
+
+        public string QuestionId { get; init; } = questionId;
 
         /// <summary>
         /// The text of the question.
@@ -36,7 +40,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// Each element represents the index of a selected option in the <see cref="AnswerOptions"/> array.
         /// </para>
         /// </summary>
-        public ImmutableArray<int> Answers { get; init; } = answers;
+        public ImmutableArray<ImmutableArray<int>> Answers { get; init; } = answers;
 
         #endregion
 
@@ -68,8 +72,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// </summary>
         public override EvaluationData EvaluateData()
         {
+            // Flatten the 2D array to calculate frequencies
+            var flattenedAnswers = Answers.SelectMany(respondent => respondent).ToImmutableArray();
+
             // 1) Absolute frequency (option name → count)
-            Frequencies = CalculateFrequency(AnswerOptions, Answers);
+            Frequencies = CalculateFrequency(AnswerOptions, flattenedAnswers);
 
             // 2) Relative frequency (%) – based on total count
             RelativeFrequenciesPercent = CalculateRelativeFrequencyPercent(Frequencies);
