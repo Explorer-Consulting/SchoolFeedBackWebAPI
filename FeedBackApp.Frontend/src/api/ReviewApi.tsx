@@ -80,4 +80,9 @@ export const SendOTP = async (email: string): Promise<unknown> => {
     return data;
 };
 
+// VerifyOTP - Verifies OTP code and logs in the user
+export const VerifyOTP = async (email: string, code: string): Promise<unknown> => {
+    const { data } = await apiClient.post('/auth/otp/verify', { email, code });
+    return data;
+};
 

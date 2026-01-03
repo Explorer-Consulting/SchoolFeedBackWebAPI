@@ -75,6 +75,7 @@ var host = new HostBuilder()
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+        services.AddSingleton<Application.Services.Interfaces.IOtpService, Application.Services.OtpService>();
 
         // --- Repositories ---
         services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
@@ -118,6 +119,7 @@ var host = new HostBuilder()
         services.AddScoped<EvaluationFunctions>();
         services.AddScoped<ReportFunctions>();
         services.AddScoped<EmailSendingFunctions>();
+        services.AddScoped<AzureFunctionsAPI.AzureEndPointReaction.Functions.AuthFunctions>();
 
         // Validators
         services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();

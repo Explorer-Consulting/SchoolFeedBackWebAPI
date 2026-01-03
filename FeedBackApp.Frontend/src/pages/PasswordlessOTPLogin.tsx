@@ -1,20 +1,23 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useReviews } from '@/hooks/useReviews'
+import { useAuthStore } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, Mail, ArrowLeft } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useToast } from '@/hooks/useToast'
+import { User, Role } from '@/models/User'
 
 export default function PasswordlessOTPLogin() {
   const navigate = useNavigate()
   const location = useLocation()
+  const setUser = useAuthStore((state) => state.setUser)
   const [otp, setOtp] = useState('')
   const [email, setEmail] = useState<string>('')
   const { toast } = useToast()
 
-  const { sendOTP, isSendingOTP } = useReviews()
+  const { sendOTP, isSendingOTP, verifyOTP, isVerifyingOTP } = useReviews()
 
   useEffect(() => {
     // Get email from navigation state
@@ -48,7 +51,7 @@ export default function PasswordlessOTPLogin() {
   }
 
   const handleVerifyOTP = () => {
-    if (!otp || otp.length < 4) {
+    if (!otp || otp.length < 6 || !email) {
       toast({
         title: "Hiba",
         description: "Kérjük, adjon meg egy érvényes OTP kódot",
@@ -57,12 +60,42 @@ export default function PasswordlessOTPLogin() {
       return
     }
 
-    // TODO: Implement OTP verification API call
-    console.log('Verifying OTP:', otp, 'for email:', email)
-    
-    toast({
-      title: "Ellenőrzés",
-      description: "Az OTP kód ellenőrzése folyamatban...",
+    verifyOTP({ email, code: otp }, {
+      onSuccess: (data: any) => {
+        // Create user object from response
+        const user: User = {
+          email: data.email,
+          role: data.role === 'Admin' ? Role.Admin : Role.Student,
+          firstName: '', // OTP login doesn't provide name
+          lastName: ''
+        }
+        
+        // Store user in auth store
+        setUser(user)
+        
+        toast({
+          title: "Sikeres bejelentkezés",
+          description: `Üdvözöljük, ${data.email}!`,
+        })
+        
+        // Redirect based on role
+        setTimeout(() => {
+          if (data.role === 'Admin') {
+            navigate('/dashboard/admin')
+          } else {
+            navigate('/dashboard/student')
+          }
+        }, 1000)
+      },
+      onError: (e: any) => {
+        toast({
+          title: "Hiba",
+          description: e.response?.data?.message || "Érvénytelen vagy lejárt OTP kód. Kérjük, próbálja újra.",
+          variant: "destructive"
+        })
+        // Clear OTP on error
+        setOtp('')
+      }
     })
   }
 
@@ -111,11 +144,18 @@ export default function PasswordlessOTPLogin() {
 
           <Button
             onClick={handleVerifyOTP}
-            disabled={!otp || otp.length < 4}
+            disabled={!otp || otp.length < 6 || isVerifyingOTP}
             className="w-full"
             size="lg"
           >
-            Ellenőrzés
+            {isVerifyingOTP ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Ellenőrzés...
+              </>
+            ) : (
+              'Ellenőrzés'
+            )}
           </Button>
 
           <div className="text-center space-y-2">
@@ -148,5 +188,6 @@ export default function PasswordlessOTPLogin() {
     </main>
   )
 }
+
 
 

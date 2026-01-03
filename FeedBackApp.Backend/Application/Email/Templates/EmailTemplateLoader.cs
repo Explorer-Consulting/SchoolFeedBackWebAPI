@@ -102,6 +102,19 @@ Csatolva megtalálja a kérdőívek összesített eredményét <b>{{SurveyName}}
 Alább csatolotuk a <b>{{SurveyName}}</b> kérdőív összesített eredményeit.",
                     IsHtml = true
                 }
+            },
+            {
+                "otp-authentication",
+                new EmailTemplate
+                {
+                    TemplateId = "otp-authentication",
+                    SubjectTemplate = "Bejelentkezési kód",
+                    BodyTemplate = @"Kedves felhasználó,<br/><br/>
+Az alábbi egyszer használatos kóddal tud bejelentkezni a rendszerbe:<br/><br/>
+<div style=""font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 0.2em; padding: 20px; background-color: #f5f5f5; border-radius: 8px; margin: 20px 0;"">{{OtpCode}}</div><br/>
+A kód 10 percig érvényes. Ha nem ön kezdeményezte a bejelentkezést, kérjük hagyja figyelmen kívül az üzenetet.",
+                    IsHtml = true
+                }
             }
         };
     }

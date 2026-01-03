@@ -23,5 +23,10 @@ public interface IEmailContentService
     /// Creates an email message with admin summary reports (sent to administrators).
     /// </summary>
     Task<EmailMessage> CreateAdminSummaryEmailAsync(string recipientEmail, string surveyName, string surveyId);
+
+    /// <summary>
+    /// Creates an email message with an OTP code for passwordless authentication.
+    /// </summary>
+    Task<EmailMessage> CreateOtpEmailAsync(string recipientEmail, string otpCode);
 }
 

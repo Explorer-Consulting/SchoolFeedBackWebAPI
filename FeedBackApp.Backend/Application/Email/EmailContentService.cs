@@ -103,6 +103,19 @@ public class EmailContentService : IEmailContentService
         return message;
     }
 
+    /// <summary>
+    /// Creates an email message with an OTP code for passwordless authentication.
+    /// </summary>
+    public Task<EmailMessage> CreateOtpEmailAsync(string recipientEmail, string otpCode)
+    {
+        var tokens = new Dictionary<string, string>
+        {
+            { "OtpCode", otpCode }
+        };
+
+        return _templateService.RenderEmailAsync("otp-authentication", recipientEmail, tokens);
+    }
+
     private static string GetContentType(string fileName)
     {
         return fileName.ToLowerInvariant() switch
