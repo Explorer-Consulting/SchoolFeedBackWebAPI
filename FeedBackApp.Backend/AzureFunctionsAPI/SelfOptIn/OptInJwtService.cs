@@ -36,6 +36,7 @@ public sealed class OptInJwtService : IOptInTokenService
     public OptInJwtService(IOptions<SelfOptInJwtOptions> opt)
     {
         _opt = opt.Value ?? throw new ArgumentNullException(nameof(opt));
+        _handler.MapInboundClaims = false;
         if (string.IsNullOrWhiteSpace(_opt.SigningKey) || _opt.SigningKey.Length < 32)
             throw new InvalidOperationException("SelfOptInJwtOptions.SigningKey must be at least 32 characters.");
     }
@@ -94,7 +95,7 @@ public sealed class OptInJwtService : IOptInTokenService
                 return new(false, default, string.Empty, null, "wrong_purpose");
 
             var tidText = principal.FindFirst("tid")?.Value
-                        ?? principal.FindFirst("qid")?.Value; // just in case
+                        ?? principal.FindFirst("qid")?.Value;
             if (!Ulid.TryParse(tidText, out var tid))
                 return new(false, default, "", null, "bad_tid");
 

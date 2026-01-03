@@ -9,6 +9,16 @@ using NUlid;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
+/*
+ * Serve a read-only questionnaire preview to anyone holding a valid self-opt-in link.
+ * It never mutates data.
+ * route: GET /api/templates/{id}/preview?optin=<jwt>
+ * {id} = ULID of the questionnaire template
+ *    (the public alias backfilled into QuestionnaireTemplate.TemplateUlid via "DebugBackfillTemplateUlids")
+ * optin = short-lived JWT created by IOptInTokenService
+ *    (purpose "optin", contains tid claim = same ULID).
+ */
+
 public class TemplatePreview
 {
     private readonly IOptInTokenService _tokens;
@@ -26,11 +36,11 @@ public class TemplatePreview
          Route = "templates/{id}/preview")] HttpRequestData req,
         string id)
     {
-        // route id must be a ULID
+        // 1) id must be ULID
         if (!Ulid.TryParse(id, out var templateUlid))
             return await Text(req, HttpStatusCode.BadRequest, "Invalid template id (ULID expected).");
 
-        // extract and validate token
+        // 2) validate token
         var qs = System.Web.HttpUtility.ParseQueryString(req.Url.Query);
         var optinToken = qs.Get("optin");
         if (string.IsNullOrWhiteSpace(optinToken))
@@ -40,57 +50,57 @@ public class TemplatePreview
         if (!v.IsValid)
             return await Text(req, HttpStatusCode.Gone, $"Invalid or expired link ({v.Error}).");
 
-        // tken's ULID must match the route id
         if (v.QuestionnaireId != templateUlid)
             return await Text(req, HttpStatusCode.BadRequest, "Token/template mismatch.");
 
-        // load template by storage id ("questiontemplates_{ulid}")
-        var storageId = $"questiontemplates_{id}";
+        // 3) load template by alias (ULID)
         var template = await _db.Set<QuestionnaireTemplate>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.TemplateUlid == id);  // 'id' is ULID from route
-        
+            .FirstOrDefaultAsync(t => t.TemplateUlid == id);
+
+
         if (template is null)
         {
             var nf = req.CreateResponse(HttpStatusCode.NotFound);
-            await nf.WriteStringAsync($"Template not found: expected id 'questiontemplates_{id}'");
+            await nf.WriteStringAsync($"Template not found for ULID '{id}'");
             return nf;
         }
 
-        //
-        // if (template is null)
-        //     return req.CreateResponse(HttpStatusCode.NotFound);
-
         if (!template.IsSelfOptInEnabled)
-            return req.CreateResponse(HttpStatusCode.Forbidden);
+            return await Text(req, HttpStatusCode.Forbidden, "Self opt-in disabled for this template.");
+
 
         if (template.OptInExpiresAt is not null && template.OptInExpiresAt <= DateTimeOffset.UtcNow)
             return await Text(req, HttpStatusCode.Gone, "Self opt-in window has closed.");
 
-        // TODO capacity
         int? capacityLeft = template.MaxParticipants;
 
-        // build sanitized read-only response
+        // make questions null-safe
+        var questions = (template.QuestionTemplates ?? Enumerable.Empty<QuestionTemplate>())
+            .Select(q => new QuestionPreviewDto
+            {
+                Id = q?.Id ?? string.Empty,
+                Question = q?.Question ?? string.Empty,
+                Type = (q?.Type).ToString(), // string; safe even if q is null
+                AnswerOptions = (q?.AnswerOptions ?? Array.Empty<string>()).ToArray(),
+                Category = q?.Category ?? string.Empty,
+                Description = q?.Description ?? string.Empty
+            })
+            .ToArray();
+        
         var payload = new TemplatePreviewDto
         {
             Id = id,
-            Title = template.Title,
-            Questions = template.QuestionTemplates.Select(q => new QuestionPreviewDto
-            {
-                Id = q.Id,
-                Question = q.Question,
-                Type = q.Type.ToString(),
-                AnswerOptions = q.AnswerOptions.ToArray(),
-                Category = q.Category,
-                Description = q.Description
-            }).ToArray(),
+            Title = template.Title ?? string.Empty,
+            Questions = questions,
             OptIn = new TemplateOptInInfo
             {
                 Enabled = true,
                 ExpiresAt = v.ExpiresAtUtc,
-                CapacityLeft = capacityLeft
+                CapacityLeft = template.MaxParticipants
             }
         };
+
 
         var ok = req.CreateResponse(HttpStatusCode.OK);
         await ok.WriteAsJsonAsync(payload);
@@ -104,7 +114,6 @@ public class TemplatePreview
         return res;
     }
 
-    // response DTOs (local to function)
     private sealed class TemplatePreviewDto
     {
         public string Id { get; set; } = default!;
@@ -130,19 +139,46 @@ public class TemplatePreview
         public int? CapacityLeft { get; set; }
     }
     
+    
+    // Admin functions, end user will not see these
+    // 1.) to list all the templates and ids
     [Function("DebugListTemplates")]
     public async Task<HttpResponseData> DebugListTemplates(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "debug/templates")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "debug/templates")]
+        HttpRequestData req)
     {
-        var ids = await _db.Set<QuestionnaireTemplate>()
+        var data = await _db.Set<QuestionnaireTemplate>()
             .AsNoTracking()
-            .Select(t => t.Id)
+            .Select(t => new { t.Id, t.TemplateUlid })
             .Take(50)
             .ToListAsync();
 
         var res = req.CreateResponse(HttpStatusCode.OK);
-        await res.WriteAsJsonAsync(new { count = ids.Count, ids });
+        await res.WriteAsJsonAsync(new { count = data.Count, data });
         return res;
+    }
+    
+    // 2.) turn opt-in on & off
+    [Function("DebugEnableOptIn")]
+    public async Task<HttpResponseData> DebugEnableOptIn(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "debug/templates/{ulid}/enable-optin")]
+        HttpRequestData req, string ulid)
+    {
+        var t = await _db.Set<QuestionnaireTemplate>()
+            .FirstOrDefaultAsync(x => x.TemplateUlid == ulid);
+        if (t is null) return req.CreateResponse(System.Net.HttpStatusCode.NotFound);
+
+        t.IsSelfOptInEnabled = true;
+
+        // set a future expiry if none or already past
+        if (t.OptInExpiresAt is null || t.OptInExpiresAt <= DateTimeOffset.UtcNow)
+            t.OptInExpiresAt = DateTimeOffset.UtcNow.AddDays(7);
+
+        await _db.SaveChangesAsync();
+
+        var ok = req.CreateResponse(System.Net.HttpStatusCode.OK);
+        await ok.WriteAsJsonAsync(new { ulid, t.IsSelfOptInEnabled, t.OptInExpiresAt });
+        return ok;
     }
 
 }

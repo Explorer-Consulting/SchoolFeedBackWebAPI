@@ -6,8 +6,20 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using NUlid;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
+using FeedBackApp.Backend.Infrastructure.Persistence.Context;
+using FeedBackApp.Core.Model;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
+
+/*
+ * When a user is already authenticated,
+ * this endpoint converts the preview link into actual access
+ * by creating a questionnaire instance for that user. It is idempotent.
+ * route: POST /api/templates/{id}/self-opt-in
+ * Body: { "optInToken": "<jwt>" }
+ * {id} = template ULID (same as in preview)
+ * optInToken = the same short-lived JWT from the share link.
+ */
 
 public class TemplateSelfOptIn
 {
