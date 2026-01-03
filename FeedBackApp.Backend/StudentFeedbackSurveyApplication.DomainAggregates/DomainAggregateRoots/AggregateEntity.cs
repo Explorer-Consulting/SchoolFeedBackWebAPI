@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FeedBackApp.Core.DomainAggregates.AggregateComponents
+namespace StudentFeedbackSurveyApplication.Domain.DomainAggregateRoots
 {
-    public sealed class QuestionItem
+    public abstract class AggregateEntity
     {
     }
 }

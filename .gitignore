@@ -432,3 +432,4 @@ npm-debug.log
 .env
 .DS_Store
 /FeedBackApp.Backend/AzureFunctionsAPI/local.settings.json
+/FeedBackApp.Backend/StudentFeedbackSurveyApplication.ApplicationWorkers/local.settings.json
