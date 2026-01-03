@@ -15,8 +15,70 @@ using System.Text;
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
-    public class AuthFunctions
+    /// <summary>
+    /// Authentication endpoints for the School Feedback application (Azure Functions – .NET isolated worker).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Overview</b><br/>
+    /// This function class implements a Google-based login flow and issues a server-generated JWT which is returned
+    /// to the browser as a secure, HTTP-only cookie. The endpoint also performs application-level authorization
+    /// by validating the caller against a student whitelist and/or an administrator list supplied via environment variables.
+    /// </para>
+    ///
+    /// <para>
+    /// <b>End-to-end flow</b>
+    /// <list type="number">
+    ///   <item><description><b>CORS &amp; preflight</b>: For <c>OPTIONS</c> requests the function returns a <c>204 No Content</c> with appropriate <c>Access-Control-*</c> headers.</description></item>
+    ///   <item><description><b>Request parsing</b>: On <c>POST</c> requests the function reads a JSON body into <see cref="LoginRequest"/> and ensures a non-empty Google <c>IdToken</c>.</description></item>
+    ///   <item><description><b>Google token validation</b>: The function verifies the <c>IdToken</c> via <see cref="GoogleJsonWebSignature.ValidateAsync(string, GoogleJsonWebSignature.ValidationSettings)"/>,
+    ///   constrained by the configured <c>GoogleClientId</c> (<c>Audience</c>).</description></item>
+    ///   <item><description><b>Authorization</b>: The caller's email is checked against a student whitelist (repository-backed) and a comma-separated admin list from <c>AdminEmails</c> environment variable.</description></item>
+    ///   <item><description><b>JWT issuance</b>: A short, role-bearing JWT is created with <c>HS256</c> using <c>JwtSecretKey</c>. Claims include <c>NameIdentifier</c> (email) and <c>Role</c> (<c>Admin</c>|<c>Student</c>).</description></item>
+    ///   <item><description><b>Cookie + JSON</b>: The JWT is set as an HTTP-only, <c>SameSite=None</c>, <c>Secure</c> cookie (<c>token</c>) with 1-day lifetime. The body returns a minimal user profile (email, first/last name, role).</description></item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// <b>Security notes</b>
+    /// <list type="bullet">
+    ///   <item><description>JWT signing uses a symmetric key (<c>HS256</c>). Keep <c>JwtSecretKey</c> secret and sufficiently long (min. 32 random bytes recommended).</description></item>
+    ///   <item><description>Cookie is <c>HttpOnly</c> + <c>Secure</c> + <c>SameSite=None</c> to support cross-site scenarios with credentials while mitigating XSS and ensuring TLS-only transport.</description></item>
+    ///   <item><description>Origin is echoed to <c>Access-Control-Allow-Origin</c> from request header; in production, validate the origin against an allowlist.</description></item>
+    ///   <item><description>Google ID token is validated for audience binding (<c>GoogleClientId</c>).</description></item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// <b>Environment variables</b>
+    /// <list type="bullet">
+    ///   <item><description><c>GoogleClientId</c>: OAuth 2.0 Client ID used as audience constraint when validating Google ID tokens.</description></item>
+    ///   <item><description><c>AdminEmails</c>: Comma-separated list of admin email addresses (case-insensitive match).</description></item>
+    ///   <item><description><c>JwtSecretKey</c>: Symmetric key for signing JWTs with HS256.</description></item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// <b>Logging</b><br/>
+    /// The function emits structured logs for: invocation start, CORS handling, token validation, authorization decisions, and JWT issuance.
+    /// </para>
+    ///
+    /// <para>
+    /// <b>Response summary</b>
+    /// <list type="bullet">
+    ///   <item><description><c>204 No Content</c> – Preflight handled</description></item>
+    ///   <item><description><c>400 Bad Request</c> – Missing or empty <c>IdToken</c></description></item>
+    ///   <item><description><c>401 Unauthorized</c> – Invalid Google token</description></item>
+    ///   <item><description><c>403 Forbidden</c> – Email not authorized (neither student nor admin)</description></item>
+    ///   <item><description><c>200 OK</c> – JWT issued (cookie) and user info returned in body</description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    /// <param name="logger">Application logger used for structured diagnostics and traceability.</param>
+    /// <param name="whitelistRepository">Repository providing access to the student email whitelist.</param>
+    public class AuthFunctions(ILogger<AuthFunctions> logger, IWhitelistRepository whitelistRepository)
     {
+<<<<<<< HEAD
         private readonly ILogger<AuthFunctions> _logger;
         private readonly IWhitelistRepository _whitelistRepository;
         private readonly IOtpService _otpService;
@@ -36,10 +98,37 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             _emailContentService = emailContentService;
             _emailSender = emailSender;
         }
+=======
+        private readonly ILogger<AuthFunctions> _logger = logger;
+        private readonly IWhitelistRepository _whitelistRepository = whitelistRepository;
+>>>>>>> develop
 
+        /// <summary>
+        /// Handles Google-based login (<c>POST</c>) and CORS preflight (<c>OPTIONS</c>) for the <c>/api/auth/google</c> endpoint.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// POST: Expects a JSON body containing <see cref="LoginRequest.IdToken"/> (Google ID token). Validates the token's audience
+        /// against the <c>GoogleClientId</c> environment variable. On success, authorizes the email against the whitelist/admin list,
+        /// issues a role-bearing JWT, sets it as a secure HTTP-only cookie (<c>token</c>), and returns a small profile JSON.
+        /// </para>
+        /// <para>
+        /// OPTIONS: Responds to preflight with <c>204 No Content</c> and CORS headers (<c>Access-Control-Allow-Origin</c>, <c>Allow-Methods</c>, <c>Allow-Headers</c>, <c>Allow-Credentials</c>).
+        /// </para>
+        /// </remarks>
+        /// <param name="req">HTTP request containing the JSON payload and the <c>Origin</c> header used for CORS.</param>
+        /// <returns>
+        /// <see cref="HttpResponseData"/> with one of the following status codes:
+        /// <list type="bullet">
+        ///   <item><description><c>204 No Content</c> – Preflight handled</description></item>
+        ///   <item><description><c>400 Bad Request</c> – Missing or empty <c>IdToken</c></description></item>
+        ///   <item><description><c>401 Unauthorized</c> – Invalid Google token</description></item>
+        ///   <item><description><c>403 Forbidden</c> – Email not authorized (neither student nor admin)</description></item>
+        ///   <item><description><c>200 OK</c> – JWT issued (cookie) and user info returned in body</description></item>
+        /// </list>
+        /// </returns>
         [Function("LoginWithGoogle")]
-        [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]
+        [OpenApiOperation(operationId: "LoginWithGoogle", tags: ["Auth"])]
         public async Task<HttpResponseData> LoginWithGoogle(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {
@@ -48,11 +137,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
             var students = whitelist?.StudentEmails ?? new List<string>();
 
-            // Get origin
+            // Origin for CORS
             var origin = req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
             _logger.LogDebug("Request origin: {Origin}", origin ?? "None");
 
-            // Handle preflight request
+            // CORS preflight
             if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogInformation("Handling CORS preflight request");
@@ -67,7 +156,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return preflight;
             }
 
-            // Read POST body
+            // Parse body
             var body = await new StreamReader(req.Body).ReadToEndAsync();
             var data = JsonConvert.DeserializeObject<LoginRequest>(body);
             if (data is null || string.IsNullOrWhiteSpace(data.IdToken))
@@ -82,14 +171,18 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 await badReq.WriteStringAsync("IdToken is required");
                 return badReq;
             }
-            GoogleJsonWebSignature.Payload payload;
 
+            // Validate Google ID token
+            GoogleJsonWebSignature.Payload payload;
             try
             {
-                payload = await GoogleJsonWebSignature.ValidateAsync(data.IdToken, new GoogleJsonWebSignature.ValidationSettings
-                {
-                    Audience = new[] { Environment.GetEnvironmentVariable("GoogleClientId") }
-                });
+                payload = await GoogleJsonWebSignature.ValidateAsync(
+                    data.IdToken,
+                    new GoogleJsonWebSignature.ValidationSettings
+                    {
+                    Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                    });
+
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
             }
             catch (Exception ex)
@@ -105,7 +198,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return badResp;
             }
 
-            // Check if student or admin
+            // Authorization: student or admin
             var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
             var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             bool isAdmin = adminEmails.Contains(payload.Email, StringComparer.OrdinalIgnoreCase);
@@ -130,15 +223,16 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
 
-            // Set CORS headers for credentials
+            // CORS for credentialed response
             if (!string.IsNullOrEmpty(origin))
             {
                 response.Headers.Add("Access-Control-Allow-Origin", origin);
                 response.Headers.Add("Access-Control-Allow-Credentials", "true");
             }
 
-            // Set HttpOnly cookie
-            response.Headers.Add("Set-Cookie",
+            // Secure cookie with JWT
+            response.Headers.Add(
+                "Set-Cookie",
                 $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400");
 
             await response.WriteAsJsonAsync(new
@@ -150,13 +244,26 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             });
 
             _logger.LogInformation("LoginWithGoogle function completed successfully for {Email}", payload.Email);
-
             return response;
         }
 
+        /// <summary>
+        /// Generates an HS256-signed JWT for the specified user, embedding identity and role claims.
+        /// </summary>
+        /// <remarks>
+        /// The token contains the <c>ClaimTypes.NameIdentifier</c> (user email) and <c>ClaimTypes.Role</c> (<c>Admin</c> or <c>Student</c>) claims.
+        /// Issuer and audience are both set to <c>SchoolFeedbackWebAPI</c>. The token lifetime is 7 days.
+        /// The signing key is loaded from the <c>JwtSecretKey</c> environment variable.
+        /// </remarks>
+        /// <param name="email">User email to embed as the name identifier claim.</param>
+        /// <param name="isAdmin">Determines the role claim (<c>Admin</c> if <c>true</c>, otherwise <c>Student</c>).</param>
+        /// <returns>A compact JWS (JWT) string signed with HS256.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when <c>JwtSecretKey</c> is not configured.</exception>
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."));
+            string secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."))
+                ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -177,6 +284,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+<<<<<<< HEAD
         [Function("SendOtp")]
         [OpenApiOperation(operationId: "SendOtp", tags: new[] { "Auth" })]
         [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(SendOtpRequest), Required = true, Description = "Email address to send OTP to")]
@@ -399,8 +507,19 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return response;
         }
 
+=======
+        /// <summary>
+        /// Incoming JSON payload carrying the Google ID token to validate.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="IdToken"/> must be a Google-issued ID token for the configured <c>GoogleClientId</c> audience.
+        /// </remarks>
+>>>>>>> develop
         public class LoginRequest
         {
+            /// <summary>
+            /// Google ID token (JWT) obtained on the client via Google Sign-In.
+            /// </summary>
             public required string IdToken { get; set; }
         }
 

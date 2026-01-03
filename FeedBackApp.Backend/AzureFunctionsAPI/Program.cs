@@ -1,4 +1,4 @@
-using Application.DTOs.Questionnaire;
+﻿using Application.DTOs.Questionnaire;
 using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
@@ -16,6 +16,7 @@ using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,128 +24,177 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
-using Azure.Identity;
 
 QuestPDF.Settings.License = LicenseType.Community;
+//megy
+// ──────────────────────────────────────────────────---
+// 1) Modern isolated builder
+// ─────────────────────────────────────────────────────
+var builder = FunctionsApplication.CreateBuilder(args);
 
-var host = new HostBuilder()
-    .ConfigureAppConfiguration((ctx, cfg) =>
-    {
-        cfg.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-           .AddJsonFile($"appsettings.{ctx.HostingEnvironment.EnvironmentName}.json", optional: true)
-           .AddEnvironmentVariables();
-    })
-    .ConfigureServices((ctx, services) =>
-    {
-        services.AddApplicationInsightsTelemetryWorkerService();
+builder.Configuration.AddEnvironmentVariables();
 
-        services.Configure<WorkerOptions>(o =>
-        {
-            o.Serializer = new JsonObjectSerializer(
-                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        });
-
-        // --- EF Core (Cosmos) ---
-        services.AddDbContext<AppDBContext>(options =>
-        {
-            var connectionString = Environment.GetEnvironmentVariable("ConnectionString")
-                ?? throw new InvalidOperationException("ConnectionString environment variable is not set.");
-
-            options.UseCosmos(connectionString, databaseName: "SchoolDatabase");
-        });
-
-        // --- Blob Storage DI (ÚJ: BlobServiceClient + IBlobContext ---
-        services.AddSingleton(sp =>
-        {
-            var cs = Environment.GetEnvironmentVariable("AZURE_REPORT_BLOB_STORAGE");
-            if (!string.IsNullOrWhiteSpace(cs))
-                return new BlobServiceClient(cs);
-
-            throw new InvalidOperationException("Set AZURE_REPORT_BLOB_STORAGE.");
-        });
-
-        services.AddSingleton<IBlobContext>(sp =>
-        {
-            var svc = sp.GetRequiredService<BlobServiceClient>();
-            var containerName = Environment.GetEnvironmentVariable("AZURE_REPORTS_CONTAINER")
-                ?? throw new InvalidOperationException("AZURE_REPORTS_CONTAINER is not set.");
-            return new BlobContext(svc, containerName); // CreateIfNotExists itt lefut a konstruktorban
-        });
-
-        // --- Application Services ---
-        services.AddScoped<ISurveyService, SurveyService>();
-        services.AddScoped<IEvaluationService, EvaluationService>();
-        services.AddScoped<IQuestionnaireService, QuestionnaireService>();
-        services.AddSingleton<Application.Services.Interfaces.IOtpService, Application.Services.OtpService>();
-
-        // --- Repositories ---
-        services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
-        services.AddScoped<IEvaluationRepository, EvaluationRepository>();
-        services.AddScoped<IWhitelistRepository, WhitelistRepository>();
-        services.AddScoped<IEmailRepository, EmailRepository>();
-        services.AddScoped<IReportRepository, ReportRepository>();
-
-        // --- Email Services ---
-        // Email configuration: Loaded from environment variables
-        services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
-            _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
-        
-        // Email templates: Loaded at startup and cached in memory
-        // Templates are loaded once and reused for all email rendering operations
-        services.AddSingleton<IReadOnlyDictionary<string, Application.Email.Templates.EmailTemplate>>(sp =>
-        {
-            var config = sp.GetRequiredService<IConfiguration>();
-            var logger = sp.GetRequiredService<ILogger<Program>>();
-            return Application.Email.Templates.EmailTemplateLoader.LoadTemplates(config, logger);
-        });
-        
-        // Email template service: Renders templates with token replacement
-        services.AddScoped<Application.Email.Templates.IEmailTemplateService, Application.Email.Templates.EmailTemplateService>();
-        
-        // Email content service: Creates email messages using templates (replaces Factory pattern)
-        services.AddScoped<Application.Email.IEmailContentService, Application.Email.EmailContentService>();
-        
-        // Email sender: MailKit-based SMTP implementation
-        services.AddScoped<IEmailSender, SmtpEmailSender>();
-        
-        // Email service: Orchestrates email batch processing and compilation
-        services.AddScoped<IEmailService, EmailService>();
-
-        // --- Report Services ---
-        // Report service uses IBlobContext for blob storage operations
-        services.AddScoped<IReportService, ReportService>();
-
-        // --- Azure Functions ---
-        services.AddScoped<QuestionnaireFunctions>();
-        services.AddScoped<EvaluationFunctions>();
-        services.AddScoped<ReportFunctions>();
-        services.AddScoped<EmailSendingFunctions>();
-        services.AddScoped<AzureFunctionsAPI.AzureEndPointReaction.Functions.AuthFunctions>();
-
-        // Validators
-        services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
-        services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
-        services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
-        services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
-        services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
-        services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
-
-        // Middleware
-        services.AddSingleton<AdminOnlyMiddleware>();
-        services.AddSingleton<StudentOnlyMiddleware>();
-        services.AddSingleton<MiddlewareSelector>();
-    })
-    .ConfigureFunctionsWebApplication((IFunctionsWorkerApplicationBuilder app) =>
-    {
-        app.UseMiddleware<MiddlewareSelector>();
-    })
-    .Build();
-
-// Inicializálás: csak DB (BlobContainer létrehozást a BlobContext intézi a konstruktorban)
-using (var scope = host.Services.CreateScope())
+// ─────────────────────────────────────────────────────
+// 2) JSON serializer
+// ─────────────────────────────────────────────────────
+builder.Services.Configure<WorkerOptions>(o =>
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDBContext>();
-    await dbContext.Database.EnsureCreatedAsync();
+    o.Serializer = new JsonObjectSerializer(
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+});
+
+builder.Services
+    .AddApplicationInsightsTelemetryWorkerService()
+    .ConfigureFunctionsApplicationInsights();
+
+// ─────────────────────────────────────────────────────
+// 3) EF Core Cosmos – local.settings.json / Azure App Settings
+// ─────────────────────────────────────────────────────
+builder.Services.AddDbContext<AppDBContext>(options =>
+{
+    var endpoint = builder.Configuration["Cosmos:AccountEndpoint"];
+    var key = builder.Configuration["Cosmos:AccountKey"];
+    var db = builder.Configuration["Cosmos:DatabaseName"];
+
+    if (string.IsNullOrWhiteSpace(endpoint) ||
+        string.IsNullOrWhiteSpace(key) ||
+        string.IsNullOrWhiteSpace(db))
+    {
+        throw new InvalidOperationException(
+            "Missing Cosmos configuration: Cosmos:AccountEndpoint, Cosmos:AccountKey, Cosmos:DatabaseName");
+    }
+
+    options.UseCosmos(endpoint, key, db);
+});
+
+// ─────────────────────────────────────────────────────
+// 4) Blob Storage – ReportStorage:ConnectionString, ReportStorage:ContainerName
+// ─────────────────────────────────────────────────────
+builder.Services.AddSingleton(sp =>
+{
+    var cs = builder.Configuration["ReportStorage:ConnectionString"];
+    if (string.IsNullOrWhiteSpace(cs))
+        throw new InvalidOperationException("Missing ReportStorage:ConnectionString");
+
+    return new BlobServiceClient(cs);
+});
+
+builder.Services.AddSingleton<IBlobContext>(sp =>
+{
+    var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+    var containerName = builder.Configuration["ReportStorage:ContainerName"];
+
+    if (string.IsNullOrWhiteSpace(containerName))
+        throw new InvalidOperationException("Missing ReportStorage:ContainerName");
+
+    return new BlobContext(serviceClient, containerName);
+});
+
+// ─────────────────────────────────────────────────────
+// 5) Egyéb config ellenőrzés (JWT, Google, Email, AdminEmails)
+// ─────────────────────────────────────────────────────
+_ = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("Missing Jwt:SecretKey");
+
+_ = builder.Configuration["Google:ClientId"]
+    ?? throw new InvalidOperationException("Missing Google:ClientId");
+
+var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
+var adminEmails = rawAdminEmails
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+_ = builder.Configuration["Email:FromAddress"]
+    ?? throw new InvalidOperationException("Missing Email:FromAddress");
+
+_ = builder.Configuration["Email:FromName"]
+    ?? throw new InvalidOperationException("Missing Email:FromName");
+
+_ = builder.Configuration["Email:AppPassword"]
+    ?? throw new InvalidOperationException("Missing Email:AppPassword");
+
+// Certificates – localon használod, Azure-on majd KeyVault lesz valószínűleg
+var certLoadPath = builder.Configuration["Certificates:LoadPath"];
+
+
+// ─────────────────────────────────────────────────────
+// 6) Services & repositories
+// ─────────────────────────────────────────────────────
+builder.Services.AddScoped<ISurveyService, SurveyService>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+services.AddSingleton<Application.Services.Interfaces.IOtpService, Application.Services.OtpService>();
+builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IWhitelistRepository, WhitelistRepository>();
+builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
+
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+// --- Email Services ---
+// Email configuration: Loaded from environment variables
+services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
+    _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
+
+// Email templates: Loaded at startup and cached in memory
+// Templates are loaded once and reused for all email rendering operations
+services.AddSingleton<IReadOnlyDictionary<string, Application.Email.Templates.EmailTemplate>>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    return Application.Email.Templates.EmailTemplateLoader.LoadTemplates(config, logger);
+});
+
+// Email template service: Renders templates with token replacement
+services.AddScoped<Application.Email.Templates.IEmailTemplateService, Application.Email.Templates.EmailTemplateService>();
+
+// Email content service: Creates email messages using templates (replaces Factory pattern)
+services.AddScoped<Application.Email.IEmailContentService, Application.Email.EmailContentService>();
+
+// Email sender: MailKit-based SMTP implementation
+services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+// Email service: Orchestrates email batch processing and compilation
+services.AddScoped<IEmailService, EmailService>();
+
+// --- Report Services ---
+// Report service uses IBlobContext for blob storage operations
+services.AddScoped<EmailSendingFunctions>();
+services.AddScoped<AzureFunctionsAPI.AzureEndPointReaction.Functions.AuthFunctions>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// ─────────────────────────────────────────────────────
+// 8) Validators
+// ─────────────────────────────────────────────────────
+builder.Services.AddScoped<IValidator<CreateSurveyMetadataDTO>, CreateSurveyMetadataValidator>();
+builder.Services.AddScoped<IValidator<MetaTeacherDTO>, MetaTeacherValidator>();
+builder.Services.AddScoped<IValidator<QuestionnaireCreationParamDTO>, QuestionnaireCreationParamValidator>();
+builder.Services.AddScoped<IValidator<QuestionnaireDTO>, QuestionnaireValidator>();
+builder.Services.AddScoped<IValidator<QuestionTemplateDTO>, QuestionTemplateValidator>();
+builder.Services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
+
+
+builder.Services.AddSingleton<AdminOnlyMiddleware>();
+builder.Services.AddSingleton<StudentOnlyMiddleware>();
+builder.Services.AddSingleton<MiddlewareSelector>();
+
+builder
+    .UseMiddleware<MiddlewareSelector>();
+
+// ─────────────────────────────────────────────────────
+// 10) Build, DB init, Run
+// ─────────────────────────────────────────────────────
+var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
+    await db.Database.EnsureCreatedAsync();
 }
 
-await host.RunAsync();
+app.Run();
