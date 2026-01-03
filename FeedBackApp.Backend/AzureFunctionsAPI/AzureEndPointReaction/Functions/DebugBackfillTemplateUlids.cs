@@ -29,9 +29,9 @@ public sealed class DebugBackfillTemplateUlids
     {
         // load a page (tracked)
         var page = await _db.Set<QuestionnaireTemplate>()
-            .Take(1000)
             .ToListAsync();
-
+         // .ToPageAsync();
+        
         // filter in memory
         var toFix = page.Where(t => string.IsNullOrWhiteSpace(t.TemplateUlid)).ToList();
 
