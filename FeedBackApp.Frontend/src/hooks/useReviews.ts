@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit } from "@/api/ReviewApi"
+import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import { Survey } from "@/models/StudentContext"
@@ -10,6 +10,19 @@ export const useReviews = (selectedSurveyId?: string) => {
     const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
         mutationFn: (idToken: string) => LoginWithGoogle(idToken)
     });
+
+    const { mutate: loginWithFacebook, isPending: isLoggingInFacebook } = useMutation({
+        mutationFn: (accessToken: string) => LoginWithFacebook(accessToken)
+    });
+
+    const { mutate: loginWithMicrosoft, isPending: isLoggingInMicrosoft } = useMutation({
+        mutationFn: (idToken: string) => LoginWithMicrosoft(idToken)
+    });
+
+    const { mutate: loginWithLinkedIn, isPending: isLoggingInLinkedIn } = useMutation({
+        mutationFn: (accessToken: string) => LoginWithLinkedIn(accessToken)
+    });
+
 
     const {
         data: questionnaires,
@@ -103,6 +116,9 @@ export const useReviews = (selectedSurveyId?: string) => {
         performGenerateReports, isGeneratingReports,
         performSendReports, isSendingReports,
         loginWithGoogle, isLoggingIn,
+        loginWithFacebook, isLoggingInFacebook,
+        loginWithMicrosoft, isLoggingInMicrosoft,
+        loginWithLinkedIn, isLoggingInLinkedIn,
         adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
     }
 }

@@ -3,15 +3,30 @@ import axios from "axios"
 const API_URL = import.meta.env.VITE_API_BASE_URL
 
 const apiClient = axios.create({
-    baseURL: API_URL,
-    withCredentials: true,
-    headers: {
-        "Content-Type": "application/json",
-    },
+  baseURL: "/api", // ← proxy útvonal
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 //LoginWithGoogle
 export const LoginWithGoogle = async (idToken) => {
-    const { data } = await apiClient.post('/auth/google', { IdToken: idToken });
+  const { data } = await apiClient.post("/auth/google", { IdToken: idToken });
+  return data;
+};
+//LoginWithFacebook
+export const LoginWithFacebook = async (accessToken) => {
+    const { data } = await apiClient.post('/auth/facebook', { AccessToken: accessToken });
+    return data;
+};
+//LoginWithMicrosoft
+export const LoginWithMicrosoft = async (idToken) => {
+    const { data } = await apiClient.post('/auth/microsoft', { IdToken: idToken });
+    return data;
+};
+//LoginWithLinkedIn
+export const LoginWithLinkedIn = async (accessToken) => {
+    const { data } = await apiClient.post('/auth/linkedin', { AccessToken: accessToken });
     return data;
 };
 //PerformGetSurveyData

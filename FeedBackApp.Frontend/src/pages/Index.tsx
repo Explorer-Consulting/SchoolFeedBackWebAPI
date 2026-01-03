@@ -5,42 +5,85 @@ import { useAuthStore } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { User } from '@/models/User'
+import { FaFacebookF, FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
 
-export default function GoogleAuthApp() {
+export default function SocialAuthApp() {
   const navigate = useNavigate()
   const setUser = useAuthStore((state) => state.setUser)
 
-  const { loginWithGoogle, isLoggingIn } = useReviews()
+  const {
+    loginWithGoogle,
+    loginWithFacebook,
+    loginWithMicrosoft,
+    loginWithLinkedIn,
+    isLoggingIn,
+    isLoggingInFacebook,
+    isLoggingInMicrosoft,
+    isLoggingInLinkedIn
+  } = useReviews()
 
-  const onIdTokenSuccess = (resp: CredentialResponse) => {
-    const idToken = resp?.credential
-
-    if (!idToken) {
-      console.error("No ID token from Google")
-      return
+  const handleSuccess = (user: any) => {
+    setUser(user)
+    if (user.role === 'Admin') {
+      navigate("/dashboard/admin")
+    } else if (user.role === 'Student') {
+      navigate("/dashboard/student/")
+    } else {
+      navigate("/no-access")
     }
+  }
+
+  const handleError = (e: any) => {
+    if (e.response?.status === 403) {
+      navigate("/no-access")
+    } else {
+      navigate("/no-access")
+      console.error(e)
+    }
+  }
+
+  const onGoogleSuccess = (resp: CredentialResponse) => {
+    const idToken = resp?.credential;
+    if (!idToken) return console.error("No ID token from Google");
 
     loginWithGoogle(idToken, {
-      onSuccess: (user: User) => {
-        setUser(user)
+      onSuccess: handleSuccess,
+      onError: handleError,
+    });
+  };
 
-        if (user.role === 'Admin') {
-          navigate("/dashboard/admin")
-        } else if (user.role === 'Student') {
-          navigate("/dashboard/student/")
+
+  const onFacebookLogin = () => {
+  if (!window.FB) {
+    console.error("Facebook SDK not loaded yet.");
+    return;
+  }
+
+  window.FB.getLoginStatus(function(response) {
+    window.FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken;
+          loginWithFacebook(accessToken, { onSuccess: handleSuccess, onError: handleError });
         } else {
-          navigate("/no-access")
+          console.error("Facebook login failed");
         }
       },
-      onError: (e: any) => {
-        if (e.response?.status === 403) {
-          navigate("/no-access")
-        } else {
-          navigate("/no-access")
-          console.error(e);
-        }
-      }
-    })
+      { scope: 'email,public_profile' }
+    );
+  });
+};
+
+
+
+  const onMicrosoftLogin = () => {
+    const idToken = "microsoft_id_token" // Replace with real token from Microsoft auth
+    loginWithMicrosoft(idToken, { onSuccess: handleSuccess, onError: handleError })
+  }
+
+  const onLinkedInLogin = () => {
+    const accessToken = "linkedin_access_token" // Replace with real token from LinkedIn OAuth
+    loginWithLinkedIn(accessToken, { onSuccess: handleSuccess, onError: handleError })
   }
 
   return (
@@ -49,13 +92,13 @@ export default function GoogleAuthApp() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Bejelentkezés</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Jelentkezz be Google-fiókkal
+            Jelentkezz be egy közösségi fiókkal
           </p>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           <GoogleLogin
-            onSuccess={onIdTokenSuccess}
-            onError={() => console.error("Login failed")}
+            onSuccess={onGoogleSuccess}
+            onError={() => console.error("Google login failed")}
             useOneTap
             auto_select
             theme="outline"
@@ -65,14 +108,45 @@ export default function GoogleAuthApp() {
             logo_alignment="center"
             width="280"
           />
-          {isLoggingIn && (
-            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Bejelentkezés folyamatban…
-            </div>
-          )}
+          <button
+            onClick={onFacebookLogin}
+            className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
+          >
+            <FaFacebookF className="w-5 h-5" />
+            Facebook
+          </button>
+
+          <button
+            onClick={onMicrosoftLogin}
+            className="flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
+          >
+            <FaMicrosoft className="w-5 h-5" />
+            Microsoft
+          </button>
+
+          <button
+            onClick={onLinkedInLogin}
+            className="flex items-center justify-center gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
+          >
+            <FaLinkedinIn className="w-5 h-5" />
+            LinkedIn
+          </button>
+
+          {isLoggingIn && <Status text="Google bejelentkezés folyamatban…" />}
+          {isLoggingInFacebook && <Status text="Facebook bejelentkezés folyamatban…" />}
+          {isLoggingInMicrosoft && <Status text="Microsoft bejelentkezés folyamatban…" />}
+          {isLoggingInLinkedIn && <Status text="LinkedIn bejelentkezés folyamatban…" />}
         </CardContent>
       </Card>
     </main>
+  )
+}
+
+function Status({ text }: { text: string }) {
+  return (
+    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      {text}
+    </div>
   )
 }
