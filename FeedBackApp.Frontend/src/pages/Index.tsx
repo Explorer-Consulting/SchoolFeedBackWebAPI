@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { User } from '@/models/User'
 import { FaFacebookF, FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
+import { useFacebook } from "@/hooks/useFacebook";
 
 export default function SocialAuthApp() {
   const navigate = useNavigate()
@@ -52,28 +53,29 @@ export default function SocialAuthApp() {
     });
   };
 
+  const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
+  const fbLoaded = useFacebook(FACEBOOK_APP_ID);
 
-  const onFacebookLogin = () => {
-  if (!window.FB) {
-    console.error("Facebook SDK not loaded yet.");
-    return;
-  }
+   const onFacebookLogin = () => {
+    if (!fbLoaded || !window.FB) {
+      alert("Facebook SDK nem töltődött be, ellenőrizd a böngésződ!");
+      return;
+    }
 
-  window.FB.getLoginStatus(function(response) {
     window.FB.login(
       (response: any) => {
         if (response.authResponse) {
-          const accessToken = response.authResponse.accessToken;
-          loginWithFacebook(accessToken, { onSuccess: handleSuccess, onError: handleError });
+          loginWithFacebook(response.authResponse.accessToken, {
+            onSuccess: handleSuccess,
+            onError: handleError,
+          });
         } else {
-          console.error("Facebook login failed");
+          console.error("Facebook login cancelled");
         }
       },
-      { scope: 'email,public_profile' }
+      { scope: "email,public_profile" }
     );
-  });
-};
-
+  };
 
 
   const onMicrosoftLogin = () => {

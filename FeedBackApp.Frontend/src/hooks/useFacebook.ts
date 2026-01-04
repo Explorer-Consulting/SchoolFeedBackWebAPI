@@ -1,37 +1,43 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react";
 
 declare global {
   interface Window {
-    fbAsyncInit: () => void
-    FB: any
+    fbAsyncInit: () => void;
+    FB: any;
   }
 }
 
 export function useFacebook(appId: string) {
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
+    if (window.FB) {
+      setLoaded(true);
+      return;
+    }
+
     window.fbAsyncInit = function () {
       window.FB.init({
         appId,
         cookie: true,
-        xfbml: true,
-        version: "v21.0",
-      })
-    }
-  }, [appId])
+        xfbml: false,
+        version: "v19.0",
+      });
+      setLoaded(true);
+    };
 
-  const login = (callback: (accessToken: string) => void, onError: () => void) => {
-    window.FB.login(
-      (response: any) => {
-        if (response.status === "connected") {
-          const accessToken = response.authResponse.accessToken
-          callback(accessToken)
-        } else {
-          onError()
-        }
-      },
-      { scope: "email,public_profile" }
-    )
-  }
+    const script = document.createElement("script");
+    script.src = "https://connect.facebook.net/en_US/sdk.js";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => console.log("FB SDK loaded");
+    script.onerror = () => console.error("FB SDK load failed");
+    document.body.appendChild(script);
 
-  return { login }
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [appId]);
+
+  return loaded;
 }
