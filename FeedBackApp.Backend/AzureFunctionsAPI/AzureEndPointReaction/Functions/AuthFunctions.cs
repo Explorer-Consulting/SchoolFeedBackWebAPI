@@ -222,6 +222,119 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return response;
         }
 
+        [Function("LoginWithFacebook")]
+        public async Task<HttpResponseData> LoginWithFacebook(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/facebook")]
+    HttpRequestData req)
+        {
+            var origin = req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
+
+            // CORS preflight
+            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    preflight.Headers.Add("Access-Control-Allow-Origin", origin);
+                    preflight.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                    preflight.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                    preflight.Headers.Add("Access-Control-Allow-Credentials", "true");
+                }
+                return preflight;
+            }
+
+            var body = await new StreamReader(req.Body).ReadToEndAsync();
+            var data = JsonConvert.DeserializeObject<FacebookLoginRequest>(body);
+
+            if (string.IsNullOrWhiteSpace(data?.AccessToken))
+            {
+                var bad = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
+                await bad.WriteStringAsync("AccessToken required");
+                return bad;
+            }
+
+            using var http = new HttpClient();
+            var appId = Environment.GetEnvironmentVariable("Facebook:AppId");
+            var appSecret = Environment.GetEnvironmentVariable("Facebook:AppSecret");
+
+            //  Validate access token
+            var debugUrl = $"https://graph.facebook.com/debug_token?input_token={data.AccessToken}&access_token={appId}|{appSecret}";
+            var debugResponse = await http.GetStringAsync(debugUrl);
+            dynamic debug = JsonConvert.DeserializeObject(debugResponse);
+
+            if (debug?.data?.is_valid != true)
+            {
+                var unauth = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
+                await unauth.WriteStringAsync("Invalid Facebook token");
+                return unauth;
+            }
+
+            //  Fetch user profile (including email)
+            var userInfoUrl = $"https://graph.facebook.com/me?fields=id,first_name,last_name,email&access_token={data.AccessToken}";
+            var userInfoResponse = await http.GetStringAsync(userInfoUrl);
+            dynamic userInfo = JsonConvert.DeserializeObject(userInfoResponse);
+
+            string email = userInfo?.email;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                // Felhasználó nem engedélyezte az email megosztást
+                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
+                await forbidden.WriteStringAsync("Email not available. Please allow email access in Facebook login.");
+                return forbidden;
+            }
+
+            //  Authorization (student/admin)
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist.StudentEmails;
+
+            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
+            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            bool isAdmin = adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
+            bool isStudent = students.Contains(email, StringComparer.OrdinalIgnoreCase);
+
+            if (!isAdmin && !isStudent)
+            {
+                var notFoundResp = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    notFoundResp.Headers.Add("Access-Control-Allow-Origin", origin);
+                    notFoundResp.Headers.Add("Access-Control-Allow-Credentials", "true");
+                }
+                await notFoundResp.WriteStringAsync("User not authorized");
+                return notFoundResp;
+            }
+
+            //  JWT issuance
+            var token = GenerateJwtToken(email, isAdmin);
+
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+
+            if (!string.IsNullOrEmpty(origin))
+            {
+                response.Headers.Add("Access-Control-Allow-Origin", origin);
+                response.Headers.Add("Access-Control-Allow-Credentials", "true");
+            }
+
+            response.Headers.Add(
+                "Set-Cookie",
+                $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400"
+            );
+
+            await response.WriteAsJsonAsync(new
+            {
+                email,
+                firstName = userInfo?.first_name,
+                lastName = userInfo?.last_name,
+                role = isAdmin ? "Admin" : "Student",
+                provider = "Facebook"
+            });
+
+            return response;
+        }
+
+
+
         /// <summary>
         /// Generates an HS256-signed JWT for the specified user, embedding identity and role claims.
         /// </summary>
@@ -272,5 +385,10 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             /// </summary>
             public required string IdToken { get; set; }
         }
+        public class FacebookLoginRequest
+        {
+            public required string AccessToken { get; set; }
+        }
+
     }
 }
