@@ -6,7 +6,6 @@ using FeedBackApp.Core.Model;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
-using NUlid;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
@@ -16,7 +15,7 @@ namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
  * by creating a questionnaire instance for that user. It is idempotent.
  * route: POST /api/templates/{id}/self-opt-in
  * Body: { "optInToken": "<jwt>" }
- * {id} = template ULID (same as in preview)
+ * {id} = template Guid (same as in preview)
  * optInToken = the same short-lived JWT from the share link.
  */
 
@@ -40,9 +39,9 @@ public class TemplateSelfOptIn
         string id,
         FunctionContext context)   // StudentOnlyMiddleware should populate ctx.Items["User"]
     {
-        // route ULID
-        if (!Ulid.TryParse(id, out var templateUlid))
-            return await Text(req, HttpStatusCode.BadRequest, "Invalid template id (ULID expected).");
+        // route Guid
+        if (!Guid.TryParse(id, out var templateGuid))
+            return await Text(req, HttpStatusCode.BadRequest, "Invalid template id (Guid expected).");
 
         // body with token
         var body = await req.ReadFromJsonAsync<RequestDto>() ?? new();
@@ -54,7 +53,7 @@ public class TemplateSelfOptIn
         if (!v.IsValid)
             return await Text(req, HttpStatusCode.Gone, $"Invalid or expired link ({v.Error}).");
 
-        if (v.QuestionnaireId != templateUlid)
+        if (v.QuestionnaireId != templateGuid)
             return await Text(req, HttpStatusCode.BadRequest, "Token/template mismatch.");
 
         // require authenticated user (middleware-enforced)
@@ -68,7 +67,7 @@ public class TemplateSelfOptIn
         // load real template by alias
         var template = await _db.Set<QuestionnaireTemplate>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.TemplateUlid == id);
+            .FirstOrDefaultAsync(t => t.Id == id);
 
         if (template is null)
             return req.CreateResponse(HttpStatusCode.NotFound);
@@ -102,7 +101,7 @@ public class TemplateSelfOptIn
         // create a real Questionnaire instance (minimal fields; results will be filled on submit)
         var instance = new Questionnaire
         {
-            Id = Ulid.NewUlid().ToString(),
+            Id = Guid.NewGuid().ToString("D"),
             Status = false,               // not completed
             SurveyId = template.Id,       // link instance to template via stored Id (questiontemplates_<guid>)
             TeacherEmail = string.Empty,  // unknown in self-opt-in path

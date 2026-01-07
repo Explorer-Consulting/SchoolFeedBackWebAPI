@@ -4,7 +4,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using NUlid;
 
 namespace ApplicationEventWorkers.SelfOptIn;
 
@@ -41,12 +40,12 @@ public sealed class OptInJwtService : IOptInTokenService
             throw new InvalidOperationException("SelfOptInJwtOptions.SigningKey must be at least 32 characters.");
     }
 
-    public string CreateToken(Ulid questionnaireId, string tag, DateTimeOffset expiresAtUtc)
+    public string CreateToken(Guid questionnaireId, string tag, DateTimeOffset expiresAtUtc)
     {
         var claims = new[]
         {
             new Claim("purpose", "optin"),
-            new Claim("tid", questionnaireId.ToString()),
+            new Claim("tid", questionnaireId.ToString("D")), // GUID has hyphens 
             new Claim("tag", tag ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
@@ -96,7 +95,7 @@ public sealed class OptInJwtService : IOptInTokenService
 
             var tidText = principal.FindFirst("tid")?.Value
                         ?? principal.FindFirst("qid")?.Value;
-            if (!Ulid.TryParse(tidText, out var tid))
+            if (!Guid.TryParse(tidText, out var tid))
                 return new(false, default, "", null, "bad_tid");
 
             var tag = principal.FindFirst("tag")?.Value ?? string.Empty;

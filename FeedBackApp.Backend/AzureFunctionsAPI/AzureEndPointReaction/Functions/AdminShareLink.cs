@@ -4,8 +4,6 @@ using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
-using NUlid;
-
 /*
  * A simple HTTP GET function to generate a shareable opt-in link for testing/admin usage.
  * Lets us verify end-to-end that token creation works
@@ -27,14 +25,14 @@ public class AdminShareLink
 
     [Function("ShareOptInLink")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get",
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post",
             Route = "optin/share-link/{tid}")] HttpRequestData req, string tid)
     {
         
-        if (!Ulid.TryParse(tid, out var templateId))
+        if (!Guid.TryParse(tid, out var templateId))
         {
             var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-            await bad.WriteStringAsync("Missing/invalid tid (expected ULID).");
+            await bad.WriteStringAsync("Missing/invalid tid (expected Guid).");
             return bad;
         }
 
@@ -45,7 +43,8 @@ public class AdminShareLink
 
         var token = _tokens.CreateToken(templateId, tag, exp);
         var url = $"http://localhost:7071/api/templates/{tid}/preview?optin={Uri.EscapeDataString(token)}";
-        
+        // templates/tid nem kell
+        // endpoint
 
         var ok = req.CreateResponse(HttpStatusCode.OK);
         await ok.WriteAsJsonAsync(new { url, expiresAt = exp });
