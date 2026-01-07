@@ -34,9 +34,9 @@ public class TemplatePreview
         [HttpTrigger(AuthorizationLevel.Anonymous, "get",
          Route = "templates/{id}/preview")] HttpRequestData req,
         string id)
-    {
+    {   
         // 1) id must be Guid
-        if (!Guid.TryParse(id, out var templateGuid))
+        if (!Guid.TryParse(id, out var templateId))
             return await Text(req, HttpStatusCode.BadRequest, "Invalid template id (Guid expected).");
 
         // 2) validate token
@@ -49,16 +49,18 @@ public class TemplatePreview
         if (!v.IsValid)
             return await Text(req, HttpStatusCode.Gone, $"Invalid or expired link ({v.Error}).");
 
-        if (v.QuestionnaireId != templateGuid)
+        if (v.QuestionnaireId != templateId)
             return await Text(req, HttpStatusCode.BadRequest, "Token/template mismatch.");
 
         // 3) load template by alias (Guid)
-        var storageId = $"questiontemplates_{templateGuid:D}";
+        var storageId = $"questiontemplates_{templateId:D}";
+        
         var template = await _db.Set<QuestionnaireTemplate>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == storageId);
+            .Where(t => EF.Property<string>(t, "DocumentType") == "QuestionTemplate")
+            .SingleOrDefaultAsync(t => t.Id == storageId);
 
-
+        
         if (template is null)
         {
             var nf = req.CreateResponse(HttpStatusCode.NotFound);
@@ -164,8 +166,13 @@ public class TemplatePreview
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "debug/templates/{guid}/enable-optin")]
         HttpRequestData req, string guid)
     {
+        var storageId = $"questiontemplates_{guid:D}";
+
         var t = await _db.Set<QuestionnaireTemplate>()
-            .FirstOrDefaultAsync(x => x.Id == guid);
+            .AsNoTracking()
+            .Where(t => EF.Property<string>(t, "DocumentType") == "QuestionTemplate")
+            .SingleOrDefaultAsync(t => t.Id == storageId);
+
         if (t is null) return req.CreateResponse(HttpStatusCode.NotFound);
 
         t.IsSelfOptInEnabled = true;
