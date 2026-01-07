@@ -39,7 +39,7 @@ public sealed class OptInJwtService : IOptInTokenService
         if (string.IsNullOrWhiteSpace(_opt.SigningKey) || _opt.SigningKey.Length < 32)
             throw new InvalidOperationException("SelfOptInJwtOptions.SigningKey must be at least 32 characters.");
     }
-
+    
     public string CreateToken(Guid questionnaireId, string tag, DateTimeOffset expiresAtUtc)
     {
         var claims = new[]
@@ -48,6 +48,34 @@ public sealed class OptInJwtService : IOptInTokenService
             new Claim("tid", questionnaireId.ToString("D")), // GUID has hyphens 
             new Claim("tag", tag ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        var creds = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256);
+        var now = DateTime.UtcNow;
+
+        var desc = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            NotBefore = now.AddMinutes(-1),
+            Expires   = expiresAtUtc.UtcDateTime,
+            Issuer    = _opt.Issuer,
+            Audience  = _opt.Audience,
+            SigningCredentials = creds
+        };
+
+        var token = _handler.CreateToken(desc);
+        return _handler.WriteToken(token);
+    }
+    
+    public string CreateTokenWithEmail(Guid questionnaireId, string tag, string email, DateTimeOffset expiresAtUtc)
+    {
+        var claims = new[]
+        {
+            new Claim("purpose", "optin"),
+            new Claim("tid", questionnaireId.ToString("D")), // GUID has hyphens 
+            new Claim("tag", tag ?? string.Empty),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("email", email)
         };
 
         var creds = new SigningCredentials(SigningKey, SecurityAlgorithms.HmacSha256);

@@ -2,7 +2,7 @@ using Application.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-namespace AzureFunctionsAPI.AzureEndPointReaction.Functions;
+namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
 public sealed class EmailSendingFunctions(ILogger<EmailSendingFunctions> logger, IEmailService emailService)
 {

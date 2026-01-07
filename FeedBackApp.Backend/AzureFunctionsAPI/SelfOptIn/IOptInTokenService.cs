@@ -5,6 +5,8 @@ namespace ApplicationEventWorkers.SelfOptIn;
 public interface IOptInTokenService
 {
     string CreateToken(Guid questionnaireId, string tag, DateTimeOffset expiresAtUtc);
+    public string CreateTokenWithEmail(Guid templateId, string tag, string email, DateTimeOffset expiresAtUtc);
+
     OptInTokenValidationResult Validate(string token, DateTimeOffset nowUtc);
 }
 
