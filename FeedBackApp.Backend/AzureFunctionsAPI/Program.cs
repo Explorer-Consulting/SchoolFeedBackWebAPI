@@ -22,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
+using Azure.Storage.Queues;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -110,6 +111,17 @@ builder.Services.AddOptions<SelfOptInJwtOptions>()
     .ValidateOnStart();
 
 builder.Services.AddSingleton<IOptInTokenService, OptInJwtService>();
+
+builder.Services.AddSingleton(sp =>
+{
+    var conn = builder.Configuration["AzureWebJobsStorage"]
+               ?? throw new InvalidOperationException("AzureWebJobsStorage missing.");
+    var client = new QueueClient(conn, "optin-email-jobs",
+        new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 });
+    client.CreateIfNotExists();
+    return client;
+});
+
 // ─────────────────────────────────────────────────────
 // 5) Egyéb config ellenőrzés (JWT, Google, Email, AdminEmails)
 // ─────────────────────────────────────────────────────
@@ -149,7 +161,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
-builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReportService, ReportService>();    
 
 // ─────────────────────────────────────────────────────
 // 8) Validators
