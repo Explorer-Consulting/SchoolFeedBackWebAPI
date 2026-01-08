@@ -4,11 +4,15 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using HttpRequestData = Microsoft.Azure.Functions.Worker.Http.HttpRequestData;
+
 
 namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 {
@@ -333,6 +337,145 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return response;
         }
 
+        [Function("LoginWithMicrosoft")]
+        public async Task<HttpResponseData> LoginWithMicrosoft(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/microsoft")]
+    HttpRequestData req)
+        {
+            var origin = req.Headers.TryGetValues("Origin", out var origins)
+                ? origins.FirstOrDefault()
+                : null;
+
+           
+            // CORS preflight
+           
+            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    preflight.Headers.Add("Access-Control-Allow-Origin", origin);
+                    preflight.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                    preflight.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                    preflight.Headers.Add("Access-Control-Allow-Credentials", "true");
+                }
+                return preflight;
+            }
+
+          
+            // Parse request body
+           
+            var body = await new StreamReader(req.Body).ReadToEndAsync();
+            var data = JsonConvert.DeserializeObject<MicrosoftLoginRequest>(body);
+
+            if (string.IsNullOrWhiteSpace(data?.IdToken))
+            {
+                var bad = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
+                await bad.WriteStringAsync("IdToken is required");
+                return bad;
+            }
+
+            
+            // Microsoft ID token validation 
+            
+            ClaimsPrincipal principal;
+            try
+            {
+                var tenantId = Environment.GetEnvironmentVariable("Microsoft:TenantId") ?? "common";
+                var clientId = Environment.GetEnvironmentVariable("Microsoft:ClientId");
+
+                var authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+                var metadataAddress = $"{authority}/.well-known/openid-configuration";
+
+                var configManager =
+                    new ConfigurationManager<OpenIdConnectConfiguration>(
+                        metadataAddress,
+                        new OpenIdConnectConfigurationRetriever()
+                    );
+
+                var openIdConfig = await configManager.GetConfigurationAsync();
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = clientId,
+                    ValidateLifetime = true,
+                    IssuerSigningKeys = openIdConfig.SigningKeys
+                };
+
+                var handler = new JwtSecurityTokenHandler();
+                principal = handler.ValidateToken(data.IdToken, validationParameters, out _);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Invalid Microsoft token");
+
+                var unauth = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
+                await unauth.WriteStringAsync("Invalid Microsoft token");
+                return unauth;
+            }
+
+           
+            // Extract email
+           
+            var email =
+                principal.FindFirst(ClaimTypes.Email)?.Value ??
+                principal.FindFirst("preferred_username")?.Value;
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
+                await forbidden.WriteStringAsync("Email not available from Microsoft account");
+                return forbidden;
+            }
+
+         
+            // Authorization (UGYANAZ, mint Google/Facebook)
+          
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist.StudentEmails;
+
+            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
+            var adminEmails = adminEmailsEnv
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            bool isAdmin = adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
+            bool isStudent = students.Contains(email, StringComparer.OrdinalIgnoreCase);
+
+            if (!isAdmin && !isStudent)
+            {
+                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
+                await forbidden.WriteStringAsync("User not authorized");
+                return forbidden;
+            }
+
+            // JWT issuance (UGYANAZ)
+          
+            var token = GenerateJwtToken(email, isAdmin);
+
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+
+            if (!string.IsNullOrEmpty(origin))
+            {
+                response.Headers.Add("Access-Control-Allow-Origin", origin);
+                response.Headers.Add("Access-Control-Allow-Credentials", "true");
+            }
+
+            response.Headers.Add(
+                "Set-Cookie",
+                $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400"
+            );
+
+            await response.WriteAsJsonAsync(new
+            {
+                email,
+                role = isAdmin ? "Admin" : "Student",
+                provider = "Microsoft"
+            });
+
+            return response;
+        }
 
 
         /// <summary>
@@ -388,6 +531,10 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         public class FacebookLoginRequest
         {
             public required string AccessToken { get; set; }
+        }
+        public class MicrosoftLoginRequest
+        {
+            public required string IdToken { get; set; }
         }
 
     }

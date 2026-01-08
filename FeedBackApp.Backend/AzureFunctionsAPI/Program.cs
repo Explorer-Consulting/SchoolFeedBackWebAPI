@@ -105,6 +105,12 @@ _ = builder.Configuration["Facebook:AppId"]
 _ = builder.Configuration["Facebook:AppSecret"]
     ?? throw new InvalidOperationException("Missing Facebook:AppSecret");
 
+_ = builder.Configuration["Microsoft:ClientId"]
+    ?? throw new InvalidOperationException("Missing Microsoft:ClientId");
+
+_ = builder.Configuration["Microsoft:TenantId"]
+    ?? "common";
+
 var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
 var adminEmails = rawAdminEmails
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

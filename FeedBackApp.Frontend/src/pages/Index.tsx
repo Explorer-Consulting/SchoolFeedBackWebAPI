@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react'
 import { User } from '@/models/User'
 import { FaFacebookF, FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
 import { useFacebook } from "@/hooks/useFacebook";
+import { PublicClientApplication } from "@azure/msal-browser";
 
 export default function SocialAuthApp() {
   const navigate = useNavigate()
@@ -78,10 +79,39 @@ export default function SocialAuthApp() {
   };
 
 
-  const onMicrosoftLogin = () => {
-    const idToken = "microsoft_id_token" // Replace with real token from Microsoft auth
-    loginWithMicrosoft(idToken, { onSuccess: handleSuccess, onError: handleError })
+
+const onMicrosoftLogin = async () => {
+  try {
+    // 1. Létrehozzuk a példányt
+    const msalInstance = new PublicClientApplication({
+      auth: {
+        clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID,
+        authority: "https://login.microsoftonline.com/common",
+        redirectUri: window.location.origin,
+      },
+    });
+
+    // 2. Inicializáljuk az MSAL-t
+    await msalInstance.initialize();
+
+    // 3. Popup login
+    const response = await msalInstance.loginPopup({
+      scopes: ["openid", "profile", "email", "User.Read"],
+    });
+
+    const idToken = response.idToken;
+    if (!idToken) throw new Error("No idToken received");
+
+    loginWithMicrosoft(idToken, {
+      onSuccess: handleSuccess,
+      onError: handleError,
+    });
+
+  } catch (err) {
+    console.error("Microsoft login cancelled or failed", err);
   }
+};
+
 
   const onLinkedInLogin = () => {
     const accessToken = "linkedin_access_token" // Replace with real token from LinkedIn OAuth
