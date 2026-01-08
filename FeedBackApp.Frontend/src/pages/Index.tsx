@@ -155,7 +155,7 @@ const onMicrosoftLogin = async () => {
             <FaMicrosoft className="w-5 h-5" />
             Microsoft
           </button>
-
+          {/*
           <button
             onClick={onLinkedInLogin}
             className="flex items-center justify-center gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
@@ -163,6 +163,7 @@ const onMicrosoftLogin = async () => {
             <FaLinkedinIn className="w-5 h-5" />
             LinkedIn
           </button>
+          */}
 
           {isLoggingIn && <Status text="Google bejelentkezés folyamatban…" />}
           {isLoggingInFacebook && <Status text="Facebook bejelentkezés folyamatban…" />}
