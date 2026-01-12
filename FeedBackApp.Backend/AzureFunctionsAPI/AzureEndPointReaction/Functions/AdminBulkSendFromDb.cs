@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using ApplicationEventWorkers.SelfOptIn;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Core.Model;
+using FeedBackApp.Core.Repositories;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
@@ -14,19 +15,20 @@ namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
 /// <summary>
 /// Bulk-send opt-in links for a QuestionnaireTemplate (GUID) to a whitelist in DB.
-/// - Route avoids "admin/*" (reserved by Functions host).
-/// - Uses property-based Queue output binding (isolated worker compatible).
+/// - Uses property-based Queue output binding
 /// - Applies explicit Cosmos discriminator filters to avoid materialization errors.
 /// </summary>
 public sealed class AdminBulkSendFromDb
 {
     private readonly AppDBContext _db;
     private readonly IOptInTokenService _tokens;
+    private readonly IWhitelistRepository _whitelistRepository;
 
-    public AdminBulkSendFromDb(AppDBContext db, IOptInTokenService tokens)
+    public AdminBulkSendFromDb(AppDBContext db, IOptInTokenService tokens, IWhitelistRepository whitelistRepository)
     {
         _db = db;
         _tokens = tokens;
+        _whitelistRepository = whitelistRepository;
     }
 
     [Function("AdminBulkSendFromWhitelist")]
@@ -76,11 +78,13 @@ public sealed class AdminBulkSendFromDb
         if (wl is null)
             return await Fail(req, HttpStatusCode.NotFound, $"Whitelist '{wlId}' not found.");
 
-        var recipients = (wl.StudentEmails ?? new List<string>())
-            .Select(e => (e ?? string.Empty).Trim())
-            .Where(e => e.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        // var recipients = (wl.StudentEmails ?? new List<string>())
+        //     .Select(e => (e ?? string.Empty).Trim())
+        //     .Where(e => e.Length > 0)
+        //     .Distinct(StringComparer.OrdinalIgnoreCase)
+        //     .ToList();
+        var studentEmails = await _whitelistRepository.GetStudentWhitelistAsync();
+        var recipients = studentEmails?.StudentEmails ?? new List<String>();
 
         if (recipients.Count == 0)
             return await Fail(req, HttpStatusCode.BadRequest, "Whitelist contains no emails.");
