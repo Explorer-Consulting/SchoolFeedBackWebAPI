@@ -83,10 +83,11 @@ export default function SocialAuthApp() {
 const onMicrosoftLogin = async () => {
   try {
     // 1. Létrehozzuk a példányt
+    const tenantId = import.meta.env.VITE_MICROSOFT_TENANT_ID;
     const msalInstance = new PublicClientApplication({
       auth: {
         clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID,
-        authority: "https://login.microsoftonline.com/common",
+        authority: `https://login.microsoftonline.com/${tenantId}`,
         redirectUri: window.location.origin,
       },
     });

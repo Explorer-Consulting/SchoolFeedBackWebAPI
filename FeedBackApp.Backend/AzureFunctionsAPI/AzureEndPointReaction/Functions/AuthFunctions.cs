@@ -159,7 +159,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                     data.IdToken,
                     new GoogleJsonWebSignature.ValidationSettings
                     {
-                    Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                        Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
                     });
 
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
@@ -264,7 +264,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             //  Validate access token
             var debugUrl = $"https://graph.facebook.com/debug_token?input_token={data.AccessToken}&access_token={appId}|{appSecret}";
             var debugResponse = await http.GetStringAsync(debugUrl);
-            dynamic debug = JsonConvert.DeserializeObject(debugResponse);
+            dynamic? debug = JsonConvert.DeserializeObject(debugResponse);
 
             if (debug?.data?.is_valid != true)
             {
@@ -276,9 +276,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             //  Fetch user profile (including email)
             var userInfoUrl = $"https://graph.facebook.com/me?fields=id,first_name,last_name,email&access_token={data.AccessToken}";
             var userInfoResponse = await http.GetStringAsync(userInfoUrl);
-            dynamic userInfo = JsonConvert.DeserializeObject(userInfoResponse);
+            dynamic? userInfo = JsonConvert.DeserializeObject(userInfoResponse);
 
-            string email = userInfo?.email;
+            string? email = userInfo?.email;
             if (string.IsNullOrWhiteSpace(email))
             {
                 // Felhasználó nem engedélyezte az email megosztást
@@ -346,9 +346,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 ? origins.FirstOrDefault()
                 : null;
 
-           
+
             // CORS preflight
-           
+
             if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
             {
                 var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
@@ -362,9 +362,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return preflight;
             }
 
-          
+
             // Parse request body
-           
+
             var body = await new StreamReader(req.Body).ReadToEndAsync();
             var data = JsonConvert.DeserializeObject<MicrosoftLoginRequest>(body);
 
@@ -375,9 +375,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return bad;
             }
 
-            
+
             // Microsoft ID token validation 
-            
+
             ClaimsPrincipal principal;
             try
             {
@@ -398,10 +398,14 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
+                    ValidIssuer = $"https://login.microsoftonline.com/{tenantId}/v2.0",
+
                     ValidateAudience = true,
                     ValidAudience = clientId,
+
                     ValidateLifetime = true,
                     IssuerSigningKeys = openIdConfig.SigningKeys
+
                 };
 
                 var handler = new JwtSecurityTokenHandler();
@@ -416,9 +420,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return unauth;
             }
 
-           
+
             // Extract email
-           
+
             var email =
                 principal.FindFirst(ClaimTypes.Email)?.Value ??
                 principal.FindFirst("preferred_username")?.Value;
@@ -430,9 +434,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return forbidden;
             }
 
-         
+
             // Authorization (UGYANAZ, mint Google/Facebook)
-          
+
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
             var students = whitelist.StudentEmails;
 
@@ -451,7 +455,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             }
 
             // JWT issuance (UGYANAZ)
-          
+
             var token = GenerateJwtToken(email, isAdmin);
 
             var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
