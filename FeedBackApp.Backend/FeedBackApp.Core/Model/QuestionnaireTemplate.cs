@@ -22,5 +22,17 @@ namespace FeedBackApp.Core.Model
             }
             QuestionTemplates = questionTemplates;
         }
+        
+        // Self opt-in controls
+        public bool IsSelfOptInEnabled { get; set; } = false;
+        public DateTimeOffset? OptInExpiresAt { get; set; } = null;
+        public int? MaxParticipants { get; set; } = null;
+
+        // Instant revocation knob (bump to invalidate all existing links)  
+        public int LinkVersion { get; set; } = 1;
+        
+        // ULID alias for links
+        public string TemplateUlid { get; set; } = string.Empty;
+        
     }
 }

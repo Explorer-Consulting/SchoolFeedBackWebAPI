@@ -62,6 +62,18 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             return whitelist;
         }
 
+        public async Task<IReadOnlyList<string>> GetStudentEmailsAsync(string id = "StudentWhitelist", CancellationToken ct = default)
+        {
+            var doc = await _context.Set<StudentWhitelistDoc>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (doc.StudentEmails == null)
+            {
+                return Array.Empty<string>();
+            }
+            return doc.StudentEmails;
+        }
+
         /// <summary>
         /// Persists changes made to the provided student whitelist entity.
         /// </summary>
@@ -72,5 +84,12 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             _context.StudentWhitelist.Update(studentWhitelist);
             await _context.SaveChangesAsync();
         }
+    }
+    
+    public class StudentWhitelistDoc
+    {
+        public string Id { get; set; } = "StudentWhitelist";
+        public string DocumentType { get; set; } = "StudentWhitelist";
+        public List<string> StudentEmails { get; set; } = new();
     }
 }

@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import NoAccess from "./pages/NoAccess";
 import StudentDashboard from "./pages/dashboards/StudentDashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
+import QuestionnaireTemplatePreview from "./pages/QuestionnaireTemplatePreview";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,7 @@ const queryClient = new QueryClient({
 });
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 const App = () => (
   <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <QueryClientProvider client={queryClient}>
@@ -33,6 +35,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard/student" element={<StudentDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
+            <Route
+              path="/questionnairetemplate/:id/preview"
+              element={<QuestionnaireTemplatePreview />}
+            />
+
             <Route path="/no-access" element={<NoAccess />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
