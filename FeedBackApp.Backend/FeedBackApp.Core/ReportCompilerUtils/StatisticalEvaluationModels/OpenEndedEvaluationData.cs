@@ -1,4 +1,5 @@
-﻿using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
+﻿using DocumentFormat.OpenXml.Office.SpreadSheetML.Y2023.MsForms;
+using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using QuestPDF.Infrastructure;
 using System.Collections.Immutable;
 
@@ -12,9 +13,12 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
     /// method simply returns the current instance.
     /// </para>
     /// </summary>
-    public sealed class OpenEndedEvaluationData(string questionStatement, ImmutableArray<string> answers)
+    public sealed class OpenEndedEvaluationData(string questionId, string questionStatement, ImmutableArray<string> answers)
         : EvaluationData
     {
+        #region Inputs
+        public string QuestionId { get; init; } = questionId;
+
         /// <summary>
         /// The question text.
         /// </summary>
@@ -27,6 +31,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels
         /// </para>
         /// </summary>
         public ImmutableArray<string> Answers { get; init; } = answers;
+        #endregion
 
         /// <summary>
         /// No statistical indicators are calculated; simply returns the current instance.

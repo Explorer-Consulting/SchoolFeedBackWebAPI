@@ -22,6 +22,7 @@ namespace FeedBackApp.Core.Model
             }
             QuestionTemplates = questionTemplates;
         }
+        
         // Self opt-in controls
         public bool IsSelfOptInEnabled { get; set; } = false;
         public DateTimeOffset? OptInExpiresAt { get; set; } = null;

@@ -61,3 +61,8 @@ export const GetSurveysAdmin = async () => {
     const { data } = await apiClient.get(`/management/surveys`);
     return data;
 };
+
+export const GetQuestionnaireTemplatePreview = async (templateId) => {
+    const { data } = await apiClient.get(`/questionnairetemplate/${templateId}/preview`); 
+    return data;
+};

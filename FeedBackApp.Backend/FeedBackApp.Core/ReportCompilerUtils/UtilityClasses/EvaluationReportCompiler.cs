@@ -121,22 +121,27 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// <summary>
         /// Collects multiple-choice responses (multiple indices encoded in a single field, separated by hyphens).
         /// </summary>
-        private static ImmutableArray<int> CollectMultipleChoiceData(
+        private static ImmutableArray<ImmutableArray<int>> CollectMultipleChoiceData(
             string id,
             IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
         {
             if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty)
                 return [];
 
-            var buf = new List<int>(list.Length * 3);
+            var builder = ImmutableArray.CreateBuilder<ImmutableArray<int>>();
+
             foreach (var a in list)
             {
                 if (string.IsNullOrWhiteSpace(a.Answer)) continue;
+
+                var options = ImmutableArray.CreateBuilder<int>();
                 foreach (var token in a.Answer.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     if (int.TryParse(token, out var v))
-                        buf.Add(v);
+                        options.Add(v);
+
+                builder.Add(options.ToImmutable());
             }
-            return [.. buf];
+            return [.. builder];
         }
 
         /// <summary>
@@ -155,7 +160,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     case QuestionType.LikertScaleOneToFive:
                         {
                             var data = CollectLikertScaleData(q.Id, index);
-                            var ed = new LikertScaleEvaluationData(q.Question, data, q.Description, 1, 5);
+                            var ed = new LikertScaleEvaluationData(q.Id, q.Question, data, q.Description, 1, 5);
                             var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
                             document.ReportComponents.Add(src.CompileComponent());
                             break;
@@ -164,7 +169,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     case QuestionType.MultinomialSingleChoice:
                         {
                             var data = CollectSingleChoiceData(q.Id, index);
-                            var ed = new SingleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, data, []);
+                            var ed = new SingleChoiceEvaluationData(q.Id, q.Question, [.. q.AnswerOptions], SingleChoice.REGULAR, data, []);
                             var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
                             document.ReportComponents.Add(src.CompileComponent());
                             break;
@@ -174,6 +179,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                         {
                             var (nums, texts) = CollectCustomSingleChoiceData(q.Id, index);
                             var ed = new SingleChoiceEvaluationData(
+                                q.Id,
                                 q.Question,
                                 [.. q.AnswerOptions],
                                 SingleChoice.CUSTOM,
@@ -188,7 +194,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     case QuestionType.MultipleChoice:
                         {
                             var data = CollectMultipleChoiceData(q.Id, index);
-                            var ed = new MultipleChoiceEvaluationData(q.Question, [.. q.AnswerOptions], data);
+                            var ed = new MultipleChoiceEvaluationData(q.Id, q.Question, [.. q.AnswerOptions], data);
                             var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
                             document.ReportComponents.Add(src.CompileComponent());
                             break;
@@ -197,7 +203,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     case QuestionType.OpenEnded:
                         {
                             var data = CollectOpenEndedData(q.Id, index);
-                            var ed = new OpenEndedEvaluationData(q.Question, data);
+                            var ed = new OpenEndedEvaluationData(q.Id, q.Question, data);
                             var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
                             document.ReportComponents.Add(src.CompileComponent());
                             break;
@@ -224,8 +230,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             ImmutableArray<QuestionTemplate> rawQuestions,
             string surveyId)
         {
-            ArgumentNullException.ThrowIfNull(rawData);
-            ArgumentNullException.ThrowIfNull(rawQuestions);
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
             // 1) Teacher-specific PDFs
@@ -285,13 +289,21 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     BLOB_URI = string.Empty
                 };
 
-                var adminExcel = new AdministratorExcelReportDocument(metadata);
+                var adminExcel = new ExcelReportDocument(metadata);
                 var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
-                var globalIndex = BuildAnswersIndex(allData);
-                var compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
-                await compiledExcel.RenderDocument();
+                ReportDocument compiledExcel;
+                Task<byte[]> renderTask;
+                CreateRenderOfDocument(rawQuestions, adminExcel, allData, out compiledExcel, out renderTask);
+                await renderTask;
                 yield return compiledExcel;
             }
+        }
+
+        public static void CreateRenderOfDocument(ImmutableArray<QuestionTemplate> rawQuestions, ExcelReportDocument adminExcel, ImmutableArray<QuestionAnswer> allData, out ReportDocument compiledExcel, out Task<byte[]> renderTask)
+        {
+            var globalIndex = BuildAnswersIndex(allData);
+            compiledExcel = CompileQuestions(adminExcel, rawQuestions, globalIndex, evaluate: false);
+            renderTask = compiledExcel.RenderDocument();
         }
 
         private static string San(string? input)
