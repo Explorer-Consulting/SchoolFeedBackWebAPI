@@ -9,7 +9,7 @@ namespace StudentFeedbackSurveyApplication.Infrastructure
         Task RemoveAggregateEntity(ULID aggregateId);
         Task<TAggregateDocument> RetrieveAggregateEntity(ULID aggregateId);
         Task UpdateAggregateEntity(TAggregateDocument aggregateDocument);
-        Task<IReadOnlyList<TAggregateDocument>> RetrieveAllAggregateEntities(int pageSize);
+        Task<IReadOnlyList<TAggregateDocument>> RetrieveAllAggregateEntities();
 
     }
 }

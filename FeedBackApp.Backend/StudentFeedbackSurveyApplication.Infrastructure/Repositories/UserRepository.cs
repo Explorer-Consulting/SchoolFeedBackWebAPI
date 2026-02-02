@@ -18,7 +18,7 @@ namespace StudentFeedbackSurveyApplication.Infrastructure.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IReadOnlyList<User>> RetrieveAllAggregateEntities(int pageSize)
+        public Task<IReadOnlyList<User>> RetrieveAllAggregateEntities()
         {
             throw new NotImplementedException();
         }
