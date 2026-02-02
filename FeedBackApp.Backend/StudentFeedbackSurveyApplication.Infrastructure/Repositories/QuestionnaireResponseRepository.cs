@@ -17,6 +17,11 @@ namespace StudentFeedbackSurveyApplication.Infrastructure.Repositories
             throw new NotImplementedException();
         }
 
+        public Task<IReadOnlyList<QuestionnaireResponseDocument>> RetrieveAllAggregateEntities()
+        {
+            throw new NotImplementedException();
+        }
+
         public Task StoreAggregateEntity(QuestionnaireResponseDocument aggregateDocument)
         {
             throw new NotImplementedException();
