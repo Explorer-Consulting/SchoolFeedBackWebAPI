@@ -11,7 +11,7 @@ namespace Application.Extensions.QuestionnaireExtensions
             ArgumentNullException.ThrowIfNull(model);
 
             return new QuestionnaireTemplatePreviewDTO(
-                SelfEnrollmentAllowed: model.SelfEnrollmentAllowed,
+                SelfEnrollmentAllowed: model.IsSelfOptInEnabled,
                 Title: model.Title,
                 QuestionTemplates: model.QuestionTemplates
             );

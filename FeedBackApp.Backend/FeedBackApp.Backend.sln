@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeedBackApp.Core", "FeedBac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentFeedbackSurveyApplication.Domain", "StudentFeedbackSurveyApplication.DomainAggregates\StudentFeedbackSurveyApplication.Domain.csproj", "{EE660536-A632-4717-9C8D-89EA002036AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentFeedbackSurveyApplication.Application", "StudentFeedbackSurveyApplication.Application\StudentFeedbackSurveyApplication.Application.csproj", "{F9B18333-5860-4040-91A9-7577FE4A484E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentFeedbackSurveyApplication.Infrastructure", "StudentFeedbackSurveyApplication.Infrastructure\StudentFeedbackSurveyApplication.Infrastructure.csproj", "{4D880754-73E2-4CE1-B188-FB72CC2CA4D6}"
 EndProject
 Global
@@ -87,18 +85,6 @@ Global
 		{EE660536-A632-4717-9C8D-89EA002036AB}.Release|x64.Build.0 = Release|Any CPU
 		{EE660536-A632-4717-9C8D-89EA002036AB}.Release|x86.ActiveCfg = Release|Any CPU
 		{EE660536-A632-4717-9C8D-89EA002036AB}.Release|x86.Build.0 = Release|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Debug|x64.Build.0 = Debug|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Debug|x86.Build.0 = Debug|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Release|x64.ActiveCfg = Release|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Release|x64.Build.0 = Release|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Release|x86.ActiveCfg = Release|Any CPU
-		{F9B18333-5860-4040-91A9-7577FE4A484E}.Release|x86.Build.0 = Release|Any CPU
 		{4D880754-73E2-4CE1-B188-FB72CC2CA4D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D880754-73E2-4CE1-B188-FB72CC2CA4D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D880754-73E2-4CE1-B188-FB72CC2CA4D6}.Debug|x64.ActiveCfg = Debug|Any CPU

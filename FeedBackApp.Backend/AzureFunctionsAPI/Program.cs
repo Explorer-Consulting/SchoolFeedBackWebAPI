@@ -3,6 +3,7 @@ using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
+using ApplicationEventWorkers.SelfOptIn; 
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
@@ -21,9 +22,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
+using Azure.Storage.Queues;
 
 QuestPDF.Settings.License = LicenseType.Community;
-//megy
+
 // ──────────────────────────────────────────────────---
 // 1) Modern isolated builder
 // ─────────────────────────────────────────────────────
@@ -91,6 +93,36 @@ builder.Services.AddSingleton<IBlobContext>(sp =>
 });
 
 // ─────────────────────────────────────────────────────
+// Self Opt-In
+// ─────────────────────────────────────────────────────
+
+builder.Services.AddOptions<SelfOptInJwtOptions>()
+    .Configure<IConfiguration>((opt, cfg) =>
+    {
+        // pulled from "SelfOptInJwtOptions"
+        opt.Enabled = true;
+        opt.Issuer = "feedback-app.optin";          // source
+        opt.Audience = "feedback-app.optin";        // destination
+        opt.SigningKey = cfg["Jwt:SecretKey"]!;     // reuse existing secret
+        opt.TokenTtlMinutes = 7 * 24 * 60;          // 7 days
+    })
+    .Validate(o => !string.IsNullOrWhiteSpace(o.SigningKey) && o.SigningKey.Length >= 32,
+        "SelfOptInJwt: SigningKey must be >= 32 chars")
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<IOptInTokenService, OptInJwtService>();
+
+builder.Services.AddSingleton(sp =>
+{
+    var conn = builder.Configuration["AzureWebJobsStorage"]
+               ?? throw new InvalidOperationException("AzureWebJobsStorage missing.");
+    var client = new QueueClient(conn, "optin-email-jobs",
+        new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 });
+    client.CreateIfNotExists();
+    return client;
+});
+
+// ─────────────────────────────────────────────────────
 // 5) Egyéb config ellenőrzés (JWT, Google, Email, AdminEmails)
 // ─────────────────────────────────────────────────────
 _ = builder.Configuration["Jwt:SecretKey"]
@@ -129,7 +161,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
-builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReportService, ReportService>();    
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 
