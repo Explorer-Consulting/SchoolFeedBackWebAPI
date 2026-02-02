@@ -1,341 +1,238 @@
-﻿using Application.Services.Interfaces;
-using DocumentFormat.OpenXml.Spreadsheet;
+using Application.Email;
+using Application.Email.Helpers;
+using Application.Email.Models;
+using Application.Services.Interfaces;
+using FeedBackApp.Core.Email;
+using FeedBackApp.Core.Email.Configuration;
+using FeedBackApp.Core.Email.Constants;
+using FeedBackApp.Core.Email.Models;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using FeedBackApp.Core.Repositories;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Net.Mail;
+using System.Collections.Concurrent;
 
-namespace Application.Services
+namespace Application.Services;
+
+/// <summary>
+/// Service for managing email sending operations including batch processing and email compilation.
+/// </summary>
+public class EmailService(
+    ILogger<EmailService> logger,
+    IEmailRepository emailRepository,
+    IQuestionnaireRepository questionnaireRepository,
+    IEmailContentService emailContentService,
+    IEmailSender emailSender,
+    EmailConfiguration emailConfig) : IEmailService
 {
-    /// <summary>
-    /// Batch email orchestration and delivery service for the School Feedback application.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Purpose</b><br/>
-    /// Sends survey-related email notifications (student invitations, teacher/admin report deliveries),
-    /// using an SMTP gateway and a repository-backed queue (<see cref="IEmailRepository"/>).
-    /// It also composes future deliveries by appending items to the queue based on survey metadata.
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Data flow</b><br/>
-    /// <list type="number">
-    ///   <item><description><c>CompileReportEmailsAsync</c> inspects survey metadata and enqueues recipients (teachers and leaders) for delivery.</description></item>
-    ///   <item><description><c>SendEmailBatchAsync</c> loads the queue document, prunes expired entries, slices a daily batch, sends via SMTP, and persists the new queue state.</description></item>
-    /// </list>
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Security &amp; configuration</b><br/>
-    /// Credentials and sender identity are supplied through environment variables:
-    /// <list type="bullet">
-    ///   <item><description><c>EMAIL_FROM_ADDRESS</c> – SMTP user / sender address.</description></item>
-    ///   <item><description><c>EMAIL_FROM_NAME</c> – Display name for the sender.</description></item>
-    ///   <item><description><c>EMAIL_APP_PASSWORD</c> – App password / secret used by the SMTP gateway.</description></item>
-    ///   <item><description><c>LeaderEmail</c> – Comma-separated list of admin recipients for summary reports.</description></item>
-    /// </list>
-    /// Mail is sent via <c>smtp.gmail.com:587</c> with TLS (<see cref="SmtpClient.EnableSsl"/>).
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Rate limiting &amp; reliability</b><br/>
-    /// <c>DAILY_EMAIL_LIMIT</c> bounds the number of deliveries per batch execution. The method logs per-recipient results and
-    /// updates the queue atomically after sending (removing delivered addresses, pruning empty survey entries).
-    /// Attachments are created in-memory; callers should ensure report payload sizes are reasonable.
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Attachments</b><br/>
-    /// For teacher/admin roles, report files are downloaded via <see cref="IReportService"/> and attached using
-    /// content types inferred from filename (PDF, XLSX, XLS, or binary fallback).
-    /// </para>
-    /// </remarks>
-    public class EmailService : IEmailService
+    private readonly ILogger<EmailService> _logger = logger;
+    private readonly IEmailRepository _emailRepository = ValidateAndAssign(emailRepository);
+    private readonly IQuestionnaireRepository _questionnaireRepository = ValidateAndAssign(questionnaireRepository);
+    private readonly IEmailContentService _emailContentService = ValidateAndAssign(emailContentService);
+    private readonly IEmailSender _emailSender = ValidateAndAssign(emailSender);
+    private readonly EmailConfiguration _emailConfig = ValidateAndAssign(emailConfig);
+
+    private static T ValidateAndAssign<T>(T value) where T : class
     {
-        private readonly string _fromAddress;
-        private readonly string _fromName;
-        private readonly string _appPassword;
-        private readonly ILogger<EmailService> _logger;
-        private readonly IEmailRepository _emailRepository;
-        private readonly IQuestionnaireRepository _questionnaireRepository;
-        private readonly IReportService _reportService;
+        ArgumentNullException.ThrowIfNull(value);
+        return value;
+    }
 
-        /// <summary>
-        /// Maximum number of emails the service will attempt to send in a single batch execution.
-        /// </summary>
-        private static short DAILY_EMAIL_LIMIT = 500;
-
-        /// <summary>
-        /// SMTP submission port used for STARTTLS on Gmail.
-        /// </summary>
-        private static short DNS_PORT = 587;
-
-        /// <summary>
-        /// Creates an instance of <see cref="EmailService"/> with all required dependencies and configuration.
-        /// </summary>
-        /// <param name="logger">Structured logger instance.</param>
-        /// <param name="emailRepository">Repository that stores and retrieves the email dispatch queue document.</param>
-        /// <param name="questionnaireRepository">Repository used to fetch survey metadata when composing new emails.</param>
-        /// <param name="reportService">Service used to obtain report files for teacher/admin deliveries.</param>
-        /// <exception cref="InvalidOperationException">Thrown if required environment variables are missing.</exception>
-        public EmailService(
-            ILogger<EmailService> logger,
-            IEmailRepository emailRepository,
-            IQuestionnaireRepository questionnaireRepository,
-            IReportService reportService)
+    /// <summary>
+    /// Sends a batch of pending emails, respecting daily limits and cleaning up expired surveys.
+    /// </summary>
+    public async Task<bool> SendEmailBatchAsync()
+    {
+        try
         {
-        _fromAddress = Environment.GetEnvironmentVariable("Email:FromAddress") ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set.");
-        _fromName = Environment.GetEnvironmentVariable("Email:FromName") ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set.");
-        _appPassword = Environment.GetEnvironmentVariable("Email:AppPassword") ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set.");
-            _logger = logger;
-            _emailRepository = emailRepository;
-            _questionnaireRepository = questionnaireRepository;
-            _reportService = reportService;
-        }
-
-        /// <summary>
-        /// Sends a rate-limited batch of queued survey emails and updates the queue document accordingly.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// <b>Processing steps</b><br/>
-        /// Loads the email queue, removes expired student surveys, selects active items whose start date has passed,
-        /// and takes up to <see cref="DAILY_EMAIL_LIMIT"/> recipient addresses across surveys. For each item, composes
-        /// the subject and HTML body based on the <see cref="Role"/> and attaches reports if applicable.
-        /// After successful sends, removes delivered recipients from the queue and persists the document.
-        /// </para>
-        /// <para>
-        /// <b>Return semantics</b><br/>
-        /// Returns <c>true</c> if any email was sent; <c>false</c> if the queue is empty or no eligible items were found.
-        /// Any exception is caught, logged, and results in a <c>false</c> return to keep the scheduler resilient.
-        /// </para>
-        /// </remarks>
-        /// <returns><c>true</c> if at least one message was sent; otherwise <c>false</c>.</returns>
-        public async Task<bool> SendEmailBatchAsync()
-        {
-            try
+            var doc = await _emailRepository.GetEmailsDocumentAsync();
+            if (doc == null || !doc.EmailsToSendList.Any())
             {
-                var doc = await _emailRepository.GetEmailsDocumentAsync();
-                if (doc == null || !doc.EmailsToSendList.Any())
-                    return false;
-
-                var expired = doc.EmailsToSendList
-                    .Where(s => s.EndDate < DateTime.UtcNow && s.Role == FeedBackApp.Core.Model.Enum.Role.Student)
-                    .ToList();
-
-                foreach (var survey in expired)
-                {
-                    doc.EmailsToSendList.Remove(survey);
-                    _logger.LogInformation("Removed expired survey {SurveyName} ({SurveyId})", survey.SurveyName, survey.SurveyId);
-                }
-            
-                var activeSurveys = doc.EmailsToSendList
-                    .Where(s => s.StartDate <= DateTime.UtcNow)
-                    .ToList();
-
-                if (!activeSurveys.Any())
-                    return false;
-
-                var batch = activeSurveys
-                    .SelectMany(s => s.Emails.Select(e => new
-                    {
-                        SurveyId = s.SurveyId,
-                        SurveyName = s.SurveyName,
-                        StartDate = s.StartDate,
-                        EndDate = s.EndDate,
-                        Email = e,
-                        Role = s.Role
-                    }))
-                    .Take(DAILY_EMAIL_LIMIT)
-                    .ToList();
-
-                if (!batch.Any())
-                    return false;
-
-                using var smtp = new SmtpClient("smtp.gmail.com", DNS_PORT)
-                {
-                    Credentials = new NetworkCredential(_fromAddress, _appPassword),
-                    EnableSsl = true
-                };
-
-                foreach (var entry in batch)
-                {
-                    var from = new MailAddress(_fromAddress, _fromName);
-                    var to = new MailAddress(entry.Email);
-
-                    string subject;
-                    string body;
-                    List<Attachment>? attachments = null;
-
-                    switch (entry.Role)
-                    {
-                        case Role.Student:
-                            subject = $"Kérdőív meghívó: {entry.SurveyName}";
-                            body =
-$@"Kedves diák,<br/><br/>
-Kérünk töltsd ki a <b>{entry.SurveyName}</b> nevű kérdőívet, és adj visszajelzést a tanáraidnak.<br/><br/>
-<a href=""https://witty-beach-0b0c08903.2.azurestaticapps.net"">Kattints ide, hogy elkezdd a kérdőívek kitöltését</a>";
-                            break;
-
-                        case Role.Teacher:
-                            subject = $"Kérdőív eredmények: {entry.SurveyName}";
-                            body =
-$@"Kedves tanár,<br/><br/>
-Csatolva megtalálja a kérdőívek összesített eredményét.<b>{entry.SurveyName}</b>.";
-
-                            var teacherReports = await _reportService.DownloadTeacherFilesByIdPrefixAsync(entry.Email, entry.SurveyId);
-                            _logger.LogInformation("Found {Count} teacher reports for {Email} / {SurveyId}",
-                                                   teacherReports.Count, entry.Email, entry.SurveyId);
-
-                            attachments = teacherReports
-                                .Select(r => CreateAttachment(r.Data, r.FileName))
-                                .ToList();
-                            break;
-
-                        case Role.Admin:
-                            subject = $"Igazgatói összesítés: {entry.SurveyName}";
-                            body =
-$@"Kedves intézmény vezető,<br/><br/>
-Alább csatolotuk a
-<b>{entry.SurveyName}</b> kérdőív összesített eredményeit.";
-
-                            var adminReports = await _reportService.DownloadAdminFilesByIdPrefixAsync(entry.SurveyId);
-                            _logger.LogInformation("Found {Count} admin reports for {SurveyId}",
-                                                   adminReports.Count, entry.SurveyId);
-
-                            attachments = adminReports
-                                .Select(r => CreateAttachment(r.Data, r.FileName))
-                                .ToList();
-                            break;
-
-                        default:
-                            _logger.LogWarning("Unhandled role {Role} for email {Email}", entry.Role, entry.Email);
-                            continue;
-                    }
-
-                    using var message = new MailMessage(from, to)
-                    {
-                        Subject = subject,
-                        Body = body,
-                        IsBodyHtml = true
-                    };
-
-                    if (attachments != null)
-                    {
-                        foreach (var att in attachments)
-                            message.Attachments.Add(att);
-                    }
-
-                    await smtp.SendMailAsync(message);
-                    _logger.LogInformation("Sent email to {Email} for survey {SurveyName} (Role: {Role})",
-                                           entry.Email, entry.SurveyName, entry.Role);
-                }
-
-                // Remove delivered recipients from the queue and drop empty survey entries.
-                foreach (var e in batch)
-                {
-                    var surveyBatch = doc.EmailsToSendList.FirstOrDefault(s => s.SurveyId == e.SurveyId);
-                    if (surveyBatch != null)
-                        surveyBatch.Emails.Remove(e.Email);
-
-                    if (surveyBatch != null && !surveyBatch.Emails.Any())
-                    {
-                        doc.EmailsToSendList.Remove(surveyBatch);
-                    }
-                }
-
-                await _emailRepository.UpdateEmailsDocumentAsync(doc);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error sending batch of emails");
+                _logger.LogDebug("No emails to send");
                 return false;
             }
-        }
 
-        /// <summary>
-        /// Composes and enqueues teacher and admin report deliveries for a given survey.
-        /// </summary>
-        /// <remarks>
-        /// Fetches survey metadata to determine teacher recipients and time window, then appends entries
-        /// for teachers and leaders to the email dispatch queue document. The actual delivery is performed
-        /// later by <see cref="SendEmailBatchAsync"/>.
-        /// </remarks>
-        /// <param name="surveyId">Identifier of the target survey whose reports should be delivered.</param>
-        public async Task CompileReportEmailsAsync(Guid surveyId)
-        {
-            var metadata = await _questionnaireRepository.GetSurveyMetadataAsync(surveyId);
-            if (metadata != null)
+            EmailBatchProcessor.RemoveExpiredSurveys(doc, DateTime.UtcNow);
+            
+            var activeSurveys = EmailBatchProcessor.GetSurveysReadyToSend(doc, DateTime.UtcNow);
+            if (!activeSurveys.Any())
             {
-                var teachers = metadata.Teachers
-                    .Where(t => !string.IsNullOrWhiteSpace(t.Email))
-                    .Select(t => t.Email)
-                    .ToList();
-
-                if (!teachers.Any())
-                    return;
-
-                var emailDocument = await _emailRepository.GetEmailsDocumentAsync();
-                if (emailDocument == null)
-                {
-                    emailDocument = new EmailsToSend
-                    {
-                        EmailsToSendList = new List<Email>()
-                    };
-                }
-
-                var teacherEmailsToSend = new Email()
-                {
-                    Emails = teachers,
-                    StartDate = metadata.StartDate,
-                    EndDate = metadata.EndDate,
-                    Role = Role.Teacher,
-                    SurveyId = surveyId.ToString(),
-                    SurveyName = metadata.Title
-                };
-                emailDocument.EmailsToSendList.Add(teacherEmailsToSend);
-
-                var leaders = Environment.GetEnvironmentVariable("LeaderEmail") ?? "";
-                var leadersEmails = leaders.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                var leaderEmailsToSend = new Email()
-                {
-                    Emails = leadersEmails,
-                    StartDate = metadata.StartDate,
-                    EndDate = metadata.EndDate,
-                    Role = Role.Admin,
-                    SurveyId = surveyId.ToString(),
-                    SurveyName = metadata.Title
-                };
-                emailDocument.EmailsToSendList.Add(leaderEmailsToSend);
-
-                await _emailRepository.UpdateEmailsDocumentAsync(emailDocument);
+                _logger.LogDebug("No active surveys to send");
+                return false;
             }
-        }
 
-        /// <summary>
-        /// Creates a MIME attachment from raw bytes and a filename, inferring the content type from file extension.
-        /// </summary>
-        /// <param name="data">Raw file bytes.</param>
-        /// <param name="fileName">File name including extension (used to infer content type).</param>
-        /// <returns>An in-memory <see cref="Attachment"/> ready to be appended to <see cref="MailMessage"/>.</returns>
-        private static Attachment CreateAttachment(byte[] data, string fileName)
-        {
-            string contentType = fileName.ToLowerInvariant() switch
+            var batch = EmailBatchProcessor.CreateBatch(activeSurveys, EmailConstants.DailyEmailLimit);
+            if (!batch.Any())
             {
-                string f when f.EndsWith(".pdf") => "application/pdf",
-                string f when f.EndsWith(".xlsx") => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                string f when f.EndsWith(".xls") => "application/vnd.ms-excel",
-                _ => "application/octet-stream"
+                _logger.LogDebug("Batch is empty after applying daily limit");
+                return false;
+            }
+
+            _logger.LogInformation("Created email batch with {Count} entries. Admin emails in batch: {AdminEmails}",
+                                   batch.Count,
+                                   string.Join(", ", batch.Where(e => e.Role == Role.Admin).Select(e => e.Email)));
+
+            // Parallelism is needed because SMTP operations are I/O-bound and can be performed concurrently.
+            // This significantly improves throughput when sending multiple emails.
+            // Gmail allows ~10 concurrent SMTP connections, so we limit concurrency to avoid rate limiting.
+            var results = new ConcurrentBag<(bool Success, string Email)>();
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = 10
             };
 
-            var stream = new MemoryStream(data);
-            stream.Position = 0; // ensure start
-            return new Attachment(stream, fileName, contentType);
+            await Parallel.ForEachAsync(batch, parallelOptions, async (entry, ct) =>
+            {
+                try
+                {
+                    var emailMessage = await CreateEmailMessageAsync(entry);
+                    var success = await _emailSender.SendEmailAsync(emailMessage);
+                    
+                    if (success)
+                    {
+                        _logger.LogInformation("Sent email to {Email} for survey {SurveyName} (Role: {Role})",
+                                               entry.Email, entry.SurveyName, entry.Role);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to send email to {Email} for survey {SurveyName} (Role: {Role})",
+                                          entry.Email, entry.SurveyName, entry.Role);
+                    }
+                    
+                    results.Add((success, entry.Email));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    _logger.LogError(ex, "Invalid operation while sending email to {Email} for survey {SurveyName}",
+                                     entry.Email, entry.SurveyName);
+                    results.Add((false, entry.Email));
+                }
+                catch (TimeoutException ex)
+                {
+                    _logger.LogError(ex, "Timeout while sending email to {Email} for survey {SurveyName}",
+                                     entry.Email, entry.SurveyName);
+                    results.Add((false, entry.Email));
+                }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                    _logger.LogError(ex, "Network error while sending email to {Email} for survey {SurveyName}",
+                                     entry.Email, entry.SurveyName);
+                    results.Add((false, entry.Email));
+                }
+            });
+
+            var successCount = results.Count(r => r.Success);
+            LogAdminEmailResults(batch, results);
+            
+            EmailBatchProcessor.RemoveSentEmails(doc, batch);
+            await _emailRepository.UpdateEmailsDocumentAsync(doc);
+
+            _logger.LogInformation(
+                "Email batch processing completed. Attempted: {Attempted}, Successful: {Successful}, Failed: {Failed}",
+                batch.Count,
+                successCount,
+                batch.Count - successCount);
+            
+            return successCount > 0;
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation error sending batch of emails");
+            return false;
+        }
+        catch (TimeoutException ex)
+        {
+            _logger.LogError(ex, "Timeout error sending batch of emails");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Compiles and queues email notifications for teachers and admins based on survey metadata.
+    /// </summary>
+    public async Task CompileReportEmailsAsync(Guid surveyId)
+    {
+        var metadata = await _questionnaireRepository.GetSurveyMetadataAsync(surveyId);
+        if (metadata == null)
+        {
+            _logger.LogWarning("Survey metadata not found for survey {SurveyId}", surveyId);
+            return;
+        }
+
+        var emailDocument = await _emailRepository.GetEmailsDocumentAsync();
+        emailDocument = EmailCompilationHelper.EnsureEmailDocument(emailDocument);
+
+        AddTeacherEmails(emailDocument, metadata, surveyId);
+        AddAdminEmails(emailDocument, metadata, surveyId);
+
+        await _emailRepository.UpdateEmailsDocumentAsync(emailDocument);
+        _logger.LogInformation("Successfully compiled report emails for survey {SurveyId}", surveyId);
+    }
+
+    private void AddTeacherEmails(EmailsToSend emailDocument, SurveyMetadata metadata, Guid surveyId)
+    {
+        var teacherEmail = EmailCompilationHelper.CreateTeacherEmail(metadata, surveyId);
+        if (teacherEmail.Emails.Any())
+        {
+            emailDocument.EmailsToSendList.Add(teacherEmail);
+            _logger.LogInformation("Added {Count} teacher emails for survey {SurveyId}", 
+                                   teacherEmail.Emails.Count, surveyId);
+        }
+        else
+        {
+            _logger.LogInformation("No teachers with email addresses found for survey {SurveyId}", surveyId);
+        }
+    }
+
+    private void AddAdminEmails(EmailsToSend emailDocument, SurveyMetadata metadata, Guid surveyId)
+    {
+        var leaderEmails = _emailConfig.LeaderEmails ?? string.Empty;
+        var adminEmail = EmailCompilationHelper.CreateAdminEmail(metadata, surveyId, leaderEmails);
+        
+        if (adminEmail.Emails.Any())
+        {
+            emailDocument.EmailsToSendList.Add(adminEmail);
+            _logger.LogInformation("Added {Count} admin emails for survey {SurveyId}: {Emails}", 
+                                   adminEmail.Emails.Count, 
+                                   surveyId,
+                                   string.Join(", ", adminEmail.Emails));
+        }
+        else
+        {
+            _logger.LogWarning("No admin emails to add for survey {SurveyId}. LeaderEmails config: '{LeaderEmails}'", 
+                               surveyId, leaderEmails);
+        }
+    }
+
+    private void LogAdminEmailResults(List<EmailBatchEntry> batch, ConcurrentBag<(bool Success, string Email)> results)
+    {
+        var adminBatchEntries = batch.Where(e => e.Role == Role.Admin).ToList();
+        if (!adminBatchEntries.Any())
+            return;
+
+        var adminResults = results.Where(r => adminBatchEntries.Any(e => e.Email == r.Email)).ToList();
+        if (adminResults.Any())
+        {
+            _logger.LogInformation("Admin email sending results: {SuccessCount} successful, {FailedCount} failed. " +
+                                   "Successful: {SuccessfulEmails}, Failed: {FailedEmails}",
+                                   adminResults.Count(r => r.Success),
+                                   adminResults.Count(r => !r.Success),
+                                   string.Join(", ", adminResults.Where(r => r.Success).Select(r => r.Email)),
+                                   string.Join(", ", adminResults.Where(r => !r.Success).Select(r => r.Email)));
+        }
+    }
+
+    private Task<EmailMessage> CreateEmailMessageAsync(EmailBatchEntry entry)
+    {
+        return entry.Role switch
+        {
+            Role.Student => _emailContentService.CreateSurveyInvitationEmailAsync(
+                entry.Email, entry.SurveyName),
+            Role.Teacher => _emailContentService.CreateReportEmailAsync(
+                entry.Email, entry.SurveyName, entry.SurveyId),
+            Role.Admin => _emailContentService.CreateAdminSummaryEmailAsync(
+                entry.Email, entry.SurveyName, entry.SurveyId),
+            _ => throw new ArgumentException($"Unsupported role for email creation: {entry.Role}", nameof(entry))
+        };
     }
 }

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit } from "@/api/ReviewApi"
+import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import { Survey } from "@/models/StudentContext"
@@ -8,7 +8,15 @@ export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
 
     const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
-        mutationFn: (idToken: string) => LoginWithGoogle(idToken)
+        mutationFn: (idToken: string) => LoginWithGoogle(idToken) as Promise<any>
+    });
+
+    const { mutate: sendOTP, isPending: isSendingOTP } = useMutation({
+        mutationFn: (email: string) => SendOTP(email) as Promise<any>
+    });
+
+    const { mutate: verifyOTP, isPending: isVerifyingOTP } = useMutation({
+        mutationFn: ({ email, code }: { email: string; code: string }) => VerifyOTP(email, code) as Promise<any>
     });
 
     const {
@@ -103,6 +111,8 @@ export const useReviews = (selectedSurveyId?: string) => {
         performGenerateReports, isGeneratingReports,
         performSendReports, isSendingReports,
         loginWithGoogle, isLoggingIn,
+        sendOTP, isSendingOTP,
+        verifyOTP, isVerifyingOTP,
         adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
     }
 }

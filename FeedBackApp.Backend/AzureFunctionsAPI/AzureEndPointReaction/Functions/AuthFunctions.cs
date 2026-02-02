@@ -1,4 +1,7 @@
-﻿using FeedBackApp.Core.Repositories;
+﻿using Application.Email;
+using Application.Services.Interfaces;
+using FeedBackApp.Core.Email;
+using FeedBackApp.Core.Repositories;
 using Google.Apis.Auth;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -15,229 +18,233 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
     /// <summary>
     /// Authentication endpoints for the School Feedback application (Azure Functions – .NET isolated worker).
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Overview</b><br/>
-    /// This function class implements a Google-based login flow and issues a server-generated JWT which is returned
-    /// to the browser as a secure, HTTP-only cookie. The endpoint also performs application-level authorization
-    /// by validating the caller against a student whitelist and/or an administrator list supplied via environment variables.
-    /// </para>
-    ///
-    /// <para>
-    /// <b>End-to-end flow</b>
-    /// <list type="number">
-    ///   <item><description><b>CORS &amp; preflight</b>: For <c>OPTIONS</c> requests the function returns a <c>204 No Content</c> with appropriate <c>Access-Control-*</c> headers.</description></item>
-    ///   <item><description><b>Request parsing</b>: On <c>POST</c> requests the function reads a JSON body into <see cref="LoginRequest"/> and ensures a non-empty Google <c>IdToken</c>.</description></item>
-    ///   <item><description><b>Google token validation</b>: The function verifies the <c>IdToken</c> via <see cref="GoogleJsonWebSignature.ValidateAsync(string, GoogleJsonWebSignature.ValidationSettings)"/>,
-    ///   constrained by the configured <c>GoogleClientId</c> (<c>Audience</c>).</description></item>
-    ///   <item><description><b>Authorization</b>: The caller's email is checked against a student whitelist (repository-backed) and a comma-separated admin list from <c>AdminEmails</c> environment variable.</description></item>
-    ///   <item><description><b>JWT issuance</b>: A short, role-bearing JWT is created with <c>HS256</c> using <c>JwtSecretKey</c>. Claims include <c>NameIdentifier</c> (email) and <c>Role</c> (<c>Admin</c>|<c>Student</c>).</description></item>
-    ///   <item><description><b>Cookie + JSON</b>: The JWT is set as an HTTP-only, <c>SameSite=None</c>, <c>Secure</c> cookie (<c>token</c>) with 1-day lifetime. The body returns a minimal user profile (email, first/last name, role).</description></item>
-    /// </list>
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Security notes</b>
-    /// <list type="bullet">
-    ///   <item><description>JWT signing uses a symmetric key (<c>HS256</c>). Keep <c>JwtSecretKey</c> secret and sufficiently long (min. 32 random bytes recommended).</description></item>
-    ///   <item><description>Cookie is <c>HttpOnly</c> + <c>Secure</c> + <c>SameSite=None</c> to support cross-site scenarios with credentials while mitigating XSS and ensuring TLS-only transport.</description></item>
-    ///   <item><description>Origin is echoed to <c>Access-Control-Allow-Origin</c> from request header; in production, validate the origin against an allowlist.</description></item>
-    ///   <item><description>Google ID token is validated for audience binding (<c>GoogleClientId</c>).</description></item>
-    /// </list>
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Environment variables</b>
-    /// <list type="bullet">
-    ///   <item><description><c>GoogleClientId</c>: OAuth 2.0 Client ID used as audience constraint when validating Google ID tokens.</description></item>
-    ///   <item><description><c>AdminEmails</c>: Comma-separated list of admin email addresses (case-insensitive match).</description></item>
-    ///   <item><description><c>JwtSecretKey</c>: Symmetric key for signing JWTs with HS256.</description></item>
-    /// </list>
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Logging</b><br/>
-    /// The function emits structured logs for: invocation start, CORS handling, token validation, authorization decisions, and JWT issuance.
-    /// </para>
-    ///
-    /// <para>
-    /// <b>Response summary</b>
-    /// <list type="bullet">
-    ///   <item><description><c>204 No Content</c> – Preflight handled</description></item>
-    ///   <item><description><c>400 Bad Request</c> – Missing or empty <c>IdToken</c></description></item>
-    ///   <item><description><c>401 Unauthorized</c> – Invalid Google token</description></item>
-    ///   <item><description><c>403 Forbidden</c> – Email not authorized (neither student nor admin)</description></item>
-    ///   <item><description><c>200 OK</c> – JWT issued (cookie) and user info returned in body</description></item>
-    /// </list>
-    /// </para>
-    /// </remarks>
-    /// <param name="logger">Application logger used for structured diagnostics and traceability.</param>
-    /// <param name="whitelistRepository">Repository providing access to the student email whitelist.</param>
-    public class AuthFunctions(ILogger<AuthFunctions> logger, IWhitelistRepository whitelistRepository)
+    public class AuthFunctions
     {
-        private readonly ILogger<AuthFunctions> _logger = logger;
-        private readonly IWhitelistRepository _whitelistRepository = whitelistRepository;
+        private readonly ILogger<AuthFunctions> _logger;
+        private readonly IWhitelistRepository _whitelistRepository;
+        private readonly IOtpService _otpService;
+        private readonly IEmailContentService _emailContentService;
+        private readonly IEmailSender _emailSender;
+
+        public AuthFunctions(
+            ILogger<AuthFunctions> logger,
+            IWhitelistRepository whitelistRepository,
+            IOtpService otpService,
+            IEmailContentService emailContentService,
+            IEmailSender emailSender)
+        {
+            _logger = logger;
+            _whitelistRepository = whitelistRepository;
+            _otpService = otpService;
+            _emailContentService = emailContentService;
+            _emailSender = emailSender;
+        }
 
         /// <summary>
-        /// Handles Google-based login (<c>POST</c>) and CORS preflight (<c>OPTIONS</c>) for the <c>/api/auth/google</c> endpoint.
+        /// Handles Google-based login (<c>POST</c>) and CORS preflight (<c>OPTIONS</c>).
+        /// Validates the Google ID token and issues a secure JWT cookie.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// POST: Expects a JSON body containing <see cref="LoginRequest.IdToken"/> (Google ID token). Validates the token's audience
-        /// against the <c>GoogleClientId</c> environment variable. On success, authorizes the email against the whitelist/admin list,
-        /// issues a role-bearing JWT, sets it as a secure HTTP-only cookie (<c>token</c>), and returns a small profile JSON.
-        /// </para>
-        /// <para>
-        /// OPTIONS: Responds to preflight with <c>204 No Content</c> and CORS headers (<c>Access-Control-Allow-Origin</c>, <c>Allow-Methods</c>, <c>Allow-Headers</c>, <c>Allow-Credentials</c>).
-        /// </para>
-        /// </remarks>
-        /// <param name="req">HTTP request containing the JSON payload and the <c>Origin</c> header used for CORS.</param>
-        /// <returns>
-        /// <see cref="HttpResponseData"/> with one of the following status codes:
-        /// <list type="bullet">
-        ///   <item><description><c>204 No Content</c> – Preflight handled</description></item>
-        ///   <item><description><c>400 Bad Request</c> – Missing or empty <c>IdToken</c></description></item>
-        ///   <item><description><c>401 Unauthorized</c> – Invalid Google token</description></item>
-        ///   <item><description><c>403 Forbidden</c> – Email not authorized (neither student nor admin)</description></item>
-        ///   <item><description><c>200 OK</c> – JWT issued (cookie) and user info returned in body</description></item>
-        /// </list>
-        /// </returns>
         [Function("LoginWithGoogle")]
-        [OpenApiOperation(operationId: "LoginWithGoogle", tags: ["Auth"])]
+        [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(LoginRequest), Required = true, Description = "Google ID Token payload")]
         public async Task<HttpResponseData> LoginWithGoogle(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/google")] HttpRequestData req)
         {
             _logger.LogInformation("LoginWithGoogle function triggered.");
 
+            // 1. Load Whitelist
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-            var students = whitelist.StudentEmails;
+            var students = whitelist?.StudentEmails ?? new List<string>();
 
-            // Origin for CORS
-            var origin = req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
-            _logger.LogDebug("Request origin: {Origin}", origin ?? "None");
-
-            // CORS preflight
+            // 2. Handle CORS / Preflight
+            var origin = GetOrigin(req);
             if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogInformation("Handling CORS preflight request");
-                var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    preflight.Headers.Add("Access-Control-Allow-Origin", origin);
-                    preflight.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
-                    preflight.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-                    preflight.Headers.Add("Access-Control-Allow-Credentials", "true");
-                }
-                return preflight;
+                return CreatePreflightResponse(req, origin);
             }
 
-            // Parse body
+            // 3. Parse Body
             var body = await new StreamReader(req.Body).ReadToEndAsync();
             var data = JsonConvert.DeserializeObject<LoginRequest>(body);
+
             if (data is null || string.IsNullOrWhiteSpace(data.IdToken))
             {
                 _logger.LogWarning("Login request missing or invalid IdToken");
-                var badReq = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    badReq.Headers.Add("Access-Control-Allow-Origin", origin);
-                    badReq.Headers.Add("Access-Control-Allow-Credentials", "true");
-                }
-                await badReq.WriteStringAsync("IdToken is required");
-                return badReq;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "IdToken is required", origin);
             }
 
-            // Validate Google ID token
+            // 4. Validate Google Token
             GoogleJsonWebSignature.Payload payload;
             try
             {
-                payload = await GoogleJsonWebSignature.ValidateAsync(
-                    data.IdToken,
-                    new GoogleJsonWebSignature.ValidationSettings
-                    {
-                    Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
-                    });
+                var googleClientId = Environment.GetEnvironmentVariable("GoogleClientId") 
+                                     ?? Environment.GetEnvironmentVariable("Google:ClientId"); // Fallback for diff naming conventions
 
+                payload = await GoogleJsonWebSignature.ValidateAsync(data.IdToken, new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { googleClientId }
+                });
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Invalid Google token");
-                var badResp = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    badResp.Headers.Add("Access-Control-Allow-Origin", origin);
-                    badResp.Headers.Add("Access-Control-Allow-Credentials", "true");
-                }
-                await badResp.WriteStringAsync("Invalid Google token");
-                return badResp;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid Google token", origin);
             }
 
-            // Authorization: student or admin
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
-            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            bool isAdmin = adminEmails.Contains(payload.Email, StringComparer.OrdinalIgnoreCase);
+            // 5. Authorize (Check Whitelist/Admin)
+            bool isAdmin = IsAdmin(payload.Email);
 
             if (!students.Contains(payload.Email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
             {
                 _logger.LogWarning("Unauthorized login attempt. Email: {Email}", payload.Email);
-                var notFoundResp = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    notFoundResp.Headers.Add("Access-Control-Allow-Origin", origin);
-                    notFoundResp.Headers.Add("Access-Control-Allow-Credentials", "true");
-                }
-                await notFoundResp.WriteStringAsync("User not found");
-                return notFoundResp;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
             }
 
-            _logger.LogInformation("User authenticated. Email: {Email}, Role: {Role}", payload.Email, isAdmin ? "Admin" : "Student");
-
-            var token = GenerateJwtToken(payload.Email, isAdmin);
-            _logger.LogDebug("JWT generated for {Email}", payload.Email);
-
-            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-
-            // CORS for credentialed response
-            if (!string.IsNullOrEmpty(origin))
-            {
-                response.Headers.Add("Access-Control-Allow-Origin", origin);
-                response.Headers.Add("Access-Control-Allow-Credentials", "true");
-            }
-
-            // Secure cookie with JWT
-            response.Headers.Add(
-                "Set-Cookie",
-                $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400");
-
-            await response.WriteAsJsonAsync(new
-            {
-                email = payload.Email,
-                firstName = payload.GivenName,
-                lastName = payload.FamilyName,
-                role = isAdmin ? "Admin" : "Student"
-            });
-
-            _logger.LogInformation("LoginWithGoogle function completed successfully for {Email}", payload.Email);
-            return response;
+            // 6. Generate Token & Response
+            return await CreateLoginResponse(req, payload.Email, payload.GivenName, payload.FamilyName, isAdmin, origin);
         }
 
         /// <summary>
-        /// Generates an HS256-signed JWT for the specified user, embedding identity and role claims.
+        /// Sends a One-Time Password (OTP) to the specified email address if the user is authorized.
         /// </summary>
-        /// <remarks>
-        /// The token contains the <c>ClaimTypes.NameIdentifier</c> (user email) and <c>ClaimTypes.Role</c> (<c>Admin</c> or <c>Student</c>) claims.
-        /// Issuer and audience are both set to <c>SchoolFeedbackWebAPI</c>. The token lifetime is 7 days.
-        /// The signing key is loaded from the <c>JwtSecretKey</c> environment variable.
-        /// </remarks>
-        /// <param name="email">User email to embed as the name identifier claim.</param>
-        /// <param name="isAdmin">Determines the role claim (<c>Admin</c> if <c>true</c>, otherwise <c>Student</c>).</param>
-        /// <returns>A compact JWS (JWT) string signed with HS256.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when <c>JwtSecretKey</c> is not configured.</exception>
+        [Function("SendOtp")]
+        [OpenApiOperation(operationId: "SendOtp", tags: new[] { "Auth" })]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(SendOtpRequest), Required = true, Description = "Email address to send OTP to")]
+        public async Task<HttpResponseData> SendOtp(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/otp/send")] HttpRequestData req)
+        {
+            _logger.LogInformation("SendOtp function triggered.");
+
+            // 1. Handle CORS
+            var origin = GetOrigin(req);
+            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                return CreatePreflightResponse(req, origin);
+            }
+
+            // 2. Parse Body
+            var body = await new StreamReader(req.Body).ReadToEndAsync();
+            var data = JsonConvert.DeserializeObject<SendOtpRequest>(body);
+            
+            if (data is null || string.IsNullOrWhiteSpace(data.Email))
+            {
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Email is required", origin);
+            }
+
+            var email = data.Email.Trim().ToLowerInvariant();
+
+            // 3. Check Authorization
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist?.StudentEmails ?? new List<string>();
+            bool isAdmin = IsAdmin(email);
+
+            // LOGIC FIX: Changed from (students.Contains && !isAdmin) to (!students.Contains && !isAdmin)
+            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            {
+                _logger.LogWarning("Unauthorized OTP request. Email: {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+            }
+
+            try
+            {
+                // 4. Generate & Send
+                var otpCode = _otpService.GenerateOtp(email);
+                _logger.LogInformation("Generated OTP for {Email}", email);
+
+                var emailMessage = await _emailContentService.CreateOtpEmailAsync(email, otpCode);
+                var emailSent = await _emailSender.SendEmailAsync(emailMessage);
+
+                if (!emailSent)
+                {
+                    _logger.LogError("Failed to send OTP email to {Email}", email);
+                    return CreateErrorResponse(req, System.Net.HttpStatusCode.InternalServerError, "Failed to send email", origin);
+                }
+
+                _logger.LogInformation("OTP email sent successfully to {Email}", email);
+                
+                var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+                AddCorsHeaders(response, origin);
+                await response.WriteAsJsonAsync(new { message = "OTP sent successfully" });
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending OTP to {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.InternalServerError, "An error occurred while sending OTP", origin);
+            }
+        }
+
+        /// <summary>
+        /// Verifies the provided OTP code and issues a JWT if valid.
+        /// </summary>
+        [Function("VerifyOtp")]
+        [OpenApiOperation(operationId: "VerifyOtp", tags: new[] { "Auth" })]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(VerifyOtpRequest), Required = true, Description = "Email and OTP code for verification")]
+        public async Task<HttpResponseData> VerifyOtp(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/otp/verify")] HttpRequestData req)
+        {
+            _logger.LogInformation("VerifyOtp function triggered.");
+
+            // 1. Handle CORS
+            var origin = GetOrigin(req);
+            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                return CreatePreflightResponse(req, origin);
+            }
+
+            // 2. Parse Body
+            var body = await new StreamReader(req.Body).ReadToEndAsync();
+            var data = JsonConvert.DeserializeObject<VerifyOtpRequest>(body);
+            
+            if (data is null || string.IsNullOrWhiteSpace(data.Email) || string.IsNullOrWhiteSpace(data.Code))
+            {
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Email and code are required", origin);
+            }
+
+            var email = data.Email.Trim().ToLowerInvariant();
+            var code = data.Code.Trim();
+
+            // 3. Validate OTP Logic
+            var isValid = _otpService.ValidateOtp(email, code);
+            if (!isValid)
+            {
+                _logger.LogWarning("OTP validation failed for {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid or expired OTP code", origin);
+            }
+
+            // 4. Re-check Authorization (Safety check)
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist?.StudentEmails ?? new List<string>();
+            bool isAdmin = IsAdmin(email);
+
+            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            {
+                _logger.LogWarning("User not in whitelist after OTP validation. Email: {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+            }
+
+            // 5. Cleanup & Token Generation
+            _otpService.RemoveOtp(email);
+            
+            // Note: OTP login doesn't provide names, so we leave them null or use placeholders
+            return await CreateLoginResponse(req, email, null, null, isAdmin, origin);
+        }
+
+        #region Helper Methods
+
+        private bool IsAdmin(string email)
+        {
+            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
+            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
+        }
+
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey") ?? throw (new InvalidOperationException("JwtSecretKey environment variable not set."))
-                ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
+            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey") 
+                               ?? Environment.GetEnvironmentVariable("Jwt:SecretKey")
+                               ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -259,18 +266,83 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        /// <summary>
-        /// Incoming JSON payload carrying the Google ID token to validate.
-        /// </summary>
-        /// <remarks>
-        /// The <see cref="IdToken"/> must be a Google-issued ID token for the configured <c>GoogleClientId</c> audience.
-        /// </remarks>
+        private string? GetOrigin(HttpRequestData req)
+        {
+            return req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
+        }
+
+        private HttpResponseData CreatePreflightResponse(HttpRequestData req, string? origin)
+        {
+            _logger.LogInformation("Handling CORS preflight request");
+            var resp = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
+            AddCorsHeaders(resp, origin);
+            return resp;
+        }
+
+        private HttpResponseData CreateErrorResponse(HttpRequestData req, System.Net.HttpStatusCode code, string message, string? origin)
+        {
+            var resp = req.CreateResponse(code);
+            AddCorsHeaders(resp, origin);
+            // Fire and forget waiting for write, or await it. Since this is a helper returning HttpResponseData, 
+            // we can't await WriteStringAsync easily without refactoring. 
+            // Instead, we explicitly write to the body stream or use a small workaround.
+            // For simplicity in this helper, we'll write sync or use a wrapping task in the caller.
+            // BUT, strictly speaking, WriteAsJsonAsync is easiest.
+            resp.WriteAsJsonAsync(new { message }).GetAwaiter().GetResult(); 
+            return resp;
+        }
+
+        private async Task<HttpResponseData> CreateLoginResponse(HttpRequestData req, string email, string? firstName, string? lastName, bool isAdmin, string? origin)
+        {
+            _logger.LogInformation("User authenticated. Email: {Email}, Role: {Role}", email, isAdmin ? "Admin" : "Student");
+
+            var token = GenerateJwtToken(email, isAdmin);
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+            
+            AddCorsHeaders(response, origin);
+
+            response.Headers.Add("Set-Cookie", $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400");
+
+            await response.WriteAsJsonAsync(new
+            {
+                email = email,
+                firstName = firstName,
+                lastName = lastName,
+                role = isAdmin ? "Admin" : "Student"
+            });
+            
+            return response;
+        }
+
+        private void AddCorsHeaders(HttpResponseData resp, string? origin)
+        {
+            if (!string.IsNullOrEmpty(origin))
+            {
+                resp.Headers.Add("Access-Control-Allow-Origin", origin);
+                resp.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                resp.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                resp.Headers.Add("Access-Control-Allow-Credentials", "true");
+            }
+        }
+
+        #endregion
+
+        #region DTOs
         public class LoginRequest
         {
-            /// <summary>
-            /// Google ID token (JWT) obtained on the client via Google Sign-In.
-            /// </summary>
             public required string IdToken { get; set; }
         }
+
+        public class SendOtpRequest
+        {
+            public required string Email { get; set; }
+        }
+
+        public class VerifyOtpRequest
+        {
+            public required string Email { get; set; }
+            public required string Code { get; set; }
+        }
+        #endregion
     }
 }

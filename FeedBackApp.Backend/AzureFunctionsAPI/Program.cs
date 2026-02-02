@@ -4,6 +4,8 @@ using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
 using ApplicationEventWorkers.SelfOptIn; 
+using FeedBackApp.Backend.Infrastructure.Email;
+using FeedBackApp.Core.Email;
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
@@ -20,6 +22,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
 using Azure.Storage.Queues;
@@ -153,14 +156,41 @@ var certLoadPath = builder.Configuration["Certificates:LoadPath"];
 // ─────────────────────────────────────────────────────
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+builder.Services.AddSingleton<Application.Services.Interfaces.IOtpService, Application.Services.OtpService>();
 builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
 builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
 builder.Services.AddScoped<IWhitelistRepository, WhitelistRepository>();
-builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
+// --- Email Services ---
+// Email configuration: Loaded from environment variables
+builder.Services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
+    _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
+
+// Email templates: Loaded at startup and cached in memory
+// Templates are loaded once and reused for all email rendering operations
+builder.Services.AddSingleton<IReadOnlyDictionary<string, Application.Email.Templates.EmailTemplate>>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    return Application.Email.Templates.EmailTemplateLoader.LoadTemplates(config, logger);
+});
+
+// Email template service: Renders templates with token replacement
+builder.Services.AddScoped<Application.Email.Templates.IEmailTemplateService, Application.Email.Templates.EmailTemplateService>();
+
+// Email content service: Creates email messages using templates (replaces Factory pattern)
+builder.Services.AddScoped<Application.Email.IEmailContentService, Application.Email.EmailContentService>();
+
+// Email sender: MailKit-based SMTP implementation
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+// --- Report Services ---
+// Report service uses IBlobContext for blob storage operations
+builder.Services.AddScoped<EmailSendingFunctions>();
+builder.Services.AddScoped<AzureFunctionsAPI.AzureEndPointReaction.Functions.AuthFunctions>();
 builder.Services.AddScoped<IReportService, ReportService>();    
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
