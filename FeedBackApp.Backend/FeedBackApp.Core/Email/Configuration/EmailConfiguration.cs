@@ -46,12 +46,12 @@ public class EmailConfiguration
     {
         return new EmailConfiguration
         {
-            FromAddress = Environment.GetEnvironmentVariable("EMAIL_FROM_ADDRESS") 
-                ?? throw new InvalidOperationException("EMAIL_FROM_ADDRESS is not set."),
-            FromName = Environment.GetEnvironmentVariable("EMAIL_FROM_NAME") 
-                ?? throw new InvalidOperationException("EMAIL_FROM_NAME is not set."),
-            AppPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") 
-                ?? throw new InvalidOperationException("EMAIL_APP_PASSWORD is not set."),
+            FromAddress = Environment.GetEnvironmentVariable("Email:FromAddress") 
+                ?? throw new InvalidOperationException("Email:FromAddress is not set."),
+            FromName = Environment.GetEnvironmentVariable("Email:FromName") 
+                ?? throw new InvalidOperationException("Email:FromName is not set."),
+            AppPassword = Environment.GetEnvironmentVariable("Email:AppPassword") 
+                ?? throw new InvalidOperationException("Email:AppPassword is not set."),
             LeaderEmails = Environment.GetEnvironmentVariable("AdminEmails") ?? string.Empty
         };
     }
