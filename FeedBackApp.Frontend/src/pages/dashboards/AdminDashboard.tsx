@@ -6,6 +6,8 @@ import { useReviews } from "@/hooks/useReviews";
 import { parseExcel } from "@/utils/parseExcel";
 import { useAuthStore } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import QrCodeModal from "@/components/ui/QrCodeModal";
+
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -13,6 +15,10 @@ export default function AdminDashboard() {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
   const [title, setTitle] = useState<string>("");
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [qrExpiresAt, setQrExpiresAt] = useState("");
+  const [qrTitle, setQrTitle] = useState("");
 
   const {
     createQuestionnaires,
@@ -29,6 +35,10 @@ export default function AdminDashboard() {
     isLoadingAdminSurveys,
     isErrorAdminSurveys,
     refetchAdminSurveys,
+    enableSelfOptIn,          
+    isEnablingSelfOptIn,        
+    generateShareLink,          
+    isGeneratingShareLink,  
   } = useReviews();
 
   useEffect(() => {
@@ -151,6 +161,46 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleGenerateQRCode = () => {
+    if (!selectedQuestionnaireId) {
+      toast.warning("Először válassz ki egy kérdőívet!");
+      return;
+    }
+
+    // Enable self optin link generation
+    enableSelfOptIn(selectedQuestionnaireId, {
+      onSuccess: () => {
+      
+        // Generate share link
+        generateShareLink(
+          { templateId: selectedQuestionnaireId, minutes: 525600 },
+          {
+            onSuccess: (data: any) => {
+              setQrCodeUrl(data.url);
+              setQrExpiresAt(data.expiresAt);
+              
+              // find survey title for the modal
+             const survey = (adminSurveys as Array<{ id: string; title: string }> | undefined)?.find(
+                (s) => s.id === selectedQuestionnaireId
+              );
+              setQrTitle(survey?.title || selectedQuestionnaireId);
+              
+              // opne model
+              setIsQRModalOpen(true);
+              toast.success("QR kód generálva!");
+            },
+            onError: () => {
+              toast.error("QR kód generálása sikertelen!");
+            }
+          }
+        );
+      },
+      onError: () => {
+        toast.error("Self opt-in engedélyezése sikertelen!");
+      }
+    });
+  };
+
   return (
     <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10">
       <header className="mb-6 sm:mb-8 text-center sm:text-left">
@@ -248,7 +298,27 @@ export default function AdminDashboard() {
         >
           Kijelölt kérdőív törlése
         </Button>
+
+        <Button
+          className="w-full sm:w-auto"
+          onClick={handleGenerateQRCode}
+          disabled={
+            !selectedQuestionnaireId || 
+            isEnablingSelfOptIn || 
+            isGeneratingShareLink || 
+            isLoadingAdminSurveys
+          }
+        >
+          QR kód generálása
+        </Button>
       </div>
+      <QrCodeModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        url={qrCodeUrl}
+        title={qrTitle}
+        expiresAt={qrExpiresAt}
+      />
     </main>
   );
 }
