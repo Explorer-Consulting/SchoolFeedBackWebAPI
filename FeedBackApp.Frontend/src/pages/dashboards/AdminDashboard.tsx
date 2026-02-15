@@ -6,8 +6,9 @@ import { useReviews } from "@/hooks/useReviews";
 import { parseExcel } from "@/utils/parseExcel";
 import { useAuthStore } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import QrCodeModal from "@/components/ui/QrCodeModal";
-
+import SavedSelfSignInLinks from "@/components/ui/saved-self-sign-in-links"
+import { selfSignInLinkStorage } from "@/utils/selfSignInLinkStorage";
+import QrCodeModal from "@/components/ui/qr-code-modal";
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     refetchAdminSurveys();
   }, [refetchAdminSurveys]);
-  
+
   const displayedQuestionnaires = adminSurveys;
   const [file, setFile] = useState<File | null>(null);
 
@@ -166,14 +167,14 @@ export default function AdminDashboard() {
       toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
-
+    
     // Enable self optin link generation
     enableSelfOptIn(selectedQuestionnaireId, {
       onSuccess: () => {
-      
+        const expirationMinutes = 525600; // 1 year
         // Generate share link
         generateShareLink(
-          { templateId: selectedQuestionnaireId, minutes: 525600 },
+          { templateId: selectedQuestionnaireId, minutes: expirationMinutes },
           {
             onSuccess: (data: any) => {
               setQrCodeUrl(data.url);
@@ -183,9 +184,22 @@ export default function AdminDashboard() {
              const survey = (adminSurveys as Array<{ id: string; title: string }> | undefined)?.find(
                 (s) => s.id === selectedQuestionnaireId
               );
+
+              const surveyTitle = survey?.title || selectedQuestionnaireId;
+              setQrTitle(surveyTitle);
+
               setQrTitle(survey?.title || selectedQuestionnaireId);
-              
-              // opne model
+              selfSignInLinkStorage.save({
+                id: crypto.randomUUID(),
+                templateId: selectedQuestionnaireId,
+                templateTitle: surveyTitle,
+                url: data.url,
+                expiresAt: data.expiresAt,
+                createdAt: new Date().toISOString(),
+                expirationMinutes: expirationMinutes,
+              });
+
+              // open model
               setIsQRModalOpen(true);
               toast.success("QR kód generálva!");
             },
@@ -319,6 +333,9 @@ export default function AdminDashboard() {
         title={qrTitle}
         expiresAt={qrExpiresAt}
       />
+      <CardContent>
+        <SavedSelfSignInLinks />
+      </CardContent>
     </main>
   );
 }

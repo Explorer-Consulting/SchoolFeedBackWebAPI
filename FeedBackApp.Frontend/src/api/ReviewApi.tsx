@@ -107,3 +107,11 @@ export const GenerateShareLink = async (
     });
     return data;
 };
+
+// Self opt-in - creates a questionnaire instance for the authenticated user
+export const SelfOptIn = async (templateId: string, optInToken: string): Promise<unknown> => {
+    const { data } = await apiClient.post(`/templates/${templateId}/self-opt-in`, {
+        optInToken: optInToken
+    });
+    return data;
+};
