@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -240,121 +241,118 @@ export default function SavedSelfSignInLinks() {
         />
       )}
 
-      {/* Print Template - Shown only when printing */}
-        {printLink && (
+      {/* Print Template - Using Portal to render directly in body */}
+      {printLink && createPortal(
         <>
-            <style>{`
+          <style>{`
             @media screen {
-                .print-qr-content {
+              .print-qr-content {
                 display: none !important;
-                }
+              }
             }
             
             @media print {
-                @page {
+              @page {
                 size: A4 portrait;
                 margin: 1cm;
-                }
-                
-                * {
-                visibility: hidden;
-                }
-                
-                .print-qr-content,
-                .print-qr-content * {
-                visibility: visible !important;
-                }
-                
-                .print-qr-content {
+              }
+              
+              body > *:not(.print-qr-content) {
+                display: none !important;
+              }
+              
+              .print-qr-content {
+                display: block !important;
                 position: absolute;
                 left: 50%;
                 top: 1.5cm;
                 transform: translateX(-50%);
                 width: 90%;
                 max-width: 500px;
-                }
+              }
             }
-            `}</style>
+          `}</style>
 
-            <div className="print-qr-content">
-                <div style={{ textAlign: 'center'}}>
-                    <h1 style={{ 
-                        fontSize: '18px', 
-                        marginBottom: '12px', 
-                        color: '#333',
-                        fontWeight: '600'
-                    }}>
-                        {printLink.templateTitle}
-                    </h1>
-                    
-                    <div style={{ 
-                        margin: '0 auto 12px auto',
-                        padding: '12px',
-                        background: 'white',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        display: 'inline-block'
-                    }}>
-                        <QRCodeSVG
-                            value={printLink.url}
-                            size={200}
-                            level="H"
-                        />
-                    </div>
+          <div className="print-qr-content">
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ 
+                fontSize: '18px', 
+                marginBottom: '12px', 
+                color: '#333',
+                fontWeight: '600'
+              }}>
+                {printLink.templateTitle}
+              </h1>
+              
+              <div style={{ 
+                margin: '0 auto 12px auto',
+                padding: '12px',
+                background: 'white',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                display: 'inline-block'
+              }}>
+                <QRCodeSVG
+                  value={printLink.url}
+                  size={200}
+                  level="H"
+                />
+              </div>
 
-                    <div style={{
-                        textAlign: 'left',
-                        padding: '10px',
-                        background: '#f9fafb',
-                        borderRadius: '6px',
-                        border: '1px solid #e5e7eb'
-                    }}>
-                        <div style={{ marginBottom: '6px', fontSize: '12px' }}>
-                            <span style={{ 
-                                fontWeight: 'bold', 
-                                color: '#4b5563',
-                                display: 'inline-block',
-                                width: '100px'
-                            }}>
-                                Létrehozva:
-                            </span>
-                            <span style={{ color: '#1f2937' }}>
-                                {formatDate(printLink.createdAt)}
-                            </span>
-                        </div>
-
-                        <div style={{ marginBottom: '6px', fontSize: '12px' }}>
-                            <span style={{ 
-                                fontWeight: 'bold', 
-                                color: '#4b5563',
-                                display: 'inline-block',
-                                width: '100px'
-                            }}>
-                                Lejárat:
-                            </span>
-                            <span style={{ color: '#1f2937' }}>
-                                {formatDate(printLink.expiresAt)}
-                            </span>
-                        </div>
-
-                        <div style={{ fontSize: '12px' }}>
-                            <span style={{ 
-                            fontWeight: 'bold', 
-                            color: '#4b5563',
-                            display: 'inline-block',
-                            width: '100px'
-                            }}>
-                            Érvényesség:
-                            </span>
-                            <span style={{ color: '#1f2937' }}>
-                            {getExpirationLabel(printLink.expirationMinutes)}
-                            </span>
-                        </div>
-                    </div>
+              <div style={{
+                textAlign: 'left',
+                padding: '10px',
+                background: '#f9fafb',
+                borderRadius: '6px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ marginBottom: '6px', fontSize: '12px' }}>
+                  <span style={{ 
+                    fontWeight: 'bold', 
+                    color: '#4b5563',
+                    display: 'inline-block',
+                    width: '100px'
+                  }}>
+                    Létrehozva:
+                  </span>
+                  <span style={{ color: '#1f2937' }}>
+                    {formatDate(printLink.createdAt)}
+                  </span>
                 </div>
+
+                <div style={{ marginBottom: '6px', fontSize: '12px' }}>
+                  <span style={{ 
+                    fontWeight: 'bold', 
+                    color: '#4b5563',
+                    display: 'inline-block',
+                    width: '100px'
+                  }}>
+                    Lejárat:
+                  </span>
+                  <span style={{ color: '#1f2937' }}>
+                    {formatDate(printLink.expiresAt)}
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '12px' }}>
+                  <span style={{ 
+                    fontWeight: 'bold', 
+                    color: '#4b5563',
+                    display: 'inline-block',
+                    width: '100px'
+                  }}>
+                    Érvényesség:
+                  </span>
+                  <span style={{ color: '#1f2937' }}>
+                    {getExpirationLabel(printLink.expirationMinutes)}
+                  </span>
+                </div>
+              </div>
             </div>
-        </>
-        )}
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 }
