@@ -269,5 +269,146 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             return activeSurveys;
         }
+
+        /// <summary>
+        /// Determines whether a questionnaire already exists for the given student and template.
+        /// </summary>
+        /// <param name="templateId">
+        /// The survey/template identifier formatted as <c>questiontemplates_{surveyId}</c>.
+        /// </param>
+        /// <param name="studentEmail">The student's email address to check membership for.</param>
+        /// <returns>
+        /// <c>true</c> if at least one questionnaire exists for the student under the given template;
+        /// otherwise <c>false</c>.
+        /// </returns>
+        public async Task<bool> QuestionnaireExistsForStudentAsync(string templateId, string studentEmail)
+        {
+            return await _context.Questionnaires
+                .AnyAsync(q => q.SurveyId == templateId && q.StudentEmail == studentEmail);
+        }
+
+        /// <summary>
+        /// Returns the total number of questionnaires materialized for a given template.
+        /// </summary>
+        /// <param name="templateId">
+        /// The survey/template identifier formatted as <c>questiontemplates_{surveyId}</c>.
+        /// </param>
+        /// <returns>The count of questionnaire documents associated with the template.</returns>
+        public async Task<int> CountQuestionnairesForTemplateAsync(string templateId)
+        {
+            return await _context.Questionnaires
+                .CountAsync(q => q.SurveyId == templateId);
+        }
+
+        /// <summary>
+        /// Persists a single questionnaire document to the Cosmos container.
+        /// </summary>
+        /// <param name="questionnaire">The fully constructed questionnaire instance to add.</param>
+        /// <remarks>
+        /// This method calls <see cref="DbContext.SaveChangesAsync(CancellationToken)"/> immediately
+        /// after staging the entity. It is intended for single-document writes; prefer
+        /// <see cref="SelfOptInStudentAsync"/> for opt-in flows that require additional side-effects.
+        /// </remarks>
+        public async Task AddQuestionnaireAsync(Questionnaire questionnaire)
+        {
+            _context.Add(questionnaire);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Enrolls a student into a survey via self opt-in: adds the student to the first student set
+        /// of the survey and materializes all missing questionnaire instances for that student.
+        /// </summary>
+        /// <param name="surveyId">The survey identifier the student is opting into.</param>
+        /// <param name="studentEmail">The authenticated student's email address.</param>
+        /// <remarks>
+        /// <para>
+        /// <b>Student set membership</b><br/>
+        /// The student is appended to <c>StudentSets[0].StudentEmails</c> if not already present.
+        /// This update is persisted together with the questionnaire writes in a single
+        /// <see cref="DbContext.SaveChangesAsync(CancellationToken)"/> call.
+        /// </para>
+        /// <para>
+        /// <b>Questionnaire generation</b><br/>
+        /// Only <see cref="SurveyMetadata.CreationParams"/> entries that reference the first student
+        /// set are processed. For each such entry a questionnaire is created with id formatted as:<br/>
+        /// <c>{studentEmail}_{teacherEmail}_{subjectName}_{surveyId}</c>.
+        /// </para>
+        /// <para>
+        /// <b>Idempotency</b><br/>
+        /// Existing questionnaire ids are fetched in a single query filtered by
+        /// <c>SurveyId</c> and <c>StudentEmail</c> before the loop, and held in a
+        /// <see cref="HashSet{T}"/> for O(1) lookup. Entries whose id already exists in
+        /// the database or appears more than once in the current batch are skipped, preventing
+        /// duplicate-key conflicts in Cosmos.
+        /// </para>
+        /// <para>
+        /// <b>No-op conditions</b><br/>
+        /// The method returns without writing if the survey is not found or has no student sets defined.
+        /// </para>
+        /// </remarks>
+        public async Task SelfOptInStudentAsync(Guid surveyId, string studentEmail)
+        {
+            var survey = await _context.Surveys
+                .FirstOrDefaultAsync(s => s.Id == surveyId);
+
+            if (survey is null) return;
+
+            var firstSet = survey.StudentSets.FirstOrDefault();
+            if (firstSet is null) return;
+
+            if (!firstSet.StudentEmails.Contains(studentEmail, StringComparer.OrdinalIgnoreCase))
+            {
+                firstSet.StudentEmails.Add(studentEmail);
+                _context.Update(survey);
+            }
+
+            var template = survey.QuestionTemplates;
+            var questionnaireIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var questionnaires = new List<Questionnaire>();
+
+            var existingIds = await _context.Questionnaires
+                .Where(q => q.SurveyId == surveyId.ToString() && q.StudentEmail == studentEmail)
+                .Select(q => q.Id)
+                .ToListAsync();
+
+            var existingIdSet = new HashSet<string>(existingIds, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var param in survey.CreationParams)
+            {
+                if (!param.StudentSetIds.Contains(firstSet.SetId, StringComparer.OrdinalIgnoreCase))
+                    continue;
+
+                var qId = $"{studentEmail}_{param.TeacherEmail}_{param.SubjectName}_{surveyId}";
+
+                if (!questionnaireIds.Add(qId))
+                    continue;
+
+                if (existingIdSet.Contains(qId))
+                    continue;
+
+                questionnaires.Add(new Questionnaire
+                {
+                    Id = qId,
+                    SurveyId = surveyId.ToString(),
+                    TeacherEmail = param.TeacherEmail,
+                    StudentEmail = studentEmail,
+                    SubjectName = param.SubjectName,
+                    QuestionnaireResults = template
+                        .Select(t => new QuestionAnswer
+                        {
+                            Answer = string.Empty,
+                            QuestionId = t.Id
+                        })
+                        .ToList()
+                });
+            }
+
+            if (questionnaires.Count > 0)
+                _context.AddRange(questionnaires);
+
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

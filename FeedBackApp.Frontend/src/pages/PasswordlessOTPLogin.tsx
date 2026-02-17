@@ -20,7 +20,7 @@ export default function PasswordlessOTPLogin() {
 
   const { sendOTP, isSendingOTP, verifyOTP, isVerifyingOTP } = useReviews()
 
-  // Check if this is a self opt-in flow - ÚJ!
+  // Check if this is a self opt-in flow 
   const allowSelfOptIn = returnTo ? returnTo.includes('optin=') : false
 
   useEffect(() => {
