@@ -1,11 +1,11 @@
 using System.Net;
 using System.Security.Claims;
 using ApplicationEventWorkers.SelfOptIn;
-using FeedBackApp.Backend.Infrastructure.Persistence.Context;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Core.Model;
+using FeedBackApp.Core.Repositories;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
@@ -22,12 +22,17 @@ namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 public class TemplateSelfOptIn
 {
     private readonly IOptInTokenService _tokens;
-    private readonly AppDBContext _db;
+    private readonly IEvaluationRepository _evalRepo;
+    private readonly IQuestionnaireRepository _questionnaireRepo;
 
-    public TemplateSelfOptIn(IOptInTokenService tokens, AppDBContext db)
+    public TemplateSelfOptIn(
+        IOptInTokenService tokens,
+        IEvaluationRepository evalRepo,
+        IQuestionnaireRepository questionnaireRepo)
     {
         _tokens = tokens;
-        _db = db;
+        _evalRepo = evalRepo;
+        _questionnaireRepo = questionnaireRepo;
     }
 
     private sealed class RequestDto { public string? OptInToken { get; set; } }
@@ -39,6 +44,17 @@ public class TemplateSelfOptIn
         string id,
         FunctionContext context)   // StudentOnlyMiddleware should populate ctx.Items["User"]
     {
+
+        var tokenCookie = req.Cookies.FirstOrDefault(c => c.Name == "token");
+        if (tokenCookie == null || string.IsNullOrWhiteSpace(tokenCookie.Value))
+            return req.CreateResponse(HttpStatusCode.Unauthorized);
+
+        var token = tokenCookie.Value;
+        bool isStudent = JwtRoleValidator.IsStudent(token, context);
+        bool isAdmin = JwtRoleValidator.IsAdmin(token, context);
+        if (!isStudent && !isAdmin)
+            return req.CreateResponse(HttpStatusCode.Forbidden);
+
         // route Guid
         if (!Guid.TryParse(id, out var templateGuid))
             return await Text(req, HttpStatusCode.BadRequest, "Invalid template id (Guid expected).");
@@ -64,10 +80,8 @@ public class TemplateSelfOptIn
         if (string.IsNullOrWhiteSpace(email))
             return req.CreateResponse(HttpStatusCode.Unauthorized);
 
-        // load real template by alias
-        var template = await _db.Set<QuestionnaireTemplate>()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id);
+        // load real template by id
+        var template = await _evalRepo.GetQuestionTemplateBySurveyIdAsync(id);
 
         if (template is null)
             return req.CreateResponse(HttpStatusCode.NotFound);
@@ -78,43 +92,29 @@ public class TemplateSelfOptIn
         if (template.OptInExpiresAt is not null && template.OptInExpiresAt <= DateTimeOffset.UtcNow)
             return await Text(req, HttpStatusCode.Gone, "Self opt-in window has closed.");
 
-        // optional: capacity check per template
+        string templateId = $"questiontemplates_{id}";
+
         if (template.MaxParticipants is int max && max >= 0)
         {
-            var current = await _db.Set<Questionnaire>()
-                .CountAsync(q => q.SurveyId == template.Id); // link via stored template Id
+            var current = await _questionnaireRepo.CountQuestionnairesForTemplateAsync(templateId);
             if (current >= max)
                 return await Text(req, HttpStatusCode.Forbidden, "Capacity reached for this template.");
         }
 
-        // idempotency: one questionnaire per (StudentEmail, Template)
-        var exists = await _db.Set<Questionnaire>()
-            .AnyAsync(q => q.SurveyId == template.Id && q.StudentEmail == email);
-
-        if (exists)
+        // idempotency check
+        var alreadyExists = await _questionnaireRepo.QuestionnaireExistsForStudentAsync(id, email);
+        if (alreadyExists)
         {
             var ok = req.CreateResponse(HttpStatusCode.OK);
             await ok.WriteAsJsonAsync(new { status = "already_has_access" });
             return ok;
         }
 
-        // create a real Questionnaire instance (minimal fields; results will be filled on submit)
-        var instance = new Questionnaire
-        {
-            Id = Guid.NewGuid().ToString("D"),
-            Status = false,               // not completed
-            SurveyId = template.Id,       // link instance to template via stored Id (questiontemplates_<guid>)
-            TeacherEmail = string.Empty,  // unknown in self-opt-in path
-            StudentEmail = email,
-            SubjectName = string.Empty,
-            QuestionnaireResults = new List<QuestionAnswer>() // keep empty; filled when answering
-        };
-
-        _db.Add(instance);
-        await _db.SaveChangesAsync();
+        // create a Questionnaire instance for the new student
+        await _questionnaireRepo.SelfOptInStudentAsync(templateGuid, email);
 
         var created = req.CreateResponse(HttpStatusCode.Created);
-        await created.WriteAsJsonAsync(new { status = "granted", questionnaireId = instance.Id });
+        await created.WriteAsJsonAsync(new { status = "granted" });
         return created;
     }
 
