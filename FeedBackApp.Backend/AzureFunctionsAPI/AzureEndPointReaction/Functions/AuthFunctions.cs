@@ -94,7 +94,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid Google token", origin);
             }
 
-            // 5. Authorize (Check Whitelist/Admin) - WITH SELF OPT-IN SUPPORT
+            // 5. Authorize (Check Whitelist/Admin) - with self opt in
             bool isAdmin = IsAdmin(payload.Email);
 
             // If allowSelfOptIn is true, skip whitelist check

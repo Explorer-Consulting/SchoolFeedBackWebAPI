@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,50 +95,50 @@ export default function QuestionnaireTemplatePreview() {
   const user = useAuthStore((s) => s.user);
   const hasAttemptedAutoEnroll = useRef(false);
 
-   // automatic self opt-in ussefect
-  useEffect(() => {
+  // self opt-in logic
+  const performSelfOptIn = useCallback(async (optInToken: string) => {
+    setIsEnrolling(true);
+    
+    try {
+      const response = await SelfOptIn(id!, optInToken);
+      
+      if (response.status === "already_has_access") {
+        toast.info("Már feliratkoztál erre a kérdőívre!");
+      } else {
+        toast.success("Sikeresen feliratkoztál a kérdőívre!");
+      }
+      
+      setTimeout(() => {
+        navigate("/dashboard/student");
+      }, 1500);
+      
+    } catch (error: any) {
+      console.error("Self opt-in error:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Hitelesítési hiba történt.");
+      } else if (error.response?.status === 403) {
+        toast.error("A feliratkozás már nem engedélyezett.");
+      } else {
+        toast.error("Feliratkozás sikertelen: " + (error.response?.data || error.message));
+      }
+    } finally {
+      setIsEnrolling(false);
+    }
+  }, [id, navigate]);
 
+  // Automatic self opt-in useEffect
+  useEffect(() => {
     if (user && data && id && (data.selfEnrollmentAllowed || data.SelfEnrollmentAllowed) && !hasAttemptedAutoEnroll.current) {
       const urlParams = new URLSearchParams(window.location.search);
       const optInToken = urlParams.get('optin');
       
       if (optInToken) {
-        hasAttemptedAutoEnroll.current = true;  // mark trying to subscribe
-        
-        // call self opt in link
-        (async () => {
-          setIsEnrolling(true);
-          try {
-            await SelfOptIn(id, optInToken);
-            toast.success("Sikeresen feliratkoztál a kérdőívre!");
-            
-            // waiting
-            setTimeout(() => {
-              navigate("/dashboard/student");
-            }, 1500);
-            
-          } catch (error: any) {
-            console.error("Auto self opt-in error:", error);
-            
-            if (error.response?.status === 401) {
-              toast.error("Hitelesítési hiba történt.");
-            } else if (error.response?.status === 403) {
-              toast.error("A feliratkozás már nem engedélyezett.");
-            } else if (error.response?.status === 200) {
-              toast.info("Már feliratkoztál erre a kérdőívre!");
-              setTimeout(() => {
-                navigate("/dashboard/student");
-              }, 1500);
-            } else {
-              toast.error("Feliratkozás sikertelen: " + (error.response?.data || error.message));
-            }
-          } finally {
-            setIsEnrolling(false);
-          }
-        })();
+        hasAttemptedAutoEnroll.current = true;
+        performSelfOptIn(optInToken);
       }
     }
-  }, [user, data, id, navigate]);
+  }, [user, data, id, performSelfOptIn]);
 
   useEffect(() => {
     if (!id) return;
@@ -159,48 +159,22 @@ export default function QuestionnaireTemplatePreview() {
   const handleSelfOptIn = async () => {
     if (!id) return;
     
-    // Check the user is logged in
     if (!user) {
       toast.error("Be kell jelentkezned a feliratkozáshoz!");
       navigate("/?returnTo=" + encodeURIComponent(window.location.pathname + window.location.search));
       return;
     }
     
-    setIsEnrolling(true);
+    const urlParams = new URLSearchParams(window.location.search);
+    const optInToken = urlParams.get('optin');
     
-    try {
-      // get token
-      const urlParams = new URLSearchParams(window.location.search);
-      const optInToken = urlParams.get('optin');
-      
-      if (!optInToken) {
-        toast.error("Hiányzó opt-in token!");
-        return;
-      }
-      
-      // call api endpoint
-      await SelfOptIn(id, optInToken);
-      toast.success("Sikeresen feliratkoztál a kérdőívre!");
-      
-      // navigate to the dashboard
-      navigate("/dashboard/student");
-      
-    } catch (error: any) {
-      console.error("Self opt-in error:", error);
-      
-      if (error.response?.status === 401) {
-        toast.error("Be kell jelentkezned a feliratkozáshoz!");
-        navigate("/?returnTo=" + encodeURIComponent(window.location.pathname + window.location.search));
-      } else if (error.response?.status === 403) {
-        toast.error("A feliratkozás már nem engedélyezett.");
-      } else {
-        toast.error("Feliratkozás sikertelen: " + (error.response?.data || error.message));
-      }
-    } finally {
-      setIsEnrolling(false);
+    if (!optInToken) {
+      toast.error("Hiányzó opt-in token!");
+      return;
     }
+    
+    await performSelfOptIn(optInToken);
   };
-
 
   const title = data?.title ?? data?.Title ?? "Kérdőív sablon – előnézet";
   const raw = data?.questionTemplates ?? data?.QuestionTemplates ?? [];
@@ -223,7 +197,6 @@ export default function QuestionnaireTemplatePreview() {
   if (loading) return <div className="p-6">Betöltés…</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
-  /* ide irányítunk, ha nincs self enrollment */
   const REDIRECT_PATH = "/no-access";
 
   return (
@@ -258,7 +231,7 @@ export default function QuestionnaireTemplatePreview() {
         </CardContent>
       </Card>
 
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[0.25px] bg-black/30">
+      <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[0.25px] bg-black/30">
         <div className="bg-background rounded-xl border shadow-xl p-6 w-full max-w-md text-center space-y-4">
           <h2 className="text-lg font-semibold">Ez csak előnézet</h2>
 

@@ -12,6 +12,11 @@ const apiClient: AxiosInstance = axios.create({
     },
 });
 
+type SelfOptInResponse = {
+  status: "granted" | "already_has_access";
+};
+
+
 // LoginWithGoogle
 export const LoginWithGoogle = async (idToken: string, allowSelfOptIn: boolean = false): Promise<unknown> => {
     const { data } = await apiClient.post('/auth/google', { IdToken: idToken, AllowSelfOptIn: allowSelfOptIn });
@@ -109,8 +114,8 @@ export const GenerateShareLink = async (
 };
 
 // Self opt-in - creates a questionnaire instance for the authenticated user
-export const SelfOptIn = async (templateId: string, optInToken: string): Promise<unknown> => {
-    const { data } = await apiClient.post(`/templates/${templateId}/self-opt-in`, {
+export const SelfOptIn = async (templateId: string, optInToken: string): Promise<SelfOptInResponse> => {
+    const { data } = await apiClient.post<SelfOptInResponse>(`/templates/${templateId}/self-opt-in`, {
         optInToken: optInToken
     });
     return data;
