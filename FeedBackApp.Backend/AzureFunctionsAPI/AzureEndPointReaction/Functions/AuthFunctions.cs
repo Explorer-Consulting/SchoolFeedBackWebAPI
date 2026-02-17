@@ -1,6 +1,7 @@
 ﻿using Application.Email;
 using Application.Services.Interfaces;
 using FeedBackApp.Core.Email;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using Google.Apis.Auth;
 using Microsoft.Azure.Functions.Worker;
@@ -109,6 +110,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             else
             {
                 _logger.LogInformation("Self opt-in login allowed for Email: {Email}", payload.Email);
+                if (whitelist != null && !students.Contains(payload.Email, StringComparer.OrdinalIgnoreCase))
+                {
+                    whitelist.StudentEmails.Add(payload.Email);
+                    await _whitelistRepository.UpdateStudentWhitelistAsync(whitelist);
+                }
             }
 
             // 6. Generate Token & Response
@@ -162,6 +168,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             else
             {
                 _logger.LogInformation("Self opt-in OTP send allowed for Email: {Email}", email);
+                if (whitelist != null && !students.Contains(email, StringComparer.OrdinalIgnoreCase))
+                {
+                    whitelist.StudentEmails.Add(email);
+                    await _whitelistRepository.UpdateStudentWhitelistAsync(whitelist);
+                }
             }
 
             try
