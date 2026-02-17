@@ -283,8 +283,13 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         /// </returns>
         public async Task<bool> QuestionnaireExistsForStudentAsync(string templateId, string studentEmail)
         {
-            return await _context.Questionnaires
-                .AnyAsync(q => q.SurveyId == templateId && q.StudentEmail == studentEmail);
+            var allQuestionnaires = await _context.Questionnaires
+                .AsNoTracking()
+                .ToListAsync();
+
+            return allQuestionnaires.Any(q =>
+                q.SurveyId == templateId &&
+                q.StudentEmail.Equals(studentEmail, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
