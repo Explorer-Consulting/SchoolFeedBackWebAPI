@@ -15,15 +15,22 @@ export default function PasswordlessOTPLogin() {
   const setUser = useAuthStore((state) => state.setUser)
   const [otp, setOtp] = useState('')
   const [email, setEmail] = useState<string>('')
+  const [returnTo, setReturnTo] = useState<string | null>(null) 
   const { toast } = useToast()
 
   const { sendOTP, isSendingOTP, verifyOTP, isVerifyingOTP } = useReviews()
 
+  // Check if this is a self opt-in flow - ÚJ!
+  const allowSelfOptIn = returnTo ? returnTo.includes('optin=') : false
+
   useEffect(() => {
-    // Get email from navigation state
+    // Get email and returnTo from navigation state
     const stateEmail = location.state?.email
+    const stateReturnTo = location.state?.returnTo
+    
     if (stateEmail) {
       setEmail(stateEmail)
+      setReturnTo(stateReturnTo || null) 
     } else {
       // If no email in state, redirect back to home
       navigate('/')
@@ -33,7 +40,8 @@ export default function PasswordlessOTPLogin() {
   const handleResendOTP = () => {
     if (!email) return
 
-    sendOTP(email, {
+    // Pass allowSelfOptIn flag 
+    sendOTP({ email, allowSelfOptIn }, {
       onSuccess: () => {
         toast({
           title: "Új kód elküldve",
@@ -78,8 +86,15 @@ export default function PasswordlessOTPLogin() {
           description: `Üdvözöljük, ${data.email}!`,
         })
         
-        // Redirect based on role
+        // Redirect based on returnTo or role 
         setTimeout(() => {
+          // If returnTo exists, navigate there 
+          if (returnTo) {
+            navigate(returnTo)
+            return
+          }
+          
+          // Otherwise normal role-based navigation
           if (data.role === 'Admin') {
             navigate('/dashboard/admin')
           } else {
@@ -188,6 +203,3 @@ export default function PasswordlessOTPLogin() {
     </main>
   )
 }
-
-
-

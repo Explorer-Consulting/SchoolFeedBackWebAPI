@@ -8,12 +8,14 @@ import { Survey } from "@/models/StudentContext"
 export const useReviews = (selectedSurveyId?: string) => {
     const client = useQueryClient();
 
-    const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
-        mutationFn: (idToken: string) => LoginWithGoogle(idToken) as Promise<any>
+   const { mutate: loginWithGoogle, isPending: isLoggingIn } = useMutation({
+        mutationFn: ({ idToken, allowSelfOptIn }: { idToken: string; allowSelfOptIn?: boolean }) => 
+            LoginWithGoogle(idToken, allowSelfOptIn) as Promise<any>
     });
 
     const { mutate: sendOTP, isPending: isSendingOTP } = useMutation({
-        mutationFn: (email: string) => SendOTP(email) as Promise<any>
+        mutationFn: ({ email, allowSelfOptIn }: { email: string; allowSelfOptIn?: boolean }) => 
+            SendOTP(email, allowSelfOptIn) as Promise<any>
     });
 
     const { mutate: verifyOTP, isPending: isVerifyingOTP } = useMutation({

@@ -13,8 +13,8 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 // LoginWithGoogle
-export const LoginWithGoogle = async (idToken: string): Promise<unknown> => {
-    const { data } = await apiClient.post('/auth/google', { IdToken: idToken });
+export const LoginWithGoogle = async (idToken: string, allowSelfOptIn: boolean = false): Promise<unknown> => {
+    const { data } = await apiClient.post('/auth/google', { IdToken: idToken, AllowSelfOptIn: allowSelfOptIn });
     return data;
 };
 
@@ -75,8 +75,8 @@ export const GetSurveysAdmin = async (): Promise<unknown> => {
 };
 
 // SendOTP - Sends OTP code to user's email
-export const SendOTP = async (email: string): Promise<unknown> => {
-    const { data } = await apiClient.post('/auth/otp/send', { email });
+export const SendOTP = async (email: string, allowSelfOptIn: boolean = false): Promise<unknown> => {
+    const { data } = await apiClient.post('/auth/otp/send', { email, AllowSelfOptIn: allowSelfOptIn  });
     return data;
 };
 

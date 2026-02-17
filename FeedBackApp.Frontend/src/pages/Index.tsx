@@ -1,5 +1,5 @@
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useReviews } from '@/hooks/useReviews'
 import { useAuthStore } from '@/hooks/useAuth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,11 +12,19 @@ import { useToast } from '@/hooks/useToast'
 
 export default function GoogleAuthApp() {
   const navigate = useNavigate()
+  const location = useLocation()
   const setUser = useAuthStore((state) => state.setUser)
   const [email, setEmail] = useState('')
   const { toast } = useToast()
 
   const { loginWithGoogle, isLoggingIn, sendOTP, isSendingOTP } = useReviews()
+
+  // Get returnTo parameter from URL
+  const searchParams = new URLSearchParams(location.search)
+  const returnTo = searchParams.get('returnTo')
+  
+  // Check if this is a self opt-in login (returnTo contains optin token)
+  const allowSelfOptIn = returnTo ? returnTo.includes('optin=') : false
 
   const onIdTokenSuccess = (resp: CredentialResponse) => {
     const idToken = resp?.credential
@@ -26,9 +34,16 @@ export default function GoogleAuthApp() {
       return
     }
 
-    loginWithGoogle(idToken, {
+    // Pass allowSelfOptIn flag to backend
+    loginWithGoogle({ idToken, allowSelfOptIn }, {
       onSuccess: (user: User) => {
         setUser(user)
+        
+        // If we have the returnTo parameter, navigate to it
+        if (returnTo) {
+          navigate(returnTo)
+          return
+        }
 
         if (user.role === 'Admin') {
           navigate("/dashboard/admin")
@@ -59,7 +74,8 @@ export default function GoogleAuthApp() {
       return
     }
 
-    sendOTP(email, {
+    // Pass allowSelfOptIn flag to backend
+    sendOTP({ email, allowSelfOptIn }, {
       onSuccess: () => {
         toast({
           title: "Email elküldve",
@@ -68,7 +84,7 @@ export default function GoogleAuthApp() {
         
         // Wait 3 seconds then redirect
         setTimeout(() => {
-          navigate('/passwordless-otp-login', { state: { email } })
+          navigate('/passwordless-otp-login', { state: { email, returnTo } })  // Pass returnTo!
         }, 3000)
       },
       onError: (e: any) => {

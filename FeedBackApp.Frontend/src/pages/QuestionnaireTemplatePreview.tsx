@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +93,52 @@ export default function QuestionnaireTemplatePreview() {
   const [isEnrolling, setIsEnrolling] = useState(false);
 
   const user = useAuthStore((s) => s.user);
+  const hasAttemptedAutoEnroll = useRef(false);
 
+   // automatic self opt-in ussefect
+  useEffect(() => {
+
+    if (user && data && id && (data.selfEnrollmentAllowed || data.SelfEnrollmentAllowed) && !hasAttemptedAutoEnroll.current) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const optInToken = urlParams.get('optin');
+      
+      if (optInToken) {
+        hasAttemptedAutoEnroll.current = true;  // mark trying to subscribe
+        
+        // call self opt in link
+        (async () => {
+          setIsEnrolling(true);
+          try {
+            await SelfOptIn(id, optInToken);
+            toast.success("Sikeresen feliratkoztál a kérdőívre!");
+            
+            // waiting
+            setTimeout(() => {
+              navigate("/dashboard/student");
+            }, 1500);
+            
+          } catch (error: any) {
+            console.error("Auto self opt-in error:", error);
+            
+            if (error.response?.status === 401) {
+              toast.error("Hitelesítési hiba történt.");
+            } else if (error.response?.status === 403) {
+              toast.error("A feliratkozás már nem engedélyezett.");
+            } else if (error.response?.status === 200) {
+              toast.info("Már feliratkoztál erre a kérdőívre!");
+              setTimeout(() => {
+                navigate("/dashboard/student");
+              }, 1500);
+            } else {
+              toast.error("Feliratkozás sikertelen: " + (error.response?.data || error.message));
+            }
+          } finally {
+            setIsEnrolling(false);
+          }
+        })();
+      }
+    }
+  }, [user, data, id, navigate]);
 
   useEffect(() => {
     if (!id) return;
