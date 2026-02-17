@@ -43,6 +43,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// <summary>
         /// Handles Google-based login (<c>POST</c>) and CORS preflight (<c>OPTIONS</c>).
         /// Validates the Google ID token and issues a secure JWT cookie.
+        /// Supports self opt-in workflow via AllowSelfOptIn flag.
         /// </summary>
         [Function("LoginWithGoogle")]
         [OpenApiOperation(operationId: "LoginWithGoogle", tags: new[] { "Auth" })]
@@ -77,8 +78,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             GoogleJsonWebSignature.Payload payload;
             try
             {
-                var googleClientId = Environment.GetEnvironmentVariable("GoogleClientId") 
-                                     ?? Environment.GetEnvironmentVariable("Google:ClientId"); // Fallback for diff naming conventions
+                var googleClientId = Environment.GetEnvironmentVariable("GoogleClientId")
+                                     ?? Environment.GetEnvironmentVariable("Google:ClientId");
 
                 payload = await GoogleJsonWebSignature.ValidateAsync(data.IdToken, new GoogleJsonWebSignature.ValidationSettings
                 {
@@ -92,13 +93,22 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid Google token", origin);
             }
 
-            // 5. Authorize (Check Whitelist/Admin)
+            // 5. Authorize (Check Whitelist/Admin) - WITH SELF OPT-IN SUPPORT
             bool isAdmin = IsAdmin(payload.Email);
 
-            if (!students.Contains(payload.Email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            // If allowSelfOptIn is true, skip whitelist check
+            // This allows users with opt-in tokens to log in even if not whitelisted
+            if (!data.AllowSelfOptIn)
             {
-                _logger.LogWarning("Unauthorized login attempt. Email: {Email}", payload.Email);
-                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+                if (!students.Contains(payload.Email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+                {
+                    _logger.LogWarning("Unauthorized login attempt. Email: {Email}", payload.Email);
+                    return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+                }
+            }
+            else
+            {
+                _logger.LogInformation("Self opt-in login allowed for Email: {Email}", payload.Email);
             }
 
             // 6. Generate Token & Response
@@ -106,7 +116,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         }
 
         /// <summary>
-        /// Sends a One-Time Password (OTP) to the specified email address if the user is authorized.
+        /// Sends a One-Time Password (OTP) to the specified email address.
+        /// Supports self opt-in workflow via AllowSelfOptIn flag.
         /// </summary>
         [Function("SendOtp")]
         [OpenApiOperation(operationId: "SendOtp", tags: new[] { "Auth" })]
@@ -126,7 +137,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             // 2. Parse Body
             var body = await new StreamReader(req.Body).ReadToEndAsync();
             var data = JsonConvert.DeserializeObject<SendOtpRequest>(body);
-            
+
             if (data is null || string.IsNullOrWhiteSpace(data.Email))
             {
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Email is required", origin);
@@ -134,16 +145,23 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             var email = data.Email.Trim().ToLowerInvariant();
 
-            // 3. Check Authorization
+            // 3. Check Authorization with self opt in 
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
             var students = whitelist?.StudentEmails ?? new List<string>();
             bool isAdmin = IsAdmin(email);
 
-            // LOGIC FIX: Changed from (students.Contains && !isAdmin) to (!students.Contains && !isAdmin)
-            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            // If allowSelfOptIn is true, skip whitelist check
+            if (!data.AllowSelfOptIn)
             {
-                _logger.LogWarning("Unauthorized OTP request. Email: {Email}", email);
-                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+                if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+                {
+                    _logger.LogWarning("Unauthorized OTP request. Email: {Email}", email);
+                    return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+                }
+            }
+            else
+            {
+                _logger.LogInformation("Self opt-in OTP send allowed for Email: {Email}", email);
             }
 
             try
@@ -162,7 +180,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 }
 
                 _logger.LogInformation("OTP email sent successfully to {Email}", email);
-                
+
                 var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
                 AddCorsHeaders(response, origin);
                 await response.WriteAsJsonAsync(new { message = "OTP sent successfully" });
@@ -177,6 +195,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         /// <summary>
         /// Verifies the provided OTP code and issues a JWT if valid.
+        /// Supports self opt-in workflow - whitelist check happens in SendOtp.
         /// </summary>
         [Function("VerifyOtp")]
         [OpenApiOperation(operationId: "VerifyOtp", tags: new[] { "Auth" })]
@@ -196,7 +215,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             // 2. Parse Body
             var body = await new StreamReader(req.Body).ReadToEndAsync();
             var data = JsonConvert.DeserializeObject<VerifyOtpRequest>(body);
-            
+
             if (data is null || string.IsNullOrWhiteSpace(data.Email) || string.IsNullOrWhiteSpace(data.Code))
             {
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Email and code are required", origin);
@@ -213,21 +232,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid or expired OTP code", origin);
             }
 
-            // 4. Re-check Authorization (Safety check)
-            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-            var students = whitelist?.StudentEmails ?? new List<string>();
+            // 4. NO whitelist check here - authorization was done in SendOtp
+            // If user received an OTP, they are authorized to verify it
             bool isAdmin = IsAdmin(email);
-
-            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
-            {
-                _logger.LogWarning("User not in whitelist after OTP validation. Email: {Email}", email);
-                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
-            }
 
             // 5. Cleanup & Token Generation
             _otpService.RemoveOtp(email);
-            
-            // Note: OTP login doesn't provide names, so we leave them null or use placeholders
+
             return await CreateLoginResponse(req, email, null, null, isAdmin, origin);
         }
 
@@ -242,7 +253,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey") 
+            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey")
                                ?? Environment.GetEnvironmentVariable("Jwt:SecretKey")
                                ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
 
@@ -251,6 +262,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             var claims = new[]
             {
+                new Claim("email", email),
+                new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.NameIdentifier, email),
                 new Claim(ClaimTypes.Role, isAdmin ? "Admin" : "Student")
             };
@@ -283,12 +296,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         {
             var resp = req.CreateResponse(code);
             AddCorsHeaders(resp, origin);
-            // Fire and forget waiting for write, or await it. Since this is a helper returning HttpResponseData, 
-            // we can't await WriteStringAsync easily without refactoring. 
-            // Instead, we explicitly write to the body stream or use a small workaround.
-            // For simplicity in this helper, we'll write sync or use a wrapping task in the caller.
-            // BUT, strictly speaking, WriteAsJsonAsync is easiest.
-            resp.WriteAsJsonAsync(new { message }).GetAwaiter().GetResult(); 
+            resp.WriteAsJsonAsync(new { message }).GetAwaiter().GetResult();
             return resp;
         }
 
@@ -298,7 +306,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             var token = GenerateJwtToken(email, isAdmin);
             var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-            
+
             AddCorsHeaders(response, origin);
 
             response.Headers.Add("Set-Cookie", $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400");
@@ -310,7 +318,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 lastName = lastName,
                 role = isAdmin ? "Admin" : "Student"
             });
-            
+
             return response;
         }
 
@@ -331,11 +339,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         public class LoginRequest
         {
             public required string IdToken { get; set; }
+            public bool AllowSelfOptIn { get; set; } = false;
         }
 
         public class SendOtpRequest
         {
             public required string Email { get; set; }
+            public bool AllowSelfOptIn { get; set; } = false;
         }
 
         public class VerifyOtpRequest
