@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const App = () => (
-  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+  <GoogleOAuthProvider clientId="606846576960-dst2a6lkdpi7dcd9shi8deg9e2mphjqk.apps.googleusercontent.com"/*{GOOGLE_CLIENT_ID}*/>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
