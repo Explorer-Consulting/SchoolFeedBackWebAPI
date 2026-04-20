@@ -187,6 +187,8 @@ builder.Services.AddScoped<Application.Email.IEmailContentService, Application.E
 // Email sender: MailKit-based SMTP implementation
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // --- Report Services ---
 // Report service uses IBlobContext for blob storage operations
 builder.Services.AddScoped<EmailSendingFunctions>();
