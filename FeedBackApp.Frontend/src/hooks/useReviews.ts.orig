@@ -1,5 +1,9 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP } from "@/api/ReviewApi"
+<<<<<<< HEAD
+import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit } from "@/api/ReviewApi"
+=======
+import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP } from "@/api/ReviewApi"
+>>>>>>> develop
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import { Survey } from "@/models/StudentContext"
@@ -124,11 +128,14 @@ export const useReviews = (selectedSurveyId?: string) => {
         performGenerateReports, isGeneratingReports,
         performSendReports, isSendingReports,
         loginWithGoogle, isLoggingIn,
+<<<<<<< HEAD
         loginWithFacebook, isLoggingInFacebook,
         loginWithMicrosoft, isLoggingInMicrosoft,
+        loginWithLinkedIn, isLoggingInLinkedIn,
+=======
         sendOTP, isSendingOTP,
         verifyOTP, isVerifyingOTP,
-        loginWithLinkedIn, isLoggingInLinkedIn,
+>>>>>>> develop
         adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
     }
 }

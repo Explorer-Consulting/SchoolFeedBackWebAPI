@@ -1,22 +1,23 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import mkcert from "vite-plugin-mkcert";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+export default defineConfig({
+  plugins: [react(), mkcert()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "src"),
     },
   },
-}));
+  server: {
+    https: {}, // TypeScript kompatibilis (true helyett üres objektum)
+    proxy: {
+      "/api": {
+        target: "http://localhost:7277", // backend HTTP
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+});
