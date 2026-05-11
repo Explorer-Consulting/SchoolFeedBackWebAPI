@@ -79,6 +79,18 @@ export const GetSurveysAdmin = async () => {
     return data;
 };
 
+// SendOTP - Sends OTP code to user's email
+export const SendOTP = async (email: string): Promise<unknown> => {
+    const { data } = await apiClient.post('/auth/otp/send', { email });
+    return data;
+};
+
+// VerifyOTP - Verifies OTP code and logs in the user
+export const VerifyOTP = async (email: string, code: string): Promise<unknown> => {
+    const { data } = await apiClient.post('/auth/otp/verify', { email, code });
+    return data;
+};
+
 export const GetQuestionnaireTemplatePreview = async (templateId) => {
     const { data } = await apiClient.get(`/questionnairetemplate/${templateId}/preview`); 
     return data;
