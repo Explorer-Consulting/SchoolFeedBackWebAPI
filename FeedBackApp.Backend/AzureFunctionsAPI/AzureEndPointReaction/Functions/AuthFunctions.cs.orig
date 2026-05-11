@@ -81,12 +81,21 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             GoogleJsonWebSignature.Payload payload;
             try
             {
+<<<<<<< HEAD
+                payload = await GoogleJsonWebSignature.ValidateAsync(
+                    data.IdToken,
+                    new GoogleJsonWebSignature.ValidationSettings
+                    {
+                        Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                    });
+=======
                 var googleClientId = Environment.GetEnvironmentVariable("GoogleClientId") 
                                      ?? Environment.GetEnvironmentVariable("Google:ClientId"); // Fallback for diff naming conventions
+>>>>>>> develop
 
                 payload = await GoogleJsonWebSignature.ValidateAsync(data.IdToken, new GoogleJsonWebSignature.ValidationSettings
                 {
-                        Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                    Audience = new[] { googleClientId }
                 });
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
             }
@@ -107,76 +116,6 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             // 6. Generate Token & Response
             return await CreateLoginResponse(req, payload.Email, payload.GivenName, payload.FamilyName, isAdmin, origin);
-        }
-
-        /// <summary>
-        /// Sends a One-Time Password (OTP) to the specified email address if the user is authorized.
-        /// </summary>
-        [Function("SendOtp")]
-        [OpenApiOperation(operationId: "SendOtp", tags: new[] { "Auth" })]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(SendOtpRequest), Required = true, Description = "Email address to send OTP to")]
-        public async Task<HttpResponseData> SendOtp(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/otp/send")] HttpRequestData req)
-        {
-            _logger.LogInformation("SendOtp function triggered.");
-
-            // 1. Handle CORS
-            var origin = GetOrigin(req);
-            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
-            {
-                return CreatePreflightResponse(req, origin);
-            }
-
-            // 2. Parse Body
-            var body = await new StreamReader(req.Body).ReadToEndAsync();
-            var data = JsonConvert.DeserializeObject<SendOtpRequest>(body);
-            
-            if (data is null || string.IsNullOrWhiteSpace(data.Email))
-            {
-                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Email is required", origin);
-            }
-
-            var email = data.Email.Trim().ToLowerInvariant();
-
-            // 3. Check Authorization
-            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-            var students = whitelist?.StudentEmails ?? new List<string>();
-            bool isAdmin = IsAdmin(email);
-
-            // LOGIC FIX: Changed from (students.Contains && !isAdmin) to (!students.Contains && !isAdmin)
-            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
-            {
-                _logger.LogWarning("Unauthorized OTP request. Email: {Email}", email);
-                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
-            }
-
-            try
-            {
-                // 4. Generate & Send
-                var otpCode = _otpService.GenerateOtp(email);
-                _logger.LogInformation("Generated OTP for {Email}", email);
-
-                var emailMessage = await _emailContentService.CreateOtpEmailAsync(email, otpCode);
-                var emailSent = await _emailSender.SendEmailAsync(emailMessage);
-
-                if (!emailSent)
-                {
-                    _logger.LogError("Failed to send OTP email to {Email}", email);
-                    return CreateErrorResponse(req, System.Net.HttpStatusCode.InternalServerError, "Failed to send email", origin);
-                }
-
-                _logger.LogInformation("OTP email sent successfully to {Email}", email);
-                
-                var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-                AddCorsHeaders(response, origin);
-                await response.WriteAsJsonAsync(new { message = "OTP sent successfully" });
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error sending OTP to {Email}", email);
-                return CreateErrorResponse(req, System.Net.HttpStatusCode.InternalServerError, "An error occurred while sending OTP", origin);
-            }
         }
 
         [Function("LoginWithFacebook")]
@@ -436,6 +375,76 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
 
         /// <summary>
+        /// Sends a One-Time Password (OTP) to the specified email address if the user is authorized.
+        /// </summary>
+        [Function("SendOtp")]
+        [OpenApiOperation(operationId: "SendOtp", tags: new[] { "Auth" })]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(SendOtpRequest), Required = true, Description = "Email address to send OTP to")]
+        public async Task<HttpResponseData> SendOtp(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/otp/send")] HttpRequestData req)
+        {
+            _logger.LogInformation("SendOtp function triggered.");
+
+            // 1. Handle CORS
+            var origin = GetOrigin(req);
+            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                return CreatePreflightResponse(req, origin);
+            }
+
+            // 2. Parse Body
+            var body = await new StreamReader(req.Body).ReadToEndAsync();
+            var data = JsonConvert.DeserializeObject<SendOtpRequest>(body);
+            
+            if (data is null || string.IsNullOrWhiteSpace(data.Email))
+            {
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Email is required", origin);
+            }
+
+            var email = data.Email.Trim().ToLowerInvariant();
+
+            // 3. Check Authorization
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist?.StudentEmails ?? new List<string>();
+            bool isAdmin = IsAdmin(email);
+
+            // LOGIC FIX: Changed from (students.Contains && !isAdmin) to (!students.Contains && !isAdmin)
+            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            {
+                _logger.LogWarning("Unauthorized OTP request. Email: {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
+            }
+
+            try
+            {
+                // 4. Generate & Send
+                var otpCode = _otpService.GenerateOtp(email);
+                _logger.LogInformation("Generated OTP for {Email}", email);
+
+                var emailMessage = await _emailContentService.CreateOtpEmailAsync(email, otpCode);
+                var emailSent = await _emailSender.SendEmailAsync(emailMessage);
+
+                if (!emailSent)
+                {
+                    _logger.LogError("Failed to send OTP email to {Email}", email);
+                    return CreateErrorResponse(req, System.Net.HttpStatusCode.InternalServerError, "Failed to send email", origin);
+                }
+
+                _logger.LogInformation("OTP email sent successfully to {Email}", email);
+                
+                var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+                AddCorsHeaders(response, origin);
+                await response.WriteAsJsonAsync(new { message = "OTP sent successfully" });
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending OTP to {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.InternalServerError, "An error occurred while sending OTP", origin);
+            }
+        }
+
+        /// <summary>
         /// Verifies the provided OTP code and issues a JWT if valid.
         /// </summary>
         [Function("VerifyOtp")]
@@ -592,6 +601,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         {
             public required string IdToken { get; set; }
         }
+<<<<<<< HEAD
         public class FacebookLoginRequest
         {
             public required string AccessToken { get; set; }
@@ -601,6 +611,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             public required string IdToken { get; set; }
         }
 
+=======
 
         public class SendOtpRequest
         {
@@ -613,5 +624,6 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             public required string Code { get; set; }
         }
         #endregion
+>>>>>>> develop
     }
 }

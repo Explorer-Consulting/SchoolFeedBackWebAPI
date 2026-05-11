@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import NoAccess from "./pages/NoAccess";
+import PasswordlessOTPLogin from "./pages/PasswordlessOTPLogin";
 import StudentDashboard from "./pages/dashboards/StudentDashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import QuestionnaireTemplatePreview from "./pages/QuestionnaireTemplatePreview";
@@ -25,7 +26,7 @@ const queryClient = new QueryClient({
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const App = () => (
-  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+  <GoogleOAuthProvider clientId="606846576960-dst2a6lkdpi7dcd9shi8deg9e2mphjqk.apps.googleusercontent.com"/*{GOOGLE_CLIENT_ID}*/>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -33,6 +34,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/passwordless-otp-login" element={<PasswordlessOTPLogin />} />
             <Route path="/dashboard/student" element={<StudentDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
             <Route

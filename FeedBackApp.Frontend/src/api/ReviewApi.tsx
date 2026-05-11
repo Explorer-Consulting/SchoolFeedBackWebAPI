@@ -9,6 +9,7 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
 //LoginWithGoogle
 export const LoginWithGoogle = async (idToken) => {
   const { data } = await apiClient.post("/auth/google", { IdToken: idToken });
@@ -29,6 +30,7 @@ export const LoginWithLinkedIn = async (accessToken) => {
     const { data } = await apiClient.post('/auth/linkedin', { AccessToken: accessToken });
     return data;
 };
+
 //PerformGetSurveyData
 export const GetQuestionnaires = async (id) => {
     const { data } = await apiClient.get(`/surveys/${id}`);

@@ -4,8 +4,11 @@ using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
 using ApplicationEventWorkers.SelfOptIn; 
+<<<<<<< HEAD
+=======
 using FeedBackApp.Backend.Infrastructure.Email;
 using FeedBackApp.Core.Email;
+>>>>>>> develop
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
@@ -22,7 +25,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+<<<<<<< HEAD
+=======
 using Microsoft.Extensions.Logging;
+>>>>>>> develop
 using QuestPDF.Infrastructure;
 using System.Text.Json;
 using Azure.Storage.Queues;
@@ -134,6 +140,7 @@ _ = builder.Configuration["Jwt:SecretKey"]
 _ = builder.Configuration["Google:ClientId"]
     ?? throw new InvalidOperationException("Missing Google:ClientId");
 
+<<<<<<< HEAD
 _ = builder.Configuration["Facebook:AppId"]
     ?? throw new InvalidOperationException("Missing Facebook:AppId");
 
@@ -146,6 +153,8 @@ _ = builder.Configuration["Microsoft:ClientId"]
 _ = builder.Configuration["Microsoft:TenantId"]
     ?? "common";
 
+=======
+>>>>>>> develop
 var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
 var adminEmails = rawAdminEmails
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -168,6 +177,16 @@ var certLoadPath = builder.Configuration["Certificates:LoadPath"];
 // ─────────────────────────────────────────────────────
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+<<<<<<< HEAD
+builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IWhitelistRepository, WhitelistRepository>();
+builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailRepository, EmailRepository>();
+
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+=======
 builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
 builder.Services.AddSingleton<Application.Services.Interfaces.IOtpService, Application.Services.OtpService>();
 builder.Services.AddScoped<IQuestionnaireRepository, QuestionnaireRepository>();
@@ -205,6 +224,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // Report service uses IBlobContext for blob storage operations
 builder.Services.AddScoped<EmailSendingFunctions>();
 builder.Services.AddScoped<AzureFunctionsAPI.AzureEndPointReaction.Functions.AuthFunctions>();
+>>>>>>> develop
 builder.Services.AddScoped<IReportService, ReportService>();    
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();

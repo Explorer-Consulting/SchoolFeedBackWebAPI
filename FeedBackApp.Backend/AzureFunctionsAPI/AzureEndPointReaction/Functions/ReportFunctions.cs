@@ -194,31 +194,129 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// </returns>
         [RequireAdmin]
         [Function("DeliverEvaluationReports")]
+        [OpenApiOperation(
+            operationId: "DeliverEvaluationReports",
+            tags: ["Reports", "Email"],
+            Summary = "Initiate email delivery for evaluation reports",
+            Description = "Compiles and queues email notifications for teachers and administrators based on survey results.")]
+        [OpenApiParameter(
+            name: "questionTemplate",
+            In = ParameterLocation.Path,
+            Required = true,
+            Type = typeof(string),
+            Summary = "Question template identifier (format: prefix_surveyId)",
+            Description = "The template identifier from which the survey ID will be extracted.")]
+        [OpenApiResponseWithBody(
+            statusCode: HttpStatusCode.Accepted,
+            contentType: "application/json",
+            bodyType: typeof(object),
+            Summary = "Email delivery initiated",
+            Description = "Email compilation and queuing has been successfully initiated.")]
+        [OpenApiResponseWithBody(
+            statusCode: HttpStatusCode.BadRequest,
+            contentType: "application/json",
+            bodyType: typeof(object),
+            Summary = "Invalid template format",
+            Description = "The question template format is invalid or missing the survey ID.")]
+        [OpenApiResponseWithoutBody(HttpStatusCode.Unauthorized)]
+        [OpenApiResponseWithoutBody(HttpStatusCode.Forbidden)]
+        [OpenApiResponseWithBody(
+            statusCode: HttpStatusCode.InternalServerError,
+            contentType: "application/json",
+            bodyType: typeof(object),
+            Summary = "Email compilation failed",
+            Description = "An error occurred while compiling email notifications.")]
         public async Task<HttpResponseData> DeliverEvaluationReports(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "reports/send/{questionTemplate}")] HttpRequestData request,
             string questionTemplate)
         {
-            string surveyId = questionTemplate.Split('_')[1];
-
-            if (string.IsNullOrWhiteSpace(surveyId))
+            if (string.IsNullOrWhiteSpace(questionTemplate))
             {
-                _reportLogger.LogWarning("Empty templateID received in DeliverEvaluationReports.");
-                var bad = request.CreateResponse(HttpStatusCode.BadRequest);
-                await bad.WriteAsJsonAsync(new { error = "Invalid templateID. The value cannot be null or whitespace." });
-                return bad;
+                _reportLogger.LogWarning("Empty questionTemplate parameter received in DeliverEvaluationReports");
+                var badRequest = request.CreateResponse(HttpStatusCode.BadRequest);
+                await badRequest.WriteAsJsonAsync(new 
+                { 
+                    error = "Invalid questionTemplate. The value cannot be null or whitespace.",
+                    parameter = "questionTemplate"
+                });
+                return badRequest;
             }
 
-            _reportLogger.LogInformation("DeliverEvaluationReports triggered. surveyId={surveyId}", surveyId);
+            // Extract survey ID from template format: "prefix_surveyId"
+            var templateParts = questionTemplate.Split('_', StringSplitOptions.RemoveEmptyEntries);
+            
+            if (templateParts.Length < 2)
+            {
+                _reportLogger.LogWarning(
+                    "Invalid questionTemplate format received: {QuestionTemplate}. Expected format: prefix_surveyId", 
+                    questionTemplate);
+                var badRequest = request.CreateResponse(HttpStatusCode.BadRequest);
+                await badRequest.WriteAsJsonAsync(new 
+                { 
+                    error = "Invalid questionTemplate format. Expected format: prefix_surveyId",
+                    received = questionTemplate,
+                    parameter = "questionTemplate"
+                });
+                return badRequest;
+            }
 
-            await _emailService.CompileReportEmailsAsync(new Guid(surveyId));
+            var surveyIdString = templateParts[1];
+
+            if (string.IsNullOrWhiteSpace(surveyIdString) || !Guid.TryParse(surveyIdString, out var surveyId))
+            {
+                _reportLogger.LogWarning(
+                    "Invalid survey ID extracted from questionTemplate: {QuestionTemplate}. Extracted: {SurveyId}", 
+                    questionTemplate, 
+                    surveyIdString);
+                var badRequest = request.CreateResponse(HttpStatusCode.BadRequest);
+                await badRequest.WriteAsJsonAsync(new 
+                { 
+                    error = "Invalid survey ID format. The survey ID must be a valid GUID.",
+                    extractedSurveyId = surveyIdString,
+                    parameter = "questionTemplate"
+                });
+                return badRequest;
+            }
+
+            _reportLogger.LogInformation(
+                "DeliverEvaluationReports triggered. questionTemplate={QuestionTemplate}, surveyId={SurveyId}", 
+                questionTemplate, 
+                surveyId);
+
+            try
+            {
+                await _emailService.CompileReportEmailsAsync(surveyId);
+
+                _reportLogger.LogInformation(
+                    "Successfully initiated email compilation for survey {SurveyId}", 
+                    surveyId);
 
             var response = request.CreateResponse(HttpStatusCode.Accepted);
             await response.WriteAsJsonAsync(new
             {
-                reportId = surveyId,
-                status = "Delivery initiated"
+                    surveyId = surveyId.ToString(),
+                    status = "Email delivery initiated",
+                    message = "Email notifications have been queued for delivery to teachers and administrators."
             });
             return response;
+            }
+            catch (Exception ex)
+            {
+                _reportLogger.LogError(
+                    ex, 
+                    "Error while compiling report emails for survey {SurveyId}. Error: {ErrorMessage}", 
+                    surveyId, 
+                    ex.Message);
+
+                var errorResponse = request.CreateResponse(HttpStatusCode.InternalServerError);
+                await errorResponse.WriteAsJsonAsync(new
+                {
+                    error = "Failed to compile email notifications.",
+                    surveyId = surveyId.ToString(),
+                    message = "An error occurred while processing the email delivery request."
+                });
+                return errorResponse;
+            }
         }
     }
 }

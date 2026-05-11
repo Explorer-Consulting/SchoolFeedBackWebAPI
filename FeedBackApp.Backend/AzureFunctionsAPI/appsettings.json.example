@@ -1,0 +1,28 @@
+{
+  "Email": {
+    "Templates": {
+      "survey-invitation": {
+        "Subject": "Kérdőív meghívó: {{SurveyName}}",
+        "Body": "Kedves kitöltő,<br/><br/>Kérünk töltsd ki a <b>{{SurveyName}}</b> nevű kérdőívet, és adj visszajelzést.<br/><br/><a href=\"{{FrontendUrl}}\">Kattints ide, hogy elkezdd a kérdőívek kitöltését</a>",
+        "IsHtml": true
+      },
+      "report-with-attachments": {
+        "Subject": "Kérdőív eredmények: {{SurveyName}}",
+        "Body": "Kedves kérdőív készítő,<br/><br/>Csatolva megtalálja a kérdőívek összesített eredményét <b>{{SurveyName}}</b>.",
+        "IsHtml": true
+      },
+      "admin-summary": {
+        "Subject": "Igazgatói összesítés: {{SurveyName}}",
+        "Body": "Kedves intézmény vezető,<br/><br/>Alább csatolotuk a <b>{{SurveyName}}</b> kérdőív összesített eredményeit.",
+        "IsHtml": true
+      },
+      "otp-passwordless-login": {
+        "Subject": "Email bejelentkezés",
+        "Body": "Kedves felhasználó,<br/><br/>Az alábbi egyszer használatos kóddal tud bejelentkezni a rendszerbe:<br/><b>{{OtpCode}}</b><br/>A kód rövid ideig érvényes. Ha nem ön kezdeményezte a bejelentkezést, kérjük hagyja figyelmen kívül az üzenetet.",
+        "IsHtml": true
+      },
+    }
+  }
+}
+
+
