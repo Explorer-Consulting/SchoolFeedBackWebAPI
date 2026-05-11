@@ -3,7 +3,7 @@ import axios from "axios"
 const API_URL = import.meta.env.VITE_API_BASE_URL
 
 const apiClient = axios.create({
-  baseURL: "/api", // ← proxy útvonal
+  baseURL: API_URL, 
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
