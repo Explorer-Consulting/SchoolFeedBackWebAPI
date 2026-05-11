@@ -191,26 +191,43 @@ export function FeedbackFormDynamic({
             { id, payload },
             {
                 onSuccess: (data: any) => {
+                    // Moderation / business reject
+                    if (data.success === false) {
+                        toast.error(
+                            data.message || "A beküldés moderáció miatt nem engedélyezett."
+                        );
+                        return;
+                    }
 
-                if (!data.success) {
-                    toast.error(data.message);
-                    return;
+                    // Success
+                    toast.success(data.message || "Kérdőív beküldve!");
+
+                    document.getElementById("topList")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+
+                    setTeacher(null);
+                    setSubject(null);
+
+                    onAfterChange();
+                },
+                onError: (error: any) => {
+
+                    const message =
+                        error?.response?.data?.message ||
+                        error?.message ||
+                        "";
+
+                    // moderációs case felismerése
+                    if (message.includes("offensive language")) {
+                        toast.error("A beküldés nem engedélyezett, mert sértő tartalmat tartalmaz.");
+                        return;
+                    }
+
+                    // egyéb hibák
+                    toast.error("Hiba történt a szerveren. Kérlek próbáld újra.");
                 }
-
-                toast.success("Kérdőív beküldve!");
-
-                document.getElementById("topList")?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-
-                setTeacher(null);
-                setSubject(null);
-
-                onAfterChange();
-            },
-
-                onError: () => { toast.error("Hiba történt a beküldés közben!"); }
             }
         )
     };
