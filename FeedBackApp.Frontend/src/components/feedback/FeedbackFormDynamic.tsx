@@ -190,16 +190,26 @@ export function FeedbackFormDynamic({
         performQuestionnaireSubmit(
             { id, payload },
             {
-                onSuccess: () => {
-                    toast.success("Kérdőív beküldve!");
-                    document.getElementById("topList")?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
-                    setTeacher(null);
-                    setSubject(null);
-                    onAfterChange();
-                },
+                onSuccess: (data: any) => {
+
+                if (!data.success) {
+                    toast.error(data.message);
+                    return;
+                }
+
+                toast.success("Kérdőív beküldve!");
+
+                document.getElementById("topList")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+
+                setTeacher(null);
+                setSubject(null);
+
+                onAfterChange();
+            },
+
                 onError: () => { toast.error("Hiba történt a beküldés közben!"); }
             }
         )
