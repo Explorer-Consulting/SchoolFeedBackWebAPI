@@ -25,7 +25,7 @@ export const useReviews = (selectedSurveyId?: string) => {
         isError: isErrorQuestionnaire,
         error: errorQuestionnaire,
         refetch: refetchQuestionnaires
-    } = useQuery({
+    } = useQuery<any>({
         queryKey: ['questionnaires', selectedSurveyId],
         queryFn: () => GetQuestionnaires(selectedSurveyId!),
         enabled: !!selectedSurveyId
@@ -95,7 +95,7 @@ export const useReviews = (selectedSurveyId?: string) => {
         isError: isErrorAdminSurveys,
         error: errorAdminSurveys,
         refetch: refetchAdminSurveys
-    } = useQuery({
+    } = useQuery<any>({
         queryKey: ['adminSurveys'],
         queryFn: () => GetSurveysAdmin(),
         enabled: false
