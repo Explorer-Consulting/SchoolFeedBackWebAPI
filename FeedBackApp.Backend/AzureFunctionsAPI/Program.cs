@@ -3,7 +3,7 @@ using Application.DTOs.Survey;
 using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
-using ApplicationEventWorkers.SelfOptIn; 
+using ApplicationEventWorkers.SelfOptIn;
 using FeedBackApp.Backend.Infrastructure.Email;
 using FeedBackApp.Core.Email;
 using Azure.Core.Serialization;
@@ -154,6 +154,9 @@ var certLoadPath = builder.Configuration["Certificates:LoadPath"];
 // ─────────────────────────────────────────────────────
 // 6) Services & repositories
 // ─────────────────────────────────────────────────────
+
+builder.Services.AddHttpClient<IModerationService, ModerationService>();
+
 builder.Services.AddScoped<ISurveyService, SurveyService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<IQuestionnaireService, QuestionnaireService>();
@@ -193,7 +196,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // Report service uses IBlobContext for blob storage operations
 builder.Services.AddScoped<EmailSendingFunctions>();
 builder.Services.AddScoped<AzureFunctionsAPI.AzureEndPointReaction.Functions.AuthFunctions>();
-builder.Services.AddScoped<IReportService, ReportService>();    
+builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 

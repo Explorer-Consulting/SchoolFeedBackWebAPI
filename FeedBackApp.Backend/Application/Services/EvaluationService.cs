@@ -6,6 +6,7 @@ using Application.Validation.UpdateValidation;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Services
 {
@@ -33,14 +34,18 @@ namespace Application.Services
     public class EvaluationService : IEvaluationService
     {
         private readonly IEvaluationRepository _repository;
+        private readonly IModerationService _moderationService;
+        private readonly ILogger<EvaluationService> _logger;
 
         /// <summary>
         /// Creates a new <see cref="EvaluationService"/> with the required repository dependency.
         /// </summary>
         /// <param name="repository">Repository for questionnaire persistence and metadata access.</param>
-        public EvaluationService(IEvaluationRepository repository)
+        public EvaluationService(IEvaluationRepository repository, IModerationService moderationService, ILogger<EvaluationService> logger)
         {
             _repository = repository;
+            _moderationService = moderationService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -95,6 +100,37 @@ namespace Application.Services
         /// <returns>Outcome including success flag and message.</returns>
         public async Task<SubmitResponseDTO> SubmitQuestionnaire(string id, SubmitQuestionnaireDTO dto)
         {
+            // 1. Answers kigyűjtése
+            var answers = dto.QuestionnaireResult
+                .Where(x => !string.IsNullOrWhiteSpace(x.Answer))
+                .Select(x => x.Answer.Trim())
+                .ToList();
+
+            // 2. Moderáció
+            if (answers.Any())
+            {
+                var combinedText = string.Join("\n---\n", answers);
+
+                try
+                {
+                    var offensive = await _moderationService
+                        .IsOffensiveAsync(combinedText);
+
+                    if (offensive)
+                    {
+                        return new SubmitResponseDTO(
+                            false,
+                            "The questionnaire contains offensive language."
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Moderation service failed");
+                }
+            }
+
+            // 3. Normál submit
             return await HandleQuestionnaireAsync(
                 id,
                 dto,
