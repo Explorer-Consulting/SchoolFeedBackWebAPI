@@ -29,6 +29,27 @@ using Azure.Storage.Queues;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
+// add Sentry before any particular job
+SentrySdk.Init(options =>
+{
+    // A Sentry Data Source Name (DSN) is required.
+    // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
+    // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
+    options.Dsn = "https://e527f85474f0587735eddc9531cae1a5@o4508133068963840.ingest.de.sentry.io/4510549831778384";
+
+    // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
+    // This might be helpful, or might interfere with the normal operation of your application.
+    // We enable it here for demonstration purposes when first trying Sentry.
+    // You shouldn't do this in your applications unless you're troubleshooting issues with Sentry.
+    options.Debug = true;
+
+    // This option is recommended. It enables Sentry's "Release Health" feature.
+    options.AutoSessionTracking = true;
+});
+
+SentrySdk.CaptureMessage("Hello Sentry");
+
+
 // ──────────────────────────────────────────────────---
 // 1) Modern isolated builder
 // ─────────────────────────────────────────────────────
