@@ -1,5 +1,4 @@
-name: Azure Static Web Apps CI/CD
-
+name: Frontend deploy (Explorer developer)
 on:
   push:
     branches:
