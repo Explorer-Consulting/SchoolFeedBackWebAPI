@@ -2,6 +2,15 @@
 {
     public partial class MainPage : ContentPage
     {
+        public static readonly BindableProperty IsLoadingProperty =
+            BindableProperty.Create(nameof(IsLoading), typeof(bool), typeof(MainPage), false);
+
+        public bool IsLoading
+        {
+            get => (bool)GetValue(IsLoadingProperty);
+            set => SetValue(IsLoadingProperty, value);
+        }
+
         public MainPage()
         {
             InitializeComponent();
@@ -35,17 +44,11 @@
             });
         }
 
-        private void buttonToClick_Clicked(object sender, EventArgs e)
-        {
-            barcodeResult.Text = "Click";
-        }
-
         private void cameraView_BarcodeDetected(object sender, Camera.MAUI.ZXingHelper.BarcodeEventArgs args)
         {
-            Console.WriteLine("asd");
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                barcodeResult.Text = args.Result[0].Text;
+                IsLoading = !IsLoading;
             });
         }
     }

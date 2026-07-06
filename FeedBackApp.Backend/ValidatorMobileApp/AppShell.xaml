@@ -7,7 +7,7 @@
     Title="ValidatorMobileApp">
 
     <ShellContent
-        Title="Home"
+        Title="Scan the QR-code for validation"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 

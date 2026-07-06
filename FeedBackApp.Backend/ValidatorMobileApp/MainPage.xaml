@@ -6,23 +6,26 @@
 
     <Grid Margin="20,35,20,20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="4*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="10*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <Label Grid.Row="0" x:Name="barcodeResult" Text="qqq" />
-        <cv:CameraView Grid.Row="1"
+        <cv:CameraView Grid.Row="0"
                        VerticalOptions="Fill"
                        HorizontalOptions="Fill"
                        x:Name="cameraView"  
                        CamerasLoaded="cameraView_CamerasLoaded" 
                        BarCodeDetectionEnabled="True"
-                       BarCodeDetectionFrameRate="10"
-                       BarcodeDetected="cameraView_BarcodeDetected"
                        />
-        <Button Grid.Row="2" x:Name="buttonToClick" Clicked="buttonToClick_Clicked"/>
+        <HorizontalStackLayout Grid.Row="1" Spacing="10" VerticalOptions="Center" HorizontalOptions="Center">
+            <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                       IsVisible="{Binding IsLoading}"
+                       Color="Blue" />
+            <Label Text="Loading data, please wait..." 
+           IsVisible="{Binding IsLoading}"
+           VerticalOptions="Center" />
+        </HorizontalStackLayout>
     </Grid>
 </ContentPage>
