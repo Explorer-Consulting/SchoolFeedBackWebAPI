@@ -12,5 +12,6 @@ namespace FeedBackApp.Core.Model
         public QuestionDependency? Dependency { get; set; }
         public required string Category { get; set; }
         public string Description { get; set; } = string.Empty;
+        public bool RequiredValidation { get; set; }
     }
 }
