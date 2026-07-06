@@ -36,6 +36,10 @@ More information: https://aka.ms/maui-privacy-manifest
                 <string>E174.1</string>
             </array>
         </dict>
+		<dict>
+			<key>NSCameraUsageDescription</key>
+			<string>This app needs access to the camera to take photos.</string>
+		</dict>
         <!--
             The entry below is only needed when you're using the Preferences API in your app.
         <dict>

@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using CommunityToolkit.Maui;
+using Camera.MAUI;
 
 namespace ValidatorMobileApp
 {
@@ -10,7 +10,7 @@ namespace ValidatorMobileApp
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
-			    .UseMauiCommunityToolkitCamera()
+			    .UseMauiCameraView()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
