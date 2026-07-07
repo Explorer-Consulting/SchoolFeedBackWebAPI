@@ -28,7 +28,7 @@
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
 		<!-- Display name -->
-		<ApplicationTitle>ValidatorMobileApp</ApplicationTitle>
+		<ApplicationTitle>Validator</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.validatormobileapp</ApplicationId>
@@ -49,7 +49,7 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\explorer_consulting.jpg" ForegroundScale="0.65" />
+		<MauiIcon Include="Resources\AppIcon\explorer_consulting.png" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
