@@ -155,6 +155,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         {
             foreach (var q in questions)
             {
+                if (q.RequiredValidation == false)
+                    continue;
+
                 switch (q.Type)
                 {
                     case QuestionType.LikertScaleOneToFive:
