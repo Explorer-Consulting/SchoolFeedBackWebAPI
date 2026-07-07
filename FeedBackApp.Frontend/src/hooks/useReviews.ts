@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP } from "@/api/ReviewApi"
+import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP,  EnableSelfOptIn, 
+    GenerateShareLink } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import { Survey } from "@/models/StudentContext"
@@ -114,6 +115,15 @@ export const useReviews = (selectedSurveyId?: string) => {
         enabled: false
     });
 
+    const { mutate: enableSelfOptIn, isPending: isEnablingSelfOptIn } = useMutation({
+        mutationFn: (templateId: string) => EnableSelfOptIn(templateId)
+    });
+
+    const { mutate: generateShareLink, isPending: isGeneratingShareLink } = useMutation({
+        mutationFn: ({ templateId, minutes }: { templateId: string; minutes?: number }) => 
+            GenerateShareLink(templateId, minutes)
+    });
+
     return {
         createQuestionnaires, isCreatingQuestionnaire,
         querySurveys, isLoadingSurveys, isErrorSurveys, errorSurveys, refetchSurveys,
@@ -130,5 +140,7 @@ export const useReviews = (selectedSurveyId?: string) => {
         verifyOTP, isVerifyingOTP,
         loginWithLinkedIn, isLoggingInLinkedIn,
         adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
+        enableSelfOptIn, isEnablingSelfOptIn,
+        generateShareLink, isGeneratingShareLink,
     }
 }

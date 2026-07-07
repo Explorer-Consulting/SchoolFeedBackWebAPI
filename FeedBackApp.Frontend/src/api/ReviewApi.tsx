@@ -95,3 +95,27 @@ export const GetQuestionnaireTemplatePreview = async (templateId) => {
     const { data } = await apiClient.get(`/questionnairetemplate/${templateId}/preview`); 
     return data;
 };
+// Enable self opt-in for a template (debug endpoint)
+export const EnableSelfOptIn = async (templateId: string): Promise<unknown> => {
+    const { data } = await apiClient.post(`/debug/templates/${templateId}/enable-optin`);
+    return data;
+};
+
+// Generate share link for QR code
+export const GenerateShareLink = async (
+    templateId: string, 
+    minutes: number = 525600 // one year
+): Promise<{ url: string; expiresAt: string }> => {
+    const { data } = await apiClient.get(`/optin/share-link/${templateId}`, {
+        params: { minutes }
+    });
+    return data;
+};
+
+// Self opt-in - creates a questionnaire instance for the authenticated user
+export const SelfOptIn = async (templateId: string, optInToken: string): Promise<unknown> => {
+    const { data } = await apiClient.post(`/templates/${templateId}/self-opt-in`, {
+        optInToken: optInToken
+    });
+    return data;
+};
