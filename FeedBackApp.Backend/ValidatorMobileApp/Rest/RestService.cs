@@ -12,7 +12,6 @@ namespace ValidatorMobileApp.Rest
 
         public static async Task<string> ValidateFromQRCodeAsync(string id)
         {
-            var cucc = Environment.GetEnvironmentVariables();
             var domain = "https://studentfeedback-dev-api.azurewebsites.net";
 #if DEBUG
             domain = "http://192.168.0.171:7277";
