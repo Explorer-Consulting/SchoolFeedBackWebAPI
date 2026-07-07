@@ -229,7 +229,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// </list>
         /// </summary>
         public static async IAsyncEnumerable<ReportDocument> CompileReports(
-            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
+            ImmutableDictionary<Teacher, ImmutableArray<QuestionnaireSubmission>> rawData,
             ImmutableArray<QuestionTemplate> rawQuestions,
             string surveyId)
         {
@@ -240,7 +240,14 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             {
                 var teacher = entry.Key;
                 var answers = entry.Value;
-                var idx = BuildAnswersIndex(answers);
+
+                // select only validated submissions
+                var validatedAnswers = answers
+                    .Where(questionnaireSubmission => questionnaireSubmission.IsValidate)
+                    .SelectMany(s => s.QuestionnaireResults)
+                    .ToImmutableArray();
+
+                var idx = BuildAnswersIndex(validatedAnswers);
 
                 var safeTeacher = San(teacher.EmailAddress);
                 var safeSubject = San(teacher.SubjectName);
@@ -263,7 +270,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
             // 2/a) Global PDF
             {
-                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
+                    .Where(questionnaireSubmission => questionnaireSubmission.IsValidate)
+                    .SelectMany(s => s.QuestionnaireResults)
+                    .ToImmutableArray();
+
                 var globalIndex = BuildAnswersIndex(allData);
 
                 const string fileName = "global_report.pdf";
@@ -293,7 +304,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 };
 
                 var adminExcel = new ExcelReportDocument(metadata);
-                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
+                    .Where(questionnaireSubmission => questionnaireSubmission.IsValidate)
+                    .SelectMany(s => s.QuestionnaireResults)
+                    .ToImmutableArray();
                 ReportDocument compiledExcel;
                 Task<byte[]> renderTask;
                 CreateRenderOfDocument(rawQuestions, adminExcel, allData, out compiledExcel, out renderTask);
