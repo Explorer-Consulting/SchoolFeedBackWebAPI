@@ -48,7 +48,10 @@
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                IsLoading = !IsLoading;
+                label.IsVisible = !label.IsVisible;
+                indicator.IsVisible = !indicator.IsVisible;
+                indicator.IsRunning = !indicator.IsRunning;
+                Console.WriteLine("asd");
             });
         }
     }

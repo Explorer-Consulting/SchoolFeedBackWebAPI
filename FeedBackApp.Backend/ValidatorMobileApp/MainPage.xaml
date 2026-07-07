@@ -20,12 +20,14 @@
                        BarCodeDetectionEnabled="True"
                        />
         <HorizontalStackLayout Grid.Row="1" Spacing="10" VerticalOptions="Center" HorizontalOptions="Center">
-            <ActivityIndicator IsRunning="{Binding IsLoading}" 
-                       IsVisible="{Binding IsLoading}"
-                       Color="Blue" />
-            <Label Text="Loading data, please wait..." 
-           IsVisible="{Binding IsLoading}"
-           VerticalOptions="Center" />
+            <ActivityIndicator IsRunning="False" 
+                               IsVisible="False"
+                               Color="Blue"
+                               x:Name="indicator"/>
+            <Label Text="Waiting for QR code..." 
+                   IsVisible="True"
+                   VerticalOptions="Center"
+                   x:Name="label"/>
         </HorizontalStackLayout>
     </Grid>
 </ContentPage>
