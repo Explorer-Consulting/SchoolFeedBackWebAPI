@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace ValidatorMobileApp
+namespace ValidatorMobileApp.Rest
 {
     public class RestService
     {
@@ -12,7 +12,12 @@ namespace ValidatorMobileApp
 
         public static async Task<string> ValidateFromQRCodeAsync(string id)
         {
-            var url = $"http://192.168.0.171:7277/api/surveys/{id}/validate";
+            var cucc = Environment.GetEnvironmentVariables();
+            var domain = "https://studentfeedback-dev-api.azurewebsites.net";
+#if DEBUG
+            //domain = "http://192.168.0.171:7277";
+#endif
+            var url = $"{domain}/api/surveys";
             Uri uri = new Uri(string.Format(url, string.Empty));
             try
             {

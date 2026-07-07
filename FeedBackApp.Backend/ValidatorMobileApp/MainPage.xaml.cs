@@ -1,4 +1,7 @@
-﻿namespace ValidatorMobileApp
+﻿using ValidatorMobileApp.Rest;
+using Newtonsoft.Json;
+
+namespace ValidatorMobileApp
 {
     public partial class MainPage : ContentPage
     {
@@ -53,25 +56,40 @@
                 indicator.IsVisible = true;
                 indicator.IsRunning = true;
 
-                var code = args.Result[0].Text;
-                var isValid = await RestService.ValidateFromQRCodeAsync(code);
-                if (isValid.Equals("success"))
+                try
                 {
-                    label.Text = "Validation Successful!";
-                }
-                else if (isValid.Equals("fail"))
-                {
-                    label.Text = "Validation failed!";
-                } 
-                else
-                {
-                    label.Text = "An error occured while trying to validate.\n Please try again.";
-                }
+                    var code = JsonConvert.DeserializeObject<QRCodeContent>(args.Result[0].Text);
+                    if (code == null)
+                    {
+                        label.Text = "QR code was not recognized az proper\nvalidation code.";
+                        return;
+                    }
+                    var isValid = await RestService.ValidateFromQRCodeAsync(code.id);
+                    if (isValid.Equals("success"))
+                    {
+                        label.Text = "Validation Successful!";
+                    }
+                    else if (isValid.Equals("fail"))
+                    {
+                        label.Text = "Validation failed!";
+                    }
+                    else
+                    {
+                        label.Text = "An error occured while trying to validate.\nPlease try again.";
+                    }
 
-                indicator.IsRunning = false;
-                indicator.IsVisible = false;
-                label.IsVisible = true;
-                cameraView.BarCodeDetectionEnabled = true;
+                }
+                catch (Exception e)
+                {
+                    label.Text = "QR code was not recognized\nas a proper validation code.";
+                }
+                finally
+                {
+                    indicator.IsRunning = false;
+                    indicator.IsVisible = false;
+                    label.IsVisible = true;
+                    cameraView.BarCodeDetectionEnabled = true;
+                }
             });
         }
     }
