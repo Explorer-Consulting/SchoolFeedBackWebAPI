@@ -304,7 +304,7 @@ namespace Application.Services
         {
             try
             {
-                var questionnaire = await _questionnaireRepository.GetQuestionnaireByIdAsync(id);
+                var questionnaire = await _questionnaireRepository.GetQuestionnaireByIdWithTrackingAsync(id);
 
                 if (questionnaire == null)
                 {

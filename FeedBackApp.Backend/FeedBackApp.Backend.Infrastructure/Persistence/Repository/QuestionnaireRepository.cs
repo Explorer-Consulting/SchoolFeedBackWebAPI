@@ -240,6 +240,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         }
 
         /// <summary>
+        /// Retrieves a questionnaire by its composite identifier and the object is being tracked by EF.
+        /// </summary>
+        /// <param name="id">Questionnaire id formatted as <c>{studentEmail}_{teacherEmail}_{subject}_{surveyId}</c>.</param>
+        /// <returns>The questionnaire if found; otherwise <c>null</c>.</returns>
+        public async Task<Questionnaire?> GetQuestionnaireByIdWithTrackingAsync(string id)
+        {
+            return await _context.Questionnaires.FirstOrDefaultAsync(q => q.Id == id);
+        }
+
+        /// <summary>
         /// Retrieves survey metadata by its identifier.
         /// </summary>
         /// <param name="surveyId">Survey identifier.</param>

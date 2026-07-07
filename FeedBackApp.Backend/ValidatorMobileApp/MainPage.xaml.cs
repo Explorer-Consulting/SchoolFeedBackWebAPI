@@ -46,12 +46,32 @@
 
         private void cameraView_BarcodeDetected(object sender, Camera.MAUI.ZXingHelper.BarcodeEventArgs args)
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            MainThread.BeginInvokeOnMainThread(async () =>
             {
-                label.IsVisible = !label.IsVisible;
-                indicator.IsVisible = !indicator.IsVisible;
-                indicator.IsRunning = !indicator.IsRunning;
-                Console.WriteLine("asd");
+                cameraView.BarCodeDetectionEnabled = false;
+                label.IsVisible = false;
+                indicator.IsVisible = true;
+                indicator.IsRunning = true;
+
+                var code = args.Result[0].Text;
+                var isValid = await RestService.ValidateFromQRCodeAsync(code);
+                if (isValid.Equals("success"))
+                {
+                    label.Text = "Validation Successful!";
+                }
+                else if (isValid.Equals("fail"))
+                {
+                    label.Text = "Validation failed!";
+                } 
+                else
+                {
+                    label.Text = "An error occured while trying to validate.\n Please try again.";
+                }
+
+                indicator.IsRunning = false;
+                indicator.IsVisible = false;
+                label.IsVisible = true;
+                cameraView.BarCodeDetectionEnabled = true;
             });
         }
     }
