@@ -4,11 +4,7 @@ namespace ValidatorMobileApp.Rest
 {
     public class RestService
     {
-        private static HttpClient _client = new HttpClient();
-
-        public RestService()
-        {
-        }
+        private static readonly HttpClient _client = new();
 
         public static async Task<string> ValidateFromQRCodeAsync(string id)
         {
