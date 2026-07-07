@@ -269,5 +269,16 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             return activeSurveys;
         }
+
+        /// <summary>
+        /// Updates an existing questionnaire document in the database.
+        /// </summary>
+        /// <param name="questionnaire"></param>
+        /// <returns></returns>
+        public async Task UpdateQuestionnaireAsync(Questionnaire questionnaire)
+        {
+            _context.Update(questionnaire);
+            await _context.SaveChangesAsync();
+        }
     }
 }
