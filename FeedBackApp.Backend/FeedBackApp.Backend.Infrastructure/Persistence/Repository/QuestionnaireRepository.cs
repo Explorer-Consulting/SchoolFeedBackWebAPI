@@ -235,7 +235,6 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
             return await _context.Questionnaires
-                .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == id);
         }
 
