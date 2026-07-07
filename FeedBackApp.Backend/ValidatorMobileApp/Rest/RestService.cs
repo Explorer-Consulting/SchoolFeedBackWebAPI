@@ -15,9 +15,9 @@ namespace ValidatorMobileApp.Rest
             var cucc = Environment.GetEnvironmentVariables();
             var domain = "https://studentfeedback-dev-api.azurewebsites.net";
 #if DEBUG
-            //domain = "http://192.168.0.171:7277";
+            domain = "http://192.168.0.171:7277";
 #endif
-            var url = $"{domain}/api/surveys";
+            var url = $"{domain}/api/surveys/{id}/validate";
             Uri uri = new Uri(string.Format(url, string.Empty));
             try
             {
