@@ -5,23 +5,11 @@ namespace ValidatorMobileApp
 {
     public partial class MainPage : ContentPage
     {
-        public static readonly BindableProperty IsLoadingProperty =
-            BindableProperty.Create(nameof(IsLoading), typeof(bool), typeof(MainPage), false);
-
-        public bool IsLoading
-        {
-            get => (bool)GetValue(IsLoadingProperty);
-            set => SetValue(IsLoadingProperty, value);
-        }
-
         public MainPage()
         {
             InitializeComponent();
             cameraView.BarCodeOptions = new()
             {
-                TryInverted=true,
-                AutoRotate = true,
-                TryHarder = true,
                 PossibleFormats = { Camera.MAUI.BarcodeFormat.QR_CODE }
             };
             cameraView.BarCodeDecoder = new Camera.MAUI.ZXing.ZXingBarcodeDecoder();
