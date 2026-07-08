@@ -21,6 +21,7 @@ namespace ValidatorMobileApp.Rest
         {
             var domain = "https://studentfeedback-dev-api.azurewebsites.net";
 #if DEBUG
+            // The IP address of your laptop or computer that you run the local server on.
             domain = "http://192.168.0.171:7277";
 #endif
 
