@@ -155,9 +155,6 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         {
             foreach (var q in questions)
             {
-                if (q.RequiredValidation == false)
-                    continue;
-
                 switch (q.Type)
                 {
                     case QuestionType.LikertScaleOneToFive:
@@ -235,6 +232,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         {
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
+            var requiredQuestionIds = rawQuestions.Where(q => q.RequiredValidation).Select(q => q.Id).ToImmutableHashSet();
+
             // 1) Teacher-specific PDFs
             foreach (var entry in rawData)
             {
@@ -243,8 +242,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                 // select only validated submissions
                 var validatedAnswers = answers
-                    .Where(questionnaireSubmission => questionnaireSubmission.IsValidate)
-                    .SelectMany(s => s.QuestionnaireResults)
+                    .SelectMany(submission => submission.QuestionnaireResults
+                        .Where(answer => submission.IsValidate || !requiredQuestionIds.Contains(answer.QuestionId)))
                     .ToImmutableArray();
 
                 var idx = BuildAnswersIndex(validatedAnswers);
@@ -271,8 +270,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             // 2/a) Global PDF
             {
                 var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
-                    .Where(questionnaireSubmission => questionnaireSubmission.IsValidate)
-                    .SelectMany(s => s.QuestionnaireResults)
+                    .SelectMany(s => s.QuestionnaireResults
+                        .Where(answer => s.IsValidate || !requiredQuestionIds.Contains(answer.QuestionId)))
                     .ToImmutableArray();
 
                 var globalIndex = BuildAnswersIndex(allData);
@@ -305,9 +304,9 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
                 var adminExcel = new ExcelReportDocument(metadata);
                 var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
-                    .Where(questionnaireSubmission => questionnaireSubmission.IsValidate)
-                    .SelectMany(s => s.QuestionnaireResults)
-                    .ToImmutableArray();
+                   .SelectMany(s => s.QuestionnaireResults
+                        .Where(answer => s.IsValidate || !requiredQuestionIds.Contains(answer.QuestionId)))
+                   .ToImmutableArray();
                 ReportDocument compiledExcel;
                 Task<byte[]> renderTask;
                 CreateRenderOfDocument(rawQuestions, adminExcel, allData, out compiledExcel, out renderTask);
