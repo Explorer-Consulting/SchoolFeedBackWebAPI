@@ -104,7 +104,7 @@ export const EnableSelfOptIn = async (templateId: string): Promise<unknown> => {
 // Generate share link for QR code
 export const GenerateShareLink = async (
     templateId: string, 
-    minutes: number = 525600 // one year
+    minutes: number = 525600 * 50 // one year * 50 = 50 year
 ): Promise<{ url: string; expiresAt: string }> => {
     const { data } = await apiClient.get(`/optin/share-link/${templateId}`, {
         params: { minutes }
