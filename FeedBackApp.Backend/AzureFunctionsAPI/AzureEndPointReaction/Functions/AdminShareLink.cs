@@ -42,7 +42,8 @@ public class AdminShareLink
         var exp = DateTimeOffset.UtcNow.AddMinutes(minutes);
 
         var token = _tokens.CreateToken(templateId, tag, exp);
-        var url = $"http://localhost:8080/questionnairetemplate/{tid}/preview?optin={Uri.EscapeDataString(token)}";
+        var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl");
+        var url = $"{frontendUrl}/questionnairetemplate/{tid}/preview?optin={Uri.EscapeDataString(token)}";
         // templates/tid nem kell
         // endpoint
 
