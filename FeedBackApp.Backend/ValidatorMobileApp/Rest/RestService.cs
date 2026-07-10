@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using Microsoft.Extensions.Configuration;
+using System.Net;
 using System.Text;
 
 namespace ValidatorMobileApp.Rest
@@ -19,18 +20,14 @@ namespace ValidatorMobileApp.Rest
 
         public static async Task<string> ValidateFromQRCodeAsync(string id)
         {
-            var domain = "https://studentfeedback-dev-api.azurewebsites.net";
-#if DEBUG
-            // The IP address of your laptop or computer that you run the local server on.
-            domain = "http://192.168.0.171:7277";
-#endif
+            var baseUrl = AppConfig.BaseUrl;
 
             CookieContainer.Add(
-               new Uri(domain),
+               new Uri(baseUrl),
                new Cookie("token", API_KEY)
             );
 
-            var url = $"{domain}/api/surveys/{id}/validate";
+            var url = $"{baseUrl}/api/surveys/{id}/validate";
             Uri uri = new Uri(string.Format(url, string.Empty));
             try
             {
