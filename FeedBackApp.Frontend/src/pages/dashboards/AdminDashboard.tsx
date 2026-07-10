@@ -171,7 +171,7 @@ export default function AdminDashboard() {
     // Enable self optin link generation
     enableSelfOptIn(selectedQuestionnaireId, {
       onSuccess: () => {
-        const expirationMinutes = 525600; // 1 year
+        const expirationMinutes = 525600 * 50; // 1 year * 50 = 50 year
         // Generate share link
         generateShareLink(
           { templateId: selectedQuestionnaireId, minutes: expirationMinutes },
