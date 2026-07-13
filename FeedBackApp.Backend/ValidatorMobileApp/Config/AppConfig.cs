@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace ValidatorMobileApp
+namespace ValidatorMobileApp.Config
 {
     public static class AppConfig
     {
@@ -8,7 +8,7 @@ namespace ValidatorMobileApp
 
         static AppConfig()
         {
-            using var stream = FileSystem.OpenAppPackageFileAsync($"appsettings.dev.json")
+            using var stream = FileSystem.OpenAppPackageFileAsync($"appsettings.{EnvironmentHelper.EnvironmentName}.json")
                 .GetAwaiter()
                 .GetResult();
 

@@ -81,4 +81,12 @@
 	  <Folder Include="Resources\Images\" />
 	</ItemGroup>
 
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<DefineConstants>$(DefineConstants);APPENV_development</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DefineConstants>$(DefineConstants);APPENV_production</DefineConstants>
+	</PropertyGroup>
+
 </Project>
