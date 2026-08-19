@@ -1,0 +1,39 @@
+name: Validator Mobile App CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'FeedBackApp.Backend/ValidatorMobileApp/**'   # csak akkor fusson, ha tényleg a mobil app változott
+  workflow_dispatch:   # manuálisan is elindítható a GitHub Actions fülön, ha épp tesztelni akarod
+
+env:
+  PROJECT_PATH: './FeedBackApp.Backend/ValidatorMobileApp/ValidatorMobileApp.csproj'
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest   # Android build nem igényel Windows-t vagy Mac-et, Linuxon olcsóbb és gyorsabb
+
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install required MAUI workloads
+        run: dotnet workload restore ${{ env.PROJECT_PATH }}
+
+      - name: Build & publish Android APK (Release)
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -f net10.0-android
+
+      - name: Upload APK as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: validator-mobile-app-apk
+          path: '**/bin/Release/net10.0-android/publish/*-Signed.apk'
+          if-no-files-found: error
