@@ -1,5 +1,6 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -23,6 +24,7 @@ public class AdminShareLink
     private readonly IOptInTokenService _tokens;
     public AdminShareLink(IOptInTokenService tokens) => _tokens = tokens;
 
+    [RequireAdmin]
     [Function("ShareOptInLink")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post",

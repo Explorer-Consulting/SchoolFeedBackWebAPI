@@ -6,6 +6,7 @@ using FeedBackApp.Core.Model;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
@@ -32,6 +33,7 @@ public class TemplateSelfOptIn
 
     private sealed class RequestDto { public string? OptInToken { get; set; } }
 
+    [RequireStudent]
     [Function("TemplateSelfOptIn")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post",

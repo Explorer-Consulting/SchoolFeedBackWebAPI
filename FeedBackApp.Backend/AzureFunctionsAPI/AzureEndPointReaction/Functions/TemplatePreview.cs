@@ -1,5 +1,6 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Core.Model;
 using Microsoft.Azure.Functions.Worker;
@@ -164,6 +165,7 @@ public class TemplatePreview
     }
     
     // 2.) turn opt-in on & off
+    [RequireAdmin]
     [Function("DebugEnableOptIn")]
     public async Task<HttpResponseData> DebugEnableOptIn(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "debug/templates/{guid}/enable-optin")]
