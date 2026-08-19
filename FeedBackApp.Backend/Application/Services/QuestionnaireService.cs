@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.Questionnaire;
+using Application.DTOs.Questionnaire.Post;
 using Application.DTOs.Survey;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
@@ -292,6 +293,31 @@ namespace Application.Services
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// Marks a questionnaire as validated, indicating the QR code has been scanned
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<ValidationResponseDTO> ValidateQuestionnaireAsync(string id)
+        {
+            try
+            {
+                var questionnaire = await _questionnaireRepository.GetQuestionnaireByIdWithTrackingAsync(id);
+
+                if (questionnaire == null)
+                {
+                    return new ValidationResponseDTO(false, "Questionnaire not found.");
+                }
+                questionnaire.IsValidate = true;
+                await _questionnaireRepository.UpdateQuestionnaireAsync(questionnaire);
+                return new ValidationResponseDTO(true, "Questionnaire validated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new ValidationResponseDTO(false, $"Error validating questionnaire: {ex.Message}");
+        }
         }
     }
 }

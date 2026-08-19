@@ -28,6 +28,7 @@ public sealed class QuestionnaireConfiguration : IEntityTypeConfiguration<Questi
         builder.Property(x => x.TeacherEmail).ToJsonProperty("teacherEmail").IsRequired();
         builder.Property(x => x.StudentEmail).ToJsonProperty("studentEmail").IsRequired();
         builder.Property(x => x.SubjectName).ToJsonProperty("subjectName").IsRequired();
+        builder.Property(x => x.IsValidate).ToJsonProperty("isValidate").IsRequired();
 
         builder.OwnsMany(x => x.QuestionnaireResults, qa =>
         {
