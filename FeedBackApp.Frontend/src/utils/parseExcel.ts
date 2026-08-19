@@ -43,6 +43,10 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             }
           }
 
+          const requiredValidationValue = String(row.requiredValidation).trim().toLowerCase();
+          const requiredValidationFieldValue: boolean = requiredValidationValue === "true" || requiredValidationValue === "1" 
+          || requiredValidationValue === "igen";
+
           return {
             question: row.question,
             type: row.type,
@@ -50,6 +54,7 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             ...(row.description ? { description: String(row.description) } : {}),
             ...(answerOptions ? { answerOptions } : {}),
             ...(dependency ? { dependency } : {}),
+            requiredValidation: requiredValidationFieldValue
           };
         });
 

@@ -12,6 +12,7 @@ import PasswordlessOTPLogin from "./pages/PasswordlessOTPLogin";
 import StudentDashboard from "./pages/dashboards/StudentDashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import QuestionnaireTemplatePreview from "./pages/QuestionnaireTemplatePreview";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const App = () => (
   <GoogleOAuthProvider clientId="606846576960-dst2a6lkdpi7dcd9shi8deg9e2mphjqk.apps.googleusercontent.com"/*{GOOGLE_CLIENT_ID}*/>
     <QueryClientProvider client={queryClient}>
+      {import.meta.env.VITE_REACT_QUERY_DEVTOOLS === "true" && (<ReactQueryDevtools initialIsOpen={false} />)}
       <TooltipProvider>
         <Toaster />
         <Sonner />

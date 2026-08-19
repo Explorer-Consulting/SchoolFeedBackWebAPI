@@ -226,18 +226,27 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
         /// </list>
         /// </summary>
         public static async IAsyncEnumerable<ReportDocument> CompileReports(
-            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> rawData,
+            ImmutableDictionary<Teacher, ImmutableArray<QuestionnaireSubmission>> rawData,
             ImmutableArray<QuestionTemplate> rawQuestions,
             string surveyId)
         {
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
+
+            var notRequiredValidationQuestionIds = rawQuestions.Where(q => !q.RequiredValidation).Select(q => q.Id).ToImmutableHashSet();
 
             // 1) Teacher-specific PDFs
             foreach (var entry in rawData)
             {
                 var teacher = entry.Key;
                 var answers = entry.Value;
-                var idx = BuildAnswersIndex(answers);
+
+                // select only validated submissions
+                var validatedAnswers = answers
+                    .SelectMany(submission => submission.QuestionnaireResults
+                        .Where(answer => submission.IsValidate || notRequiredValidationQuestionIds.Contains(answer.QuestionId)))
+                    .ToImmutableArray();
+
+                var idx = BuildAnswersIndex(validatedAnswers);
 
                 var safeTeacher = San(teacher.EmailAddress);
                 var safeSubject = San(teacher.SubjectName);
@@ -260,7 +269,11 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
 
             // 2/a) Global PDF
             {
-                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
+                    .SelectMany(s => s.QuestionnaireResults
+                        .Where(answer => s.IsValidate || notRequiredValidationQuestionIds.Contains(answer.QuestionId)))
+                    .ToImmutableArray();
+
                 var globalIndex = BuildAnswersIndex(allData);
 
                 const string fileName = "global_report.pdf";
@@ -290,7 +303,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 };
 
                 var adminExcel = new ExcelReportDocument(metadata);
-                var allData = rawData.Values.SelectMany(x => x).ToImmutableArray();
+                var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
+                   .SelectMany(s => s.QuestionnaireResults
+                        .Where(answer => s.IsValidate || notRequiredValidationQuestionIds.Contains(answer.QuestionId)))
+                   .ToImmutableArray();
                 ReportDocument compiledExcel;
                 Task<byte[]> renderTask;
                 CreateRenderOfDocument(rawQuestions, adminExcel, allData, out compiledExcel, out renderTask);

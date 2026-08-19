@@ -132,7 +132,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The ID of the questionnaire to validate.")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(ValidationResponseDTO))]
         public async Task<HttpResponseData> ValidateQuestionnaire(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "surveys/{id}/validate")] HttpRequestData request, string id)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "questionnaires/{id}/validate")] HttpRequestData request, string id)
         {
             try
             {
