@@ -1,5 +1,6 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -23,6 +24,7 @@ public class AdminShareLink
     private readonly IOptInTokenService _tokens;
     public AdminShareLink(IOptInTokenService tokens) => _tokens = tokens;
 
+    [RequireAdmin]
     [Function("ShareOptInLink")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post",
@@ -42,7 +44,8 @@ public class AdminShareLink
         var exp = DateTimeOffset.UtcNow.AddMinutes(minutes);
 
         var token = _tokens.CreateToken(templateId, tag, exp);
-        var url = $"http://localhost:7071/api/templates/{tid}/preview?optin={Uri.EscapeDataString(token)}";
+        var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl");
+        var url = $"{frontendUrl}/questionnairetemplate/{tid}/preview?optin={Uri.EscapeDataString(token)}";
         // templates/tid nem kell
         // endpoint
 

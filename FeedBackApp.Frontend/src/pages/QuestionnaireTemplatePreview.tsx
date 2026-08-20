@@ -8,7 +8,9 @@ import DynamicQuestion from "@/components/feedback/DynamicQuestion";
 import type { Question, QuestionID, QuestionType } from "@/models/StudentContext";
 import { isNewCategory, isMulti } from "@/utils/feedBackFormHelper";
 
-import { GetQuestionnaireTemplatePreview } from "@/api/ReviewApi";
+import { GetQuestionnaireTemplatePreview, SelfOptIn } from "@/api/ReviewApi";  
+import { toast } from "sonner"; 
+import { useAuthStore } from "@/hooks/useAuth";  
 
 type BackendQuestionTemplate = {
   Id?: string;
@@ -88,6 +90,10 @@ export default function QuestionnaireTemplatePreview() {
   const [data, setData] = useState<PreviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
+  const user = useAuthStore((s) => s.user);
+
 
   useEffect(() => {
     if (!id) return;
@@ -104,6 +110,52 @@ export default function QuestionnaireTemplatePreview() {
       }
     })();
   }, [id]);
+
+  const handleSelfOptIn = async () => {
+    if (!id) return;
+    
+    // Check the user is logged in
+    if (!user) {
+      toast.error("Be kell jelentkezned a feliratkozáshoz!");
+      navigate("/?returnTo=" + encodeURIComponent(window.location.pathname + window.location.search));
+      return;
+    }
+    
+    setIsEnrolling(true);
+    
+    try {
+      // get token
+      const urlParams = new URLSearchParams(window.location.search);
+      const optInToken = urlParams.get('optin');
+      
+      if (!optInToken) {
+        toast.error("Hiányzó opt-in token!");
+        return;
+      }
+      
+      // call api endpoint
+      await SelfOptIn(id, optInToken);
+      toast.success("Sikeresen feliratkoztál a kérdőívre!");
+      
+      // navigate to the dashboard
+      navigate("/dashboard/student");
+      
+    } catch (error: any) {
+      console.error("Self opt-in error:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Be kell jelentkezned a feliratkozáshoz!");
+        navigate("/?returnTo=" + encodeURIComponent(window.location.pathname + window.location.search));
+      } else if (error.response?.status === 403) {
+        toast.error("A feliratkozás már nem engedélyezett.");
+      } else {
+        toast.error("Feliratkozás sikertelen: " + (error.response?.data || error.message));
+      }
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
 
   const title = data?.title ?? data?.Title ?? "Kérdőív sablon – előnézet";
   const raw = data?.questionTemplates ?? data?.QuestionTemplates ?? [];
@@ -180,9 +232,10 @@ export default function QuestionnaireTemplatePreview() {
                 text-white
                 shadow-lg shadow-emerald-500/30
               "
-              onClick={() => alert("Feliratkozás (placeholder)")}
+              onClick={handleSelfOptIn}
+              disabled={isEnrolling}
             >
-              Feliratkozok
+              {isEnrolling ? "Feliratkozás..." : "Feliratkozok"}
             </Button>
           ) : (
             <Button

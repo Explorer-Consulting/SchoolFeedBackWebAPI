@@ -1,5 +1,6 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Core.Model;
 using Microsoft.Azure.Functions.Worker;
@@ -68,6 +69,7 @@ public class TemplatePreview
             return nf;
         }
 
+        
         if (!template.IsSelfOptInEnabled)
             return await Text(req, HttpStatusCode.Forbidden, "Self opt-in disabled for this template.");
 
@@ -93,7 +95,8 @@ public class TemplatePreview
         var payload = new TemplatePreviewDto
         {
             Id = id,
-            // Title = template.Title ?? string.Empty,
+            Title = template.Title ?? string.Empty,
+            SelfEnrollmentAllowed = template.IsSelfOptInEnabled
             // Questions = questions,
             // OptIn = new TemplateOptInInfo
             // {
@@ -119,8 +122,9 @@ public class TemplatePreview
     private sealed class TemplatePreviewDto
     {
         public string Id { get; set; } = default!;
-        // public string Title { get; set; } = default!;
-        // public QuestionPreviewDto[] Questions { get; set; } = Array.Empty<QuestionPreviewDto>();
+        public string Title { get; set; } = default!;
+        public bool SelfEnrollmentAllowed { get; set; }
+        //public QuestionPreviewDto[] Questions { get; set; } = Array.Empty<QuestionPreviewDto>();
         // public TemplateOptInInfo OptIn { get; set; } = new();
     }
 
@@ -161,6 +165,7 @@ public class TemplatePreview
     }
     
     // 2.) turn opt-in on & off
+    [RequireAdmin]
     [Function("DebugEnableOptIn")]
     public async Task<HttpResponseData> DebugEnableOptIn(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "debug/templates/{guid}/enable-optin")]
@@ -169,7 +174,6 @@ public class TemplatePreview
         var storageId = $"questiontemplates_{guid:D}";
 
         var t = await _db.Set<QuestionnaireTemplate>()
-            .AsNoTracking()
             .Where(t => EF.Property<string>(t, "DocumentType") == "QuestionTemplate")
             .SingleOrDefaultAsync(t => t.Id == storageId);
 
