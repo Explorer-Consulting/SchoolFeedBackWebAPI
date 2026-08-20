@@ -26,5 +26,8 @@ namespace Application.DTOs.Questionnaire
         [JsonProperty("description")]
         public string Description { get; set; } = string.Empty;
 
+        [JsonProperty("requiredValidation")]
+        public bool RequiredValidation { get; set; } = false;
+
     }
 }

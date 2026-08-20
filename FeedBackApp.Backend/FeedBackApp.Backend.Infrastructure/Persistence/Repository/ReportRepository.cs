@@ -32,7 +32,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .Where(q => q.SurveyId == surveyId && q.Status)
                 .ToListAsync();
 
-            ImmutableDictionary<Teacher, ImmutableArray<QuestionAnswer>> answerCollection =
+            ImmutableDictionary<Teacher, ImmutableArray<QuestionnaireSubmission>> answerCollection =
                 questionnaires
                     .GroupBy(q => new Teacher(
                         q.TeacherEmail,
@@ -40,8 +40,11 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     ))
                     .ToImmutableDictionary(
                         g => g.Key,
-                        g => g.SelectMany(q => q.QuestionnaireResults)
-                            .ToImmutableArray()
+                        g => g.Select(q => new QuestionnaireSubmission
+                        {
+                            IsValidate = q.IsValidate,
+                            QuestionnaireResults = q.QuestionnaireResults.ToList(),
+                        }).ToImmutableArray()
                     );
             
             ImmutableArray<QuestionTemplate> questions;

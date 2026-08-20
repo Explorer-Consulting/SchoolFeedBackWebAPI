@@ -12,6 +12,8 @@ namespace FeedBackApp.Core.Repositories
         Task<List<SurveyMetadata>> GetSurveyMetadataForStudentAsync(string studentEmail);
         Task<SurveyMetadata?> GetSurveyMetadataAsync(Guid surveyId);
         Task<Questionnaire?> GetQuestionnaireByIdAsync(string id);
+        Task<Questionnaire?> GetQuestionnaireByIdWithTrackingAsync(string id);
         Task<List<SurveyMetadata>> GetAllSurveyMetadata();
+        Task UpdateQuestionnaireAsync(Questionnaire questionnaire);
     }
 }

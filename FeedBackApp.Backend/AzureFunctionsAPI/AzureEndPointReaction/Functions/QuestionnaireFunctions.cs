@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.Questionnaire;
+using Application.DTOs.Questionnaire.Post;
 using Application.DTOs.Survey;
 using Application.Services.Interfaces;
 using AzureFunctionsAPI.AzureEndPointReaction.Utils;
@@ -115,6 +116,42 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 _logger.LogError("Something unexpected happenned! {Message}", e.Message);
                 var response = request.CreateResponse(HttpStatusCode.InternalServerError);
                 await response.WriteAsJsonAsync(new CreationResponseDTO(false, $"Error creating questionnaire: {e.Message}"));
+                return response;
+            }
+        }
+
+        /// <summary>
+        /// Validates an existing questionnaire by its identifier.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="id"></param>
+        /// <returns> A HTTP response indicating the validation status. <see cref="ValidationResponseDTO"/> or an error status.</returns>
+        [RequireAdmin]
+        [Function("ValidateQuestionnaire")]
+        [OpenApiOperation(operationId: "ValidateQuestionnaire", tags: new[] { "Questionnaires" })]
+        [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The ID of the questionnaire to validate.")]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(ValidationResponseDTO))]
+        public async Task<HttpResponseData> ValidateQuestionnaire(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "questionnaires/{id}/validate")] HttpRequestData request, string id)
+        {
+            try
+            {
+                var result = await _questionnaireService.ValidateQuestionnaireAsync(id);
+                if (!result.Success)
+                {
+                    var error = request.CreateResponse(HttpStatusCode.BadRequest);
+                    await error.WriteAsJsonAsync(result);
+                    return error;
+                }
+
+                var ok = request.CreateResponse(HttpStatusCode.OK);
+                await ok.WriteAsJsonAsync(result);
+                return ok;
+            } catch (Exception e)
+            {
+                _logger.LogError("Something unexpected happenned! {Message}", e.Message);
+                var response = request.CreateResponse(HttpStatusCode.InternalServerError);
+                await response.WriteAsJsonAsync(new ValidationResponseDTO(false, $"Error validating questionnaire: {e.Message}"));
                 return response;
             }
         }

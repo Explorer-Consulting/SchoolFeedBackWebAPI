@@ -220,7 +220,8 @@ namespace Application.Extensions.QuestionnaireExtensions
                 AnswerOptions = dto.AnswerOptions,
                 Dependency = dto.Dependency?.ToModel(),
                 Category = dto.Category,
-                Description = dto.Description
+                Description = dto.Description,
+                RequiredValidation = dto.RequiredValidation
             };
 
         /// <summary>

@@ -235,8 +235,17 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         public async Task<Questionnaire?> GetQuestionnaireByIdAsync(string id)
         {
             return await _context.Questionnaires
-                .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == id);
+        }
+
+        /// <summary>
+        /// Retrieves a questionnaire by its composite identifier and the object is being tracked by EF.
+        /// </summary>
+        /// <param name="id">Questionnaire id formatted as <c>{studentEmail}_{teacherEmail}_{subject}_{surveyId}</c>.</param>
+        /// <returns>The questionnaire if found; otherwise <c>null</c>.</returns>
+        public async Task<Questionnaire?> GetQuestionnaireByIdWithTrackingAsync(string id)
+        {
+            return await _context.Questionnaires.FirstOrDefaultAsync(q => q.Id == id);
         }
 
         /// <summary>
@@ -268,6 +277,17 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                 .ToList();
 
             return activeSurveys;
+        }
+
+        /// <summary>
+        /// Updates an existing questionnaire document in the database.
+        /// </summary>
+        /// <param name="questionnaire"></param>
+        /// <returns></returns>
+        public async Task UpdateQuestionnaireAsync(Questionnaire questionnaire)
+        {
+            _context.Update(questionnaire);
+            await _context.SaveChangesAsync();
         }
     }
 }

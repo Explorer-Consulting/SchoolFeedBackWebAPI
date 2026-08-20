@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:cv="clr-namespace:Camera.MAUI;assembly=Camera.MAUI"
+             x:Class="ValidatorMobileApp.MainPage">
+
+    <Grid Margin="20,35,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <cv:CameraView Grid.Row="0"
+                       VerticalOptions="Fill"
+                       HorizontalOptions="Fill"
+                       x:Name="cameraView"  
+                       CamerasLoaded="cameraView_CamerasLoaded" 
+                       BarCodeDetectionEnabled="True"
+                       />
+        <HorizontalStackLayout Grid.Row="1" Spacing="10" VerticalOptions="Center" HorizontalOptions="Center">
+            <ActivityIndicator IsRunning="False" 
+                               IsVisible="False"
+                               Color="Blue"
+                               x:Name="indicator"/>
+            <Label Text="Waiting for QR code..." 
+                   IsVisible="True"
+                   VerticalOptions="Center"
+                   x:Name="label"/>
+        </HorizontalStackLayout>
+    </Grid>
+</ContentPage>
