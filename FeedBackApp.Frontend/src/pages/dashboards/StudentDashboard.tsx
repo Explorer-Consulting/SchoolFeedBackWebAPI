@@ -6,7 +6,7 @@ import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 import { getUnansweredCount } from "@/utils/utils.ts"
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { celebrateConfettiRed } from "@/utils/celebrate";
 
 export default function StudentDashboard() {
@@ -39,13 +39,19 @@ export default function StudentDashboard() {
     refetchSurveys();
   }, [refetchSurveys]);
 
+  const prevUnansweredRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!context) return;
 
     const unanswered = getUnansweredCount(context);
-    if (unanswered === 0) {
+    const prevUnanswered = prevUnansweredRef.current;
+
+    if(prevUnanswered !== null && prevUnanswered > 0 && unanswered === 0){
       celebrateConfettiRed();
     }
+    
+    prevUnansweredRef.current = unanswered;
   }, [context]);
 
   if (!user) {
