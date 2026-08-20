@@ -70,7 +70,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var template = metadata.QuestionTemplates;
 
             QuestionnaireTemplate tempForSave =
-                new QuestionnaireTemplate(metadata.Id.ToString(), metadata.Title, template);
+                new QuestionnaireTemplate(metadata.Id.ToString(), metadata.Title, template)
+                {
+                    RequireValidation = metadata.RequireValidation
+                };
 
             _context.Add(metadata);
             _context.Add(tempForSave);
