@@ -39,19 +39,24 @@ export default function StudentDashboard() {
     refetchSurveys();
   }, [refetchSurveys]);
 
+  // stores the previous unanswered count, so we can detect the moment it drops from >0 to 0
   const prevUnansweredRef = useRef<number | null>(null);
+  // stores the last survey we were looking at, so switching from an unfinished to an already-submitted one, doesn't trigger confetti
+  const prevSurveyIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!context) return;
 
     const unanswered = getUnansweredCount(context);
     const prevUnanswered = prevUnansweredRef.current;
+    const sameSurvey = prevSurveyIdRef.current === selectedSurveyId;
 
-    if(prevUnanswered !== null && prevUnanswered > 0 && unanswered === 0){
+    if(sameSurvey && prevUnanswered !== null && prevUnanswered > 0 && unanswered === 0){
       celebrateConfettiRed();
     }
     
     prevUnansweredRef.current = unanswered;
+    prevSurveyIdRef.current = selectedSurveyId;
   }, [context]);
 
   if (!user) {
