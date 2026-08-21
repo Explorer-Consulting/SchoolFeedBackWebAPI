@@ -494,7 +494,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         private bool IsAuthorizedEmail(string email, IReadOnlyCollection<string> students, bool isAdmin)
         {
             if(isAdmin) return true;
+            if(!IsWhitelistRequired()) return true;
             return students.Contains(email, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private bool IsWhitelistRequired(){
+            var requirement = Environment.GetEnvironmentVariable("RequireStudentWhitelist");
+            return !string.Equals(requirement, "false", StringComparison.OrdinalIgnoreCase);
         }
 
         private string GenerateJwtToken(string email, bool isAdmin)
