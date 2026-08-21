@@ -138,6 +138,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             var email = data.Email.Trim().ToLowerInvariant();
 
+            if(!IsValidEmailFormat(email)){
+                _logger.LogWarning("Invalid email format in OTP request: {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Invalid email format", origin);
+            }
+
             // 3. Check Authorization
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
             var students = whitelist?.StudentEmails ?? new List<string>();
@@ -494,7 +499,26 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         private bool IsAuthorizedEmail(string email, IReadOnlyCollection<string> students, bool isAdmin)
         {
             if(isAdmin) return true;
+            if(!IsWhitelistRequired()) return true;
             return students.Contains(email, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private bool IsWhitelistRequired(){
+            var requirement = Environment.GetEnvironmentVariable("RequireStudentWhitelist");
+            return !string.Equals(requirement, "false", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool IsValidEmailFormat(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch(FormatException)
+            {
+                return false;
+            }
         }
 
         private string GenerateJwtToken(string email, bool isAdmin)
