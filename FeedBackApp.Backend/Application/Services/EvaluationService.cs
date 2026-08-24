@@ -86,7 +86,7 @@ namespace Application.Services
         ///   <item><description>Loads the existing questionnaire by <paramref name="id"/>.</description></item>
         ///   <item><description>Resolves templates and ensures the survey is still open.</description></item>
         ///   <item><description>Validates <paramref name="dto"/> using <see cref="SubmitQuestionnaireValidator"/>.</description></item>
-        ///   <item><description>Maps to domain model, sets the existing questionnaire's <c>Status</c> to <c>true</c>, and persists.</description></item>
+        ///   <item><description>Maps to domain model, sets the existing questionnaire's <c>Status</c> to <c>true</c></item>
         ///   <item><description>Returns a typed response describing the result.</description></item>
         /// </list>
         /// </remarks>

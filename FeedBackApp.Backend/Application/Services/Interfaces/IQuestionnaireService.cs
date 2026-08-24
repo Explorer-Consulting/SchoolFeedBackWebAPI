@@ -9,6 +9,7 @@ namespace Application.Services.Interfaces
         public Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDTO dto);
         public Task<DeletionResponseDTO> DeleteSurveyAsync(Guid id);
         public Task<QuestionnairesDTO> GetQuestionnairesAsync(Guid surveyId, string studentEmail);
-        public Task<ValidationResponseDTO> ValidateQuestionnaireAsync(string id);
+        public Task<ValidationResponseDTO> ValidateQuestionnairesAsync(string validationToken);
+        public Task<GenerateValidationTokenResponseDTO> GenerateValidationTokenAsync(Guid surveyId, string studentEmail);
     }
 }
