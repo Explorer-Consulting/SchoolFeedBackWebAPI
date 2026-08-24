@@ -172,6 +172,9 @@ _ = builder.Configuration["LinkedIn:ClientId"]
 
 _ = builder.Configuration["LinkedIn:ClientSecret"]
     ?? throw new InvalidOperationException("Missing LinkedIn:ClientSecret");
+    
+_ = builder.Configuration["LinkedIn:RedirectUri"]
+    ?? throw new InvalidOperationException("Missing LinkedIn:RedirectUri");
 
 var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
 var adminEmails = rawAdminEmails
