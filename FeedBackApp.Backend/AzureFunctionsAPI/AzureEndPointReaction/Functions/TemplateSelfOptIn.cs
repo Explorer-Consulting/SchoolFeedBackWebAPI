@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
+using Microsoft.Extensions.Options;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
@@ -24,11 +25,13 @@ public class TemplateSelfOptIn
 {
     private readonly IOptInTokenService _tokens;
     private readonly AppDBContext _db;
+    private readonly IOptions<SelfOptInJwtOptions> _options;
 
-    public TemplateSelfOptIn(IOptInTokenService tokens, AppDBContext db)
+    public TemplateSelfOptIn(IOptInTokenService tokens, AppDBContext db, IOptions<SelfOptInJwtOptions> options)
     {
         _tokens = tokens;
         _db = db;
+        _options = options;
     }
 
     private sealed class RequestDto { public string? OptInToken { get; set; } }
@@ -40,6 +43,10 @@ public class TemplateSelfOptIn
         string id,
         FunctionContext context)   // StudentOnlyMiddleware should populate ctx.Items["User"]
     {
+        // checking if self-opt in is enabled in configuration
+        if (!_options.Value.Enabled)
+            return await Text(req, HttpStatusCode.Forbidden, "Self opt-in is not enabled on this deployment");
+
         // route Guid
         if (!Guid.TryParse(id, out var templateGuid))
             return await Text(req, HttpStatusCode.BadRequest, "Invalid template id (Guid expected).");
@@ -51,6 +58,7 @@ public class TemplateSelfOptIn
 
         // validate token and bind to route
         var v = _tokens.Validate(body.OptInToken, DateTimeOffset.UtcNow);
+        
         if (!v.IsValid)
             return await Text(req, HttpStatusCode.Gone, $"Invalid or expired link ({v.Error}).");
 

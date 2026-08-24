@@ -35,7 +35,7 @@ SentrySdk.Init(options =>
     // A Sentry Data Source Name (DSN) is required.
     // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
     // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
-    options.Dsn = "https://e527f85474f0587735eddc9531cae1a5@o4508133068963840.ingest.de.sentry.io/4510549831778384";
+    options.Dsn = Environment.GetEnvironmentVariable("SENTRY_DSN");
 
     // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
     // This might be helpful, or might interfere with the normal operation of your application.
@@ -124,11 +124,8 @@ builder.Services.AddOptions<SelfOptInJwtOptions>()
     .Configure<IConfiguration>((opt, cfg) =>
     {
         // pulled from "SelfOptInJwtOptions"
-        opt.Enabled = true;
-        opt.Issuer = "feedback-app.optin";          // source
-        opt.Audience = "feedback-app.optin";        // destination
-        opt.SigningKey = cfg["Jwt:SecretKey"]!;     // reuse existing secret
-        opt.TokenTtlMinutes = 7 * 24 * 60;          // 7 days
+        cfg.GetSection("SelfOptInJwtOptions").Bind(opt); // enabled, issuer, audience and expiration in minutes
+        opt.SigningKey = cfg["Jwt:SecretKey"]!;    // using jwt secret key
     })
     .Validate(o => !string.IsNullOrWhiteSpace(o.SigningKey) && o.SigningKey.Length >= 32,
         "SelfOptInJwt: SigningKey must be >= 32 chars")
