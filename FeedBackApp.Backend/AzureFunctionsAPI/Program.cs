@@ -167,6 +167,12 @@ _ = builder.Configuration["Microsoft:ClientId"]
 _ = builder.Configuration["Microsoft:TenantId"]
     ?? "common";
 
+_ = builder.Configuration["LinkedIn:ClientId"]
+    ?? throw new InvalidOperationException("Missing LinkedIn:ClientId");
+
+_ = builder.Configuration["LinkedIn:ClientSecret"]
+    ?? throw new InvalidOperationException("Missing LinkedIn:ClientSecret");
+
 var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
 var adminEmails = rawAdminEmails
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

@@ -3046,6 +3046,11 @@ react-is@^18.3.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.3.1.tgz#e83557dc12eae63a99e003a46388b1dcbb44db7e"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
 
+react-linkedin-login-oauth2@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/react-linkedin-login-oauth2/-/react-linkedin-login-oauth2-3.0.0.tgz#a6c805ec70c06baa2301da8714629ac61b14cc01"
+  integrity sha512-LHGoalx7qxvnB7Tf74kWVwV9sjp9tnjK56iH2N8YqXIoVFI6n7qhUWV55oY92+ydQvEe5Cqk1zW65VWWaU6ZFQ==
+
 react-refresh@^0.18.0:
   version "0.18.0"
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.18.0.tgz#2dce97f4fe932a4d8142fa1630e475c1729c8062"

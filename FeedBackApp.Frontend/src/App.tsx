@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { LinkedInCallback } from 'react-linkedin-login-oauth2'
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/passwordless-otp-login" element={<PasswordlessOTPLogin />} />
             <Route path="/dashboard/student" element={<StudentDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
+            <Route path="/auth/linkedin/callback" element={<LinkedInCallback />} />
             <Route
               path="/questionnairetemplate/:id/preview"
               element={<QuestionnaireTemplatePreview />}

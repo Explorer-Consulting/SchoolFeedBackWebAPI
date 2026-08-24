@@ -26,8 +26,8 @@ export const LoginWithMicrosoft = async (idToken) => {
     return data;
 };
 //LoginWithLinkedIn
-export const LoginWithLinkedIn = async (accessToken) => {
-    const { data } = await apiClient.post('/auth/linkedin', { AccessToken: accessToken });
+export const LoginWithLinkedIn = async (authCode) => {
+    const { data } = await apiClient.post('/auth/linkedin', { AuthCode: authCode });
     return data;
 };
 
