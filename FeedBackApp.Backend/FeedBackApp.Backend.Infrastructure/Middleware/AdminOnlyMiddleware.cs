@@ -5,8 +5,13 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
 {
     public class AdminOnlyMiddleware : IFunctionsWorkerMiddleware
     {
+        private readonly JwtRoleValidator _jwtRoleValidator;
         private const string JwtCookieName = "token"; // Name of the cookie containing the token
 
+        public AdminOnlyMiddleware(JwtRoleValidator jwtRoleValidator)
+        {
+            _jwtRoleValidator = jwtRoleValidator;
+        }
         public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
         {
             var httpRequestData = await context.GetHttpRequestDataAsync();
@@ -28,7 +33,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
             var token = tokenCookie.Value;
 
             // Validate the token
-            if (!JwtRoleValidator.IsAdmin(token, context))
+            if (!_jwtRoleValidator.IsAdmin(token, context))
             {
                 await ReturnForbidden.ExecuteAsync(context, httpRequestData, "Admin privileges required!");
                 return;

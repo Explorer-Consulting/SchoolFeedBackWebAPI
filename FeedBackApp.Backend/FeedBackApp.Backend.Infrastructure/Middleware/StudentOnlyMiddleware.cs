@@ -6,7 +6,13 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
 {
     public class StudentOnlyMiddleware : IFunctionsWorkerMiddleware
     {
+        private readonly JwtRoleValidator _jwtRoleValidator;
         private const string JwtCookieName = "token"; // Name of the cookie containing the token
+
+        public StudentOnlyMiddleware(JwtRoleValidator jwtRoleValidator)
+        {
+            _jwtRoleValidator = jwtRoleValidator;
+        }
 
         public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
         {
@@ -29,7 +35,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware
             var token = tokenCookie.Value;
 
             // Validate the token
-            if (!JwtRoleValidator.IsStudent(token, context))
+            if (!_jwtRoleValidator.IsStudent(token, context))
             {
                 await ReturnForbidden.ExecuteAsync(context, httpRequestData, "Student privilages required!");
                 return;

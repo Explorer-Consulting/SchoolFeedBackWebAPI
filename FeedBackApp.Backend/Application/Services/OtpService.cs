@@ -1,6 +1,8 @@
 using Application.Services.Interfaces;
+using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Core.Model;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
 namespace Application.Services;
@@ -16,13 +18,11 @@ public class OtpService : IOtpService
     private readonly int _otpExpirationMinutes;
     private readonly Random _random;
 
-    public OtpService(ILogger<OtpService> logger)
+    public OtpService(ILogger<OtpService> logger, IOptions<OtpOptions> otpOptions)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _otpStore = new ConcurrentDictionary<string, OtpCode>(StringComparer.OrdinalIgnoreCase);
-        _otpExpirationMinutes = int.TryParse(
-            Environment.GetEnvironmentVariable("OTP_EXPIRATION_MINUTES"), 
-            out var minutes) ? minutes : 10; // Default 10 minutes
+        _otpExpirationMinutes = otpOptions.Value.ExpirationMinutes; // Default 10 minutes
         _random = new Random();
 
         // Start background task to clean up expired OTPs

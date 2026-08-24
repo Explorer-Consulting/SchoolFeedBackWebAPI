@@ -1,5 +1,6 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
@@ -24,10 +25,13 @@ public class AdminShareLink
 {
     private readonly IOptInTokenService _tokens;
     private readonly IOptions<SelfOptInJwtOptions> _options;
-    public AdminShareLink(IOptInTokenService tokens, IOptions<SelfOptInJwtOptions> options)
+    private readonly IOptions<FrontendOptions> _frontendOptions;
+    public AdminShareLink(IOptInTokenService tokens, IOptions<SelfOptInJwtOptions> options,
+        IOptions<FrontendOptions> frontendOptions)
     {
         _tokens = tokens; 
         _options = options;
+        _frontendOptions = frontendOptions;
     }
 
     [RequireAdmin]
@@ -58,7 +62,7 @@ public class AdminShareLink
         var exp = DateTimeOffset.UtcNow.AddMinutes(minutes);
 
         var token = _tokens.CreateToken(templateId, tag, exp);
-        var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl");
+        var frontendUrl = _frontendOptions.Value.Url;
         var url = $"{frontendUrl}/questionnairetemplate/{tid}/preview?optin={Uri.EscapeDataString(token)}";
         // templates/tid nem kell
         // endpoint
