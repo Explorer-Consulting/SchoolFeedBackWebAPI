@@ -52,6 +52,10 @@ export default function SocialAuthApp() {
     }
   }
 
+  const enabledProviders = (import.meta.env.VITE_ENABLED_LOGIN_PROVIDERS || "")
+                            .split(",")
+                            .map((p) => p.trim());
+
   const onGoogleSuccess = (resp: CredentialResponse) => {
     const idToken = resp?.credential;
     if (!idToken) return console.error("No ID token from Google");
@@ -170,6 +174,7 @@ const onMicrosoftLogin = async () => {
           </p>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
+          {enabledProviders.includes("Google") && (
           <GoogleLogin
             onSuccess={onGoogleSuccess}
             onError={() => console.error("Google login failed")}
@@ -182,6 +187,7 @@ const onMicrosoftLogin = async () => {
             logo_alignment="center"
             width="280"
           />
+          )}
           {/*
           <button
             onClick={onFacebookLogin}
@@ -191,7 +197,7 @@ const onMicrosoftLogin = async () => {
             Facebook
           </button>
           */}
-
+          {enabledProviders.includes("Microsoft") && (
           <button
             onClick={onMicrosoftLogin}
             className="flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
@@ -199,6 +205,7 @@ const onMicrosoftLogin = async () => {
             <FaMicrosoft className="w-5 h-5" />
             Microsoft
           </button>
+          )}
           {/*
           <button
             onClick={onLinkedInLogin}
