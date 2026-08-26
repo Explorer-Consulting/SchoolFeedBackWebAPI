@@ -35,6 +35,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         private readonly IOptions<GoogleAuthOptions> _googleAuthOptions;
         private readonly IOptions<MicrosoftAuthOptions> _microsoftAuthOptions;
         private readonly IOptions<AuthorizationOptions> _authorizationOptions;
+        private readonly IOptions<CorsOptions> _corsOptions;
 
         public AuthFunctions(
             ILogger<AuthFunctions> logger,
@@ -45,7 +46,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             IOptions<JwtOptions> jwtOptions,
             IOptions<GoogleAuthOptions> googleAuthOptions,
             IOptions<MicrosoftAuthOptions> microsoftAuthOptions,
-            IOptions<AuthorizationOptions> authorizationOptions)
+            IOptions<AuthorizationOptions> authorizationOptions,
+            IOptions<CorsOptions> corsOptions)
         {
             _logger = logger;
             _whitelistRepository = whitelistRepository;
@@ -56,6 +58,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             _googleAuthOptions = googleAuthOptions;
             _microsoftAuthOptions = microsoftAuthOptions;
             _authorizationOptions = authorizationOptions;
+            _corsOptions = corsOptions;
         }
 
         /// <summary>
@@ -307,24 +310,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
     [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/microsoft")]
     HttpRequestData req)
         {
-            var origin = req.Headers.TryGetValues("Origin", out var origins)
-                ? origins.FirstOrDefault()
-                : null;
-
+            var origin = GetOrigin(req);
 
             // CORS preflight
 
             if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
             {
-                var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    preflight.Headers.Add("Access-Control-Allow-Origin", origin);
-                    preflight.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
-                    preflight.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-                    preflight.Headers.Add("Access-Control-Allow-Credentials", "true");
-                }
-                return preflight;
+                return CreatePreflightResponse(req, origin);
             }
 
 
@@ -335,9 +327,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (string.IsNullOrWhiteSpace(data?.IdToken))
             {
-                var bad = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
-                await bad.WriteStringAsync("IdToken is required");
-                return bad;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "IdTpken is required", origin);
             }
 
 
@@ -379,10 +369,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Invalid Microsoft token");
-
-                var unauth = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
-                await unauth.WriteStringAsync("Invalid Microsoft token");
-                return unauth;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid Microsoft token", origin);
             }
 
 
@@ -394,11 +381,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (string.IsNullOrWhiteSpace(email))
             {
-                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
-                await forbidden.WriteStringAsync("Email not available from Microsoft account");
-                return forbidden;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "Email not available from Microsoft account", origin); 
             }
-
 
             // Authorization (UGYANAZ, mint Google/Facebook)
 
@@ -409,9 +393,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (!IsAuthorizedEmail(email,students,isAdmin))
             {
-                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
-                await forbidden.WriteStringAsync("User not authorized");
-                return forbidden;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not authorized", origin);
             }
 
             // JWT issuance (UGYANAZ)
@@ -419,12 +401,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             var token = GenerateJwtToken(email, isAdmin);
 
             var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-
-            if (!string.IsNullOrEmpty(origin))
-            {
-                response.Headers.Add("Access-Control-Allow-Origin", origin);
-                response.Headers.Add("Access-Control-Allow-Credentials", "true");
-            }
+            AddCorsHeaders(response, origin);
 
             response.Headers.Add(
                 "Set-Cookie",
@@ -603,7 +580,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private void AddCorsHeaders(HttpResponseData resp, string? origin)
         {
-            if (!string.IsNullOrEmpty(origin))
+            if (!string.IsNullOrEmpty(origin) && !IsAllowedOrigin(origin))
             {
                 resp.Headers.Add("Access-Control-Allow-Origin", origin);
                 resp.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -612,6 +589,12 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             }
         }
 
+        private bool IsAllowedOrigin(string origin) 
+        {
+            var allowed = _corsOptions.Value.AllowedOrigins
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return allowed.Contains(origin, StringComparer.OrdinalIgnoreCase);
+        }
         #endregion
 
         #region DTOs

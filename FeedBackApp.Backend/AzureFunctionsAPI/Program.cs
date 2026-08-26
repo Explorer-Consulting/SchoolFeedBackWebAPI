@@ -194,6 +194,16 @@ builder.Services.AddOptions<FrontendOptions>()
     .Validate(o => !string.IsNullOrWhiteSpace(o.Url), "Frontend: Url must be set")
     .ValidateOnStart();
 
+builder.Services.AddOptions<InstitutionOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Institution").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.DisplayName), "Institution: DisplayName must be set")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<CorsOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Cors").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.AllowedOrigins), "Cors: AllowedOrigins must be set")
+    .ValidateOnStart();
+
 // Certificates – localon használod, Azure-on majd KeyVault lesz valószínűleg
 var certLoadPath = builder.Configuration["Certificates:LoadPath"];
 

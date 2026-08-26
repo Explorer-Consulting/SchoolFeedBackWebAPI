@@ -49,7 +49,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                     page.Header().Column(col =>
                     {
                         col.Spacing(4);
-
+                        col.Item().Text(Metadata.InstitutionName)
+                            .FontSize(12).Bold();
                         col.Item().Text($"Tanár E-mail: {teacher.EmailAddress}")
                             .FontSize(12).Bold();
 

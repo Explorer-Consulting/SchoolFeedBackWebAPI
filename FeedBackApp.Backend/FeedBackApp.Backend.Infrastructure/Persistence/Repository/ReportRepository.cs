@@ -1,18 +1,25 @@
-﻿using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
+﻿using FeedBackApp.Backend.Infrastructure.Configuration;
+using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Core.Model;
 using FeedBackApp.Core.ReportCompilerUtils.DomainMetadata;
 using FeedBackApp.Core.ReportCompilerUtils.UtilityClasses;
 using FeedBackApp.Core.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Collections.Immutable;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
-    public sealed class ReportRepository(AppDBContext context, IBlobContext blob) : IReportRepository
+    public sealed class ReportRepository(
+        AppDBContext context, 
+        IBlobContext blob,
+        IOptions<InstitutionOptions> institutionOptions) : IReportRepository
     {
         private readonly AppDBContext _context = context;
         private readonly IBlobContext _blob = blob;
+
+        private readonly IOptions<InstitutionOptions> _institutionOptions =  institutionOptions;
 
         public async Task CompileAndStoreEvaluationReports(string fullTemplateId)
         {
@@ -58,7 +65,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             #endregion
             // 3) Generálás + feltöltés
 
-            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId))
+            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId, _institutionOptions.Value.DisplayName))
             {
                 var fileName = $"{surveyId}_{document.Metadata.FileName}";
 
