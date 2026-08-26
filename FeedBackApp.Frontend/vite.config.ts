@@ -17,8 +17,21 @@ export default defineConfig(({ mode }) => {
     tenantDefines[`import.meta.env.VITE_${key}`] = JSON.stringify(rawValue);
   }
 
+  const resourceTenant = tenant || "EXPLORER";
+  tenantDefines[`import.meta.env.VITE_DASHBOARD_IMAGE_PATH`] = JSON.stringify(`/resources/${resourceTenant}/Image.png`);
+  tenantDefines[`import.meta.env.VITE_FAVICON_PATH`] = JSON.stringify(`/resources/${resourceTenant}/favicon.png`);
+
   return{
-  plugins: [react(), mkcert()],
+  plugins: [
+    react(),
+    mkcert(),
+    {
+     name: "html-tenant-favicon",
+     transformIndexHtml(html){
+      return html.replace(/__FAVICON_PATH__/g, `/resources/${resourceTenant}/favicon.png`);
+     } 
+    },
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
