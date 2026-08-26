@@ -171,9 +171,9 @@ builder.Services.AddOptions<MicrosoftAuthOptions>()
     .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Microsoft: ClientId must be set")
     .ValidateOnStart();
 
-var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
-var adminEmails = rawAdminEmails
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+builder.Services.AddOptions<AuthorizationOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Authorization").Bind(opt))
+    .ValidateOnStart();
 
 _ = builder.Configuration["Email:FromAddress"]
     ?? throw new InvalidOperationException("Missing Email:FromAddress");

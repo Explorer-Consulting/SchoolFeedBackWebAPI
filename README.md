@@ -111,7 +111,8 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
     "Microsoft:ClientId": "Your-Microsoft-Id",
     "Microsoft:TenantId": "Your-Microsoft-TenantId",
 
-    "AdminEmails": "Admin-emails...",
+    "Authorization:AdminEmails": "Admin emails...",
+    "Authorization:RequireStudentWhiteList": "true/false",
 
     "ReportStorage:ConnectionString": "your-azure-storage-connection-string",
     "ReportStorage:ContainerName": "teacherreports",
@@ -119,6 +120,10 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
     "Email:FromAddress": "feedbackwebapi@gmail.com",
     "Email:FromName": "FeedbackApp",
     "Email:AppPassword": "app-password",
+
+    "Frontend:Url": "https://localhost:5173",
+    "Institution:DisplayName": "Your Institution Name",
+    "Cors:AllowedOrigins": "https://localhost:5173",
 
     "Encryption:Key": "Encription-key",
     "Certificates:LoadPath": "C:\\certs\\functions_dev.pfx",
@@ -133,20 +138,32 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
 }
 ```
 
-#### 2. Add Your Email to Admin List
+#### 2. Configure Authorization
 
-To get full admin access, you need to add your email address:
-- to the `AdminEmails` list:
+- **Admin access** — add your email address to the admin list, so you get full admin access:
 
 ```json
-"AdminEmails": "YOUR_EMAIL@gmail.com,...other emails..."
+"Authorization:AdminEmails": "YOUR_EMAIL@gmail.com,...other emails..."
 ```
-- to the `AdminEmails` environment variable in: 
-**Azure Portal → StudentFeedback-dev-api → Environment variables → App settings → AdminEmails**
 
-Use the **same email** you'll log in with via Google OAuth
+  Also set the same value as the `Authorization__AdminEmails` environment variable in:
+  **Azure Portal → StudentFeedback-dev-api → Environment variables → App settings → Authorization__AdminEmails**
 
-#### 3. Install Dependencies & Build
+  Use the **same email** you'll log in with via Google OAuth.
+
+- **Student whitelist enforcement** — `Authorization:RequireStudentWhiteList` controls whether login is restricted to students already present in a survey's student list:
+  - `true` (default) — only emails that appear in an uploaded Excel's student sets (or an admin email) can log in.
+  - `false` — the whitelist check is skipped at login; any authenticated email is treated as a student. Use this for tenants that rely on self-opt-in instead of pre-uploaded student lists.
+
+  Set the matching `Authorization__RequireStudentWhiteList` environment variable in Azure App Settings as well — this value is **not** derived automatically, it must be set explicitly per environment/tenant.
+
+#### 3. Other Environment-Specific Settings
+
+- **`Frontend:Url`** — the base URL of the deployed frontend. Used to build self-opt-in preview links sent to students.
+- **`Institution:DisplayName`** — the school/institution name shown on generated Excel/PDF reports.
+- **`Cors:AllowedOrigins`** — the origin(s) allowed to call the API's auth endpoints (comma-separated if multiple). Should match your frontend's URL.
+
+#### 4. Install Dependencies & Build
 
 ```bash
 cd FeedBackApp.Backend
