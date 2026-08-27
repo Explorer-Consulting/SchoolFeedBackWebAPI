@@ -8,6 +8,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using Microsoft.Extensions.Options;
+using FeedBackApp.Backend.Infrastructure.Configuration;
 
 namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 
@@ -36,6 +37,7 @@ public class TemplateSelfOptIn
 
     private sealed class RequestDto { public string? OptInToken { get; set; } }
 
+    [RequireStudent]
     [Function("TemplateSelfOptIn")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post",
@@ -69,14 +71,16 @@ public class TemplateSelfOptIn
         if (!context.Items.TryGetValue("User", out var u) || u is not ClaimsPrincipal user)
             return req.CreateResponse(HttpStatusCode.Unauthorized);
 
-        var email = user.FindFirst("email")?.Value ?? user.FindFirst(ClaimTypes.Email)?.Value;
+        var email = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(email))
             return req.CreateResponse(HttpStatusCode.Unauthorized);
 
         // load real template by alias
+        var storageId = $"questiontemplates_{templateGuid:D}";
         var template = await _db.Set<QuestionnaireTemplate>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .Where(t => EF.Property<string>(t, "DocumentType") == "QuestionTemplate")
+            .SingleOrDefaultAsync(t => t.Id == storageId);
 
         if (template is null)
             return req.CreateResponse(HttpStatusCode.NotFound);
@@ -87,43 +91,84 @@ public class TemplateSelfOptIn
         if (template.OptInExpiresAt is not null && template.OptInExpiresAt <= DateTimeOffset.UtcNow)
             return await Text(req, HttpStatusCode.Gone, "Self opt-in window has closed.");
 
-        // optional: capacity check per template
-        if (template.MaxParticipants is int max && max >= 0)
+        // resolve the parent survey — QuestionnaireTemplate.Id is "questiontemplates_{surveyId}"
+        const string templatePrefix = "questiontemplates_";
+        if (!template.Id.StartsWith(templatePrefix) ||
+            !Guid.TryParse(template.Id[templatePrefix.Length..], out var surveyGuid))
+            return await Text(req, HttpStatusCode.InternalServerError, "Malformed template id.");
+
+        var survey = await _db.Surveys.FirstOrDefaultAsync(s => s.Id == surveyGuid);
+        if (survey is null)
+            return await Text(req, HttpStatusCode.NotFound, "Parent survey not found.");
+
+        var universalSet = survey.StudentSets
+            .FirstOrDefault(s => s.SetId == AuthorizationOptions.UniversalStudentSetId);
+
+        if (universalSet is null)
+            return await Text(req, HttpStatusCode.Conflict,
+                "This survey has no universal student group to opt into.");
+
+        var alreadyOptedIn = universalSet.StudentEmails.Contains(email);
+
+        // capacity check — only blocks brand-new opt-ins, never a returning student
+        if (!alreadyOptedIn && _options.Value.MaxParticipants is int max && max >= 0)
         {
-            var current = await _db.Set<Questionnaire>()
-                .CountAsync(q => q.SurveyId == template.Id); // link via stored template Id
-            if (current >= max)
+            if (universalSet.StudentEmails.Count >= max)
                 return await Text(req, HttpStatusCode.Forbidden, "Capacity reached for this template.");
         }
 
-        // idempotency: one questionnaire per (StudentEmail, Template)
-        var exists = await _db.Set<Questionnaire>()
-            .AnyAsync(q => q.SurveyId == template.Id && q.StudentEmail == email);
+        if (!alreadyOptedIn)
+        {
+            universalSet.StudentEmails.Add(email);
+        }
 
-        if (exists)
+        // which questionnaires does this student already have for this survey?
+        var existingIds = await _db.Set<Questionnaire>()
+            .Where(q => q.SurveyId == surveyGuid.ToString() && q.StudentEmail == email)
+            .Select(q => q.Id)
+            .ToListAsync();
+
+        var existingIdSet = new HashSet<string>(existingIds, StringComparer.OrdinalIgnoreCase);
+        var newQuestionnaires = new List<Questionnaire>();
+
+        foreach (var param in survey.CreationParams)
+        {
+            var qId = $"{email}_{param.TeacherEmail}_{param.SubjectName}_{surveyGuid}";
+            if (existingIdSet.Contains(qId))
+                continue;
+
+            newQuestionnaires.Add(new Questionnaire
+            {
+                Id = qId,
+                SurveyId = surveyGuid.ToString(),
+                TeacherEmail = param.TeacherEmail,
+                StudentEmail = email,
+                SubjectName = param.SubjectName,
+                QuestionnaireResults = survey.QuestionTemplates
+                    .Select(t => new QuestionAnswer { Answer = string.Empty, QuestionId = t.Id })
+                    .ToList()
+            });
+        }
+
+        if (newQuestionnaires.Count == 0 && alreadyOptedIn)
         {
             var ok = req.CreateResponse(HttpStatusCode.OK);
             await ok.WriteAsJsonAsync(new { status = "already_has_access" });
             return ok;
         }
 
-        // create a real Questionnaire instance (minimal fields; results will be filled on submit)
-        var instance = new Questionnaire
-        {
-            Id = Guid.NewGuid().ToString("D"),
-            Status = false,               // not completed
-            SurveyId = template.Id,       // link instance to template via stored Id (questiontemplates_<guid>)
-            TeacherEmail = string.Empty,  // unknown in self-opt-in path
-            StudentEmail = email,
-            SubjectName = string.Empty,
-            QuestionnaireResults = new List<QuestionAnswer>() // keep empty; filled when answering
-        };
+        _db.Update(survey);
+        if (newQuestionnaires.Count > 0)
+            _db.AddRange(newQuestionnaires);
 
-        _db.Add(instance);
         await _db.SaveChangesAsync();
 
         var created = req.CreateResponse(HttpStatusCode.Created);
-        await created.WriteAsJsonAsync(new { status = "granted", questionnaireId = instance.Id });
+        await created.WriteAsJsonAsync(new
+        {
+            status = "granted",
+            questionnaireIds = newQuestionnaires.Select(q => q.Id).Concat(existingIds)
+        });
         return created;
     }
 

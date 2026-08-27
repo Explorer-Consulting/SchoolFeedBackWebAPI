@@ -34,6 +34,14 @@ export default function SocialAuthApp() {
 
   const handleSuccess = (user: any) => {
     setUser(user)
+
+    const params = new URLSearchParams(window.location.search)
+    const returnTo = params.get('returnTo')
+    if (returnTo) {
+      navigate(returnTo)
+      return
+    }
+
     if (user.role === 'Admin') {
       navigate("/dashboard/admin")
     } else if (user.role === 'Student') {

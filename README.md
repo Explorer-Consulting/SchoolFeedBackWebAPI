@@ -102,6 +102,8 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
     "Cosmos:ContainerName": "surveyContainer",
 
     "Jwt:SecretKey": "JWT-Secret-Key",
+    "Jwt:Issuer": "Your-Jwt-Issuer",
+    "Jwt:Audience": "Your-Jwt-Audience",
 
     "Google:ClientId": "Your-Client-Id",
 
@@ -113,6 +115,12 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
 
     "Authorization:AdminEmails": "Admin emails...",
     "Authorization:RequireStudentWhiteList": "true/false",
+    "Authorization:UseUniversalStudentGroup": "true/false",
+
+    "SelfOptInJwtOptions:Enabled": "true/false",
+    "SelfOptInJwtOptions:Issuer": "Your-SelfOptIn-Issuer",
+    "SelfOptInJwtOptions:Audience": "Your-SelfOptIn-Audience",
+    "SelfOptInJwtOptions:TokenTtlMinutes": "1440",
 
     "ReportStorage:ConnectionString": "your-azure-storage-connection-string",
     "ReportStorage:ContainerName": "teacherreports",
@@ -157,13 +165,37 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
 
   Set the matching `Authorization__RequireStudentWhiteList` environment variable in Azure App Settings as well — this value is **not** derived automatically, it must be set explicitly per environment/tenant.
 
-#### 3. Other Environment-Specific Settings
+- **Universal student group** — `Authorization:UseUniversalStudentGroup` is for tenants that have no pre-uploaded student list at all (e.g. a university deployment where every student can self opt-in to every teacher/subject — "everyone is everyone's teacher"):
+  - `false` (default) — surveys only get the `StudentSet`s defined by the uploaded Excel.
+  - `true` — every new survey automatically gets an additional `"everyone"` `StudentSet`, and every `CreationParam` (teacher/subject pair) is wired to it. Students then gain access purely through self-opt-in (see below) instead of being pre-listed in an Excel-defined `StudentSet`.
+
+  **This requires `Authorization:RequireStudentWhiteList` to be `false`.** If both are `true` at the same time, the app fails to start with an `OptionsValidationException` ("UseUniversalStudentGroup requires RequireStudentWhiteList to be false — otherwise no student could ever log in.").
+
+  Set the matching `Authorization__UseUniversalStudentGroup` environment variable in Azure App Settings as well.
+
+#### 3. Configure Self Opt-In
+
+Self opt-in lets a student gain access to a questionnaire by following a share link and confirming, instead of being pre-listed in a `StudentSet`. It's controlled by the `SelfOptInJwtOptions` section:
+
+- **`SelfOptInJwtOptions:Enabled`** — master switch for the `POST /api/templates/{id}/self-opt-in` endpoint. `false` (or unset) makes the endpoint return `403 Forbidden` for every request, without touching the database.
+- **`SelfOptInJwtOptions:Issuer`** / **`SelfOptInJwtOptions:Audience`** — issuer/audience used to validate the short-lived opt-in JWT embedded in the share link.
+- **`SelfOptInJwtOptions:TokenTtlMinutes`** — how long a generated share link stays valid. Once expired, opting in returns `410 Gone` ("Invalid or expired link").
+- **`SelfOptInJwtOptions:MaxParticipants`** *(optional, `int?`)* — caps how many distinct students can newly opt into a template:
+  - Unset / omitted (`null`) — unlimited.
+  - `0` — closed to new opt-ins (`403 Forbidden`, "Capacity reached for this template"); students who already opted in keep their existing access.
+  - A positive number `N` — the `(N+1)`th distinct student to opt in gets `403 Forbidden`; the first `N` succeed.
+  - **A negative number behaves the same as unlimited.** The capacity check only runs when `MaxParticipants >= 0`, so e.g. `-1` silently disables the cap instead of raising a validation error. Leave the key unset rather than using a negative value.
+- **`SelfOptInJwtOptions:SigningKey`** — not an independent setting. Even though it is bound from this section, it is unconditionally overwritten at startup with `Jwt:SecretKey`. Setting it directly under `SelfOptInJwtOptions` has no effect — the opt-in JWT is always signed with `Jwt:SecretKey`.
+
+Set the matching `SelfOptInJwtOptions__*` environment variables in Azure App Settings as well.
+
+#### 4. Other Environment-Specific Settings
 
 - **`Frontend:Url`** — the base URL of the deployed frontend. Used to build self-opt-in preview links sent to students.
 - **`Institution:DisplayName`** — the school/institution name shown on generated Excel/PDF reports.
 - **`Cors:AllowedOrigins`** — the origin(s) allowed to call the API's auth endpoints (comma-separated if multiple). Should match your frontend's URL.
 
-#### 4. Install Dependencies & Build
+#### 5. Install Dependencies & Build
 
 ```bash
 cd FeedBackApp.Backend
