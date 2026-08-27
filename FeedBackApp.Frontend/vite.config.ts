@@ -21,6 +21,15 @@ export default defineConfig(({ mode }) => {
   tenantDefines[`import.meta.env.VITE_DASHBOARD_IMAGE_PATH`] = JSON.stringify(`/resources/${resourceTenant}/Image.png`);
   tenantDefines[`import.meta.env.VITE_FAVICON_PATH`] = JSON.stringify(`/resources/${resourceTenant}/favicon.png`);
 
+  const INSTITUTION_NAMES: Record<string,string> = {
+    GIMI: "Tamási Áron Gimnázium",
+    UBB: "Babeș-Bolyai Tudományegyetem",
+    EXPLORER: "Explorer Consulting",
+  };
+
+  const institutionName = INSTITUTION_NAMES[resourceTenant] || "Explorer Consulting";
+  tenantDefines[`import.meta.env.VITE_INSTITUTION_NAME`] = JSON.stringify(institutionName);
+
   return{
   plugins: [
     react(),
@@ -28,7 +37,9 @@ export default defineConfig(({ mode }) => {
     {
      name: "html-tenant-favicon",
      transformIndexHtml(html){
-      return html.replace(/__FAVICON_PATH__/g, `/resources/${resourceTenant}/favicon.png`);
+      return html
+        .replace(/__FAVICON_PATH__/g, `/resources/${resourceTenant}/favicon.png`)
+        .replace(/__INSTITUTION_NAME__/g, institutionName);
      } 
     },
   ],
