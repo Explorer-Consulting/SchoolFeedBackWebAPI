@@ -82,7 +82,7 @@ export default function StudentDashboard() {
             Üdv, <span className="text-primary">{user.firstName}</span>!
           </h1>
           <img
-            src="/Image.png"
+            src={import.meta.env.VITE_DASHBOARD_IMAGE_PATH}
             className="block shrink-0 object-contain h-auto w-[120px] sm:w-[180px] md:w-[260px] lg:w-[320px] xl:w-[380px]"
           />
         </div>
@@ -92,7 +92,7 @@ export default function StudentDashboard() {
         <Card>
           <CardContent className="space-y-3 text-muted-foreground py-6">
             <p>
-              Kérünk, válaszolj néhány kérdésre a Tamási Áron Gimnázium oktatási tevékenységére vonatkozóan.
+              Kérünk, válaszolj néhány kérdésre a {import.meta.env.VITE_INSTITUTION_NAME} oktatási tevékenységére vonatkozóan.
               A felmérés célja az oktatásra vonatkozó tapasztalatok felmérése, illetve ezekre alapozva a megfelelő
               stratégiák kidolgozása.
             </p>
