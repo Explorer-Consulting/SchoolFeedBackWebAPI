@@ -3,8 +3,10 @@ using Application.DTOs.Questionnaire.Post;
 using Application.DTOs.Survey;
 using Application.Extensions.QuestionnaireExtensions;
 using Application.Services.Interfaces;
+using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
+using Microsoft.Extensions.Options;
 
 namespace Application.Services
 {
@@ -35,6 +37,7 @@ namespace Application.Services
         private readonly IEvaluationRepository _evaluationRepository;
         private readonly IValidator<CreateSurveyMetadataDTO> _createValidator;
         private readonly IWhitelistRepository _whitelistRepository;
+        private readonly IOptions<AuthorizationOptions> _authorizationOptions;
 
         /// <summary>
         /// Constructs the questionnaire service with repositories and validators.
@@ -43,16 +46,19 @@ namespace Application.Services
         /// <param name="evaluationRepository">Access to question templates for rendering questionnaires.</param>
         /// <param name="createValidator">FluentValidation validator for survey creation DTOs.</param>
         /// <param name="whitelistRepository">Repository handling student email whitelist.</param>
+        /// <param name="authorizationOptions">Handle universal grouping for selfOptIn.</param
         public QuestionnaireService(
             IQuestionnaireRepository questionnaireRepository,
             IEvaluationRepository evaluationRepository,
             IValidator<CreateSurveyMetadataDTO> createValidator,
-            IWhitelistRepository whitelistRepository)
+            IWhitelistRepository whitelistRepository,
+            IOptions<AuthorizationOptions> authorizationOptions)
         {
             _questionnaireRepository = questionnaireRepository;
             _evaluationRepository = evaluationRepository;
             _createValidator = createValidator;
             _whitelistRepository = whitelistRepository;
+            _authorizationOptions = authorizationOptions;
         }
 
         /// <summary>
@@ -75,6 +81,23 @@ namespace Application.Services
         /// <returns>A <see cref="CreationResponseDTO"/> with status and message.</returns>
         public async Task<CreationResponseDTO> CompileAndSaveAsync(CreateSurveyMetadataDTO dto)
         {
+            if (_authorizationOptions.Value.UseUniversalStudentGroup && !_authorizationOptions.Value.RequireStudentWhiteList)
+            {
+                dto.StudentSets = new List<StudentSetDTO>
+                {
+                    new StudentSetDTO
+                    { 
+                        SetId = AuthorizationOptions.UniversalStudentSetId,
+                        StudentEmails = new List<string>()
+                    }
+                };
+
+                foreach(var param in dto.CreationParams)
+                {
+                    param.StudentSetIds = new List<string> { AuthorizationOptions.UniversalStudentSetId };
+                }
+            }
+
             var validationResult = await _createValidator.ValidateAsync(dto);
             if (!validationResult.IsValid)
             {
@@ -83,6 +106,23 @@ namespace Application.Services
             }
 
             var metadata = dto.ToModel();
+
+            // Maintain whitelist with all student emails involved in the survey
+            if (_authorizationOptions.Value.RequireStudentWhiteList)
+            {
+                var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+                foreach (var set in metadata.StudentSets)
+                {
+                    foreach (var email in set.StudentEmails)
+                    {
+                        if (!whitelist.StudentEmails.Contains(email))
+                        {
+                            whitelist.StudentEmails.Add(email);
+                        }
+                    }
+                }
+                await _whitelistRepository.UpdateStudentWhitelistAsync(whitelist);
+            }
 
             for (int i = 0; i < metadata.QuestionTemplates.Count; i++)
             {
@@ -101,20 +141,6 @@ namespace Application.Services
                         break;
                     }
                 }
-
-                // Maintain whitelist with all student emails involved in the survey
-                var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-                foreach (var set in metadata.StudentSets)
-                {
-                    foreach (var email in set.StudentEmails)
-                    {
-                        if (!whitelist.StudentEmails.Contains(email))
-                        {
-                            whitelist.StudentEmails.Add(email);
-                        }
-                    }
-                }
-                await _whitelistRepository.UpdateStudentWhitelistAsync(whitelist);
 
                 if (depIndex == -1)
                     return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} not found for question {current.Id}.");

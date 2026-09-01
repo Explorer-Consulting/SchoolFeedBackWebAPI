@@ -13,5 +13,6 @@ public sealed class SelfOptInJwtOptions
     public string Issuer { get; set; } = "";
     public string Audience { get; set; } = "";
     public string SigningKey { get; set; } = "";
-    public int TokenTtlMinutes { get; set; } 
+    public int TokenTtlMinutes { get; set; }
+    public int? MaxParticipants { get; set; } = null;
 }

@@ -173,6 +173,8 @@ builder.Services.AddOptions<MicrosoftAuthOptions>()
 
 builder.Services.AddOptions<AuthorizationOptions>()
     .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Authorization").Bind(opt))
+    .Validate(o => !o.UseUniversalStudentGroup || !o.RequireStudentWhiteList,
+        "Authorization: UseUniversalStudentGroup requires RequireStudentWhiteList to be false — otherwise no student could ever log in.")
     .ValidateOnStart();
 
 _ = builder.Configuration["Email:FromAddress"]
