@@ -33,6 +33,9 @@ namespace FeedBackApp.Core.Model
         
         // ULID alias for links
         public string TemplateUlid { get; set; } = string.Empty;
+
+        // Validation
+        public bool RequireValidation { get; set; } = false;
         
     }
 }

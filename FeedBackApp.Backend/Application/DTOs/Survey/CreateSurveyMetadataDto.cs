@@ -25,5 +25,8 @@ namespace Application.DTOs.Survey
 
         [JsonProperty("questionnaireCreationParams")]
         public List<QuestionnaireCreationParamDTO> CreationParams { get; set; } = new();
+
+        [JsonProperty("requireValidation")]
+        public bool RequireValidation { get; set; }
     }
 }

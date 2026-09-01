@@ -119,3 +119,9 @@ export const SelfOptIn = async (templateId: string, optInToken: string): Promise
     });
     return data;
 };
+
+// Generate Validation token for QR scan
+export const GenerateValidationToken = async(surveyId: string, studentEmail: string) => {
+    const { data } = await apiClient.post(`/surveys/${surveyId}/validation-token`, {studentEmail})
+    return data;
+}

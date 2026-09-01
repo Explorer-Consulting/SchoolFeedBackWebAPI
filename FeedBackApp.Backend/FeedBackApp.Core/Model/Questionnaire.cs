@@ -17,6 +17,8 @@ namespace FeedBackApp.Core.Model
 
         public bool IsValidate { get; set; } = false;
 
+        public string? ValidationToken { get; set; }
+
         public IList<QuestionAnswer> QuestionnaireResults { get; set; } = new List<QuestionAnswer>();
     }
 }

@@ -25,6 +25,7 @@ public sealed class SurveyMetadataConfiguration : IEntityTypeConfiguration<Surve
 
         builder.Property(x => x.StartDate).ToJsonProperty("startDate");
         builder.Property(x => x.EndDate).ToJsonProperty("endDate");
+        builder.Property(x => x.RequireValidation).ToJsonProperty("requireValidation");
 
         builder.HasDiscriminator<string>("DocumentType")
             .HasValue("Survey");
@@ -50,7 +51,6 @@ public sealed class SurveyMetadataConfiguration : IEntityTypeConfiguration<Surve
             qt.Property(p => p.Category).ToJsonProperty("category").IsRequired();
             qt.Property(p => p.Description).ToJsonProperty("description");
             qt.Property(p => p.AnswerOptions).ToJsonProperty("answerOptions");
-            qt.Property(p => p.RequiredValidation).ToJsonProperty("requiredValidation");
 
             qt.OwnsOne(p => p.Dependency, dep =>
             {

@@ -6,8 +6,11 @@ import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 import { getUnansweredCount } from "@/utils/utils.ts"
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { celebrateConfettiRed } from "@/utils/celebrate";
+import QrCodeModal from "@/components/ui/qr-code-modal";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -27,7 +30,11 @@ export default function StudentDashboard() {
     questionnaires,
     isLoadingQuestionnaire,
     isErrorQuestionnaire,
-    refetchQuestionnaires } = useReviews(selectedSurveyId ?? undefined);
+    refetchQuestionnaires ,
+    generateValidationToken,
+    isGeneratingValidationToken } = useReviews(selectedSurveyId ?? undefined);
+  
+  const [validationToken, setValidationToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (!questionnaires) return;
@@ -174,17 +181,49 @@ export default function StudentDashboard() {
               }}
             />
           </>
-        ) : !isLoadingQuestionnaire && (
+        ) : !isLoadingQuestionnaire && !isErrorQuestionnaire && (
           <Card>
             <CardHeader>
               <CardTitle>Kérdőív kitöltve</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground py-4">
+              <p>
               Ezt a kérdőívet már kitöltötted. Köszönjük a visszajelzést!
+              </p>
+                {getUnansweredCount(context) === 0 && (
+                  <Button
+                    disabled={isGeneratingValidationToken}
+                    onClick={() => {
+                      if(!selectedSurveyId || !user) return;
+                      generateValidationToken(
+                         {surveyId: selectedSurveyId, studentEmail: user.email},
+                         {
+                            onSuccess: (data) =>{
+                              if(data?.validationToken){
+                                setValidationToken(data.validationToken)
+                              } else{
+                                toast.error(data?.message ?? "Nem sikerült létrehozni a validációs QR-kódot")
+                              }
+                            },
+                              onError: () => toast.error("Hiba történt a QR-kód létrehozásakor")
+                         }
+                      );
+                    }}
+                  >
+                    QR kód megjelenítése
+                  </Button>
+                )}
             </CardContent>
           </Card>
         )}
       </section>
+      <QrCodeModal
+        isOpen={!!validationToken}
+        onClose={() => setValidationToken(null)}
+        url={JSON.stringify({ id: validationToken })}
+        title="Kérdőívek validálása"
+        showActions={false}
+      />
     </main>
   );
 

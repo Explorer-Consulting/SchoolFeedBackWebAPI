@@ -296,28 +296,77 @@ namespace Application.Services
         }
 
         /// <summary>
-        /// Marks a questionnaire as validated, indicating the QR code has been scanned
+        /// Marks a questionnaires as validated, indicating the QR code has been scanned
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="validationToken"></param>
         /// <returns></returns>
-        public async Task<ValidationResponseDTO> ValidateQuestionnaireAsync(string id)
+        public async Task<ValidationResponseDTO> ValidateQuestionnairesAsync(string validationToken)
         {
             try
             {
-                var questionnaire = await _questionnaireRepository.GetQuestionnaireByIdWithTrackingAsync(id);
+                var questionnaires = await _questionnaireRepository.GetQuestionnairesByValidationTokenAsync(validationToken);
 
-                if (questionnaire == null)
+                if (questionnaires.Count == 0)
                 {
                     return new ValidationResponseDTO(false, "Questionnaire not found.");
                 }
-                questionnaire.IsValidate = true;
-                await _questionnaireRepository.UpdateQuestionnaireAsync(questionnaire);
+
+                foreach(var questionnaire in questionnaires)
+                {
+                    questionnaire.IsValidate = true;
+                    await _questionnaireRepository.UpdateQuestionnaireAsync(questionnaire);
+                }
+
                 return new ValidationResponseDTO(true, "Questionnaire validated successfully.");
             }
             catch (Exception ex)
             {
                 return new ValidationResponseDTO(false, $"Error validating questionnaire: {ex.Message}");
         }
+        }
+
+        /// <summary>
+        /// Generates a single validation token shared across all of a student's already-submitted questionnaires
+        /// for a given survey, provided the survey requires validation. The token is meant to be displayed as a
+        /// QR code and scanned once to validate every one of the student's submissions for that survey at once.
+        /// </summary>
+        /// <param name="surveyId">Survey identifier.</param>
+        /// <param name="studentEmail">The student's email whose submitted questionnaires should receive the token.</param>
+        /// <returns>A response containing the generated token, or a failure message.</returns>
+        public async Task<GenerateValidationTokenResponseDTO> GenerateValidationTokenAsync(Guid surveyId, string studentEmail)
+        {
+            try
+            {
+                var questionTemplate = await _evaluationRepository.GetQuestionTemplateBySurveyIdAsync(surveyId.ToString());
+                if (questionTemplate == null)
+                {
+                    return new GenerateValidationTokenResponseDTO(false, "Survey not found.");
+                }
+
+                if (!questionTemplate.RequireValidation)
+                {
+                    return new GenerateValidationTokenResponseDTO(false, "This survey does not require validation.");
+                }
+
+                var questionnaires = await _questionnaireRepository.GetQuestionnairesForStudentAsync(surveyId, studentEmail);
+                if (questionnaires.Count == 0)
+                {
+                    return new GenerateValidationTokenResponseDTO(false, "No submitted questionnaires found for this student.");
+                }
+
+                var token = Guid.NewGuid().ToString();
+                foreach (var questionnaire in questionnaires)
+                {
+                    questionnaire.ValidationToken = token;
+                    await _questionnaireRepository.UpdateQuestionnaireAsync(questionnaire);
+                }
+
+                return new GenerateValidationTokenResponseDTO(true, "Validation token generated successfully.", token);
+            }
+            catch (Exception ex)
+            {
+                return new GenerateValidationTokenResponseDTO(false, $"Error generating validation token: {ex.Message}");
+            }
         }
     }
 }
