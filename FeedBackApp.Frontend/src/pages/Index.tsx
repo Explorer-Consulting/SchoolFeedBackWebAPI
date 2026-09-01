@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2, Mail } from 'lucide-react'
 import { User } from '@/models/User'
 import { FaFacebookF, FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
-import { useFacebook } from "@/hooks/useFacebook";
+//import { useFacebook } from "@/hooks/useFacebook";
 import { useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { PublicClientApplication } from "@azure/msal-browser";
@@ -23,11 +23,11 @@ export default function SocialAuthApp() {
     sendOTP,
     isSendingOTP,
     loginWithGoogle,
-    loginWithFacebook,
+    //loginWithFacebook,
     loginWithMicrosoft,
     loginWithLinkedIn,
     isLoggingIn,
-    isLoggingInFacebook,
+    //isLoggingInFacebook,
     isLoggingInMicrosoft,
     isLoggingInLinkedIn
   } = useReviews()
@@ -52,6 +52,10 @@ export default function SocialAuthApp() {
     }
   }
 
+  const enabledProviders = (import.meta.env.VITE_ENABLED_LOGIN_PROVIDERS || "")
+                            .split(",")
+                            .map((p) => p.trim());
+
   const onGoogleSuccess = (resp: CredentialResponse) => {
     const idToken = resp?.credential;
     if (!idToken) return console.error("No ID token from Google");
@@ -62,7 +66,7 @@ export default function SocialAuthApp() {
     });
   };
 
-  const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
+  /*const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
   const fbLoaded = useFacebook(FACEBOOK_APP_ID);
 
    const onFacebookLogin = () => {
@@ -85,6 +89,7 @@ export default function SocialAuthApp() {
       { scope: "email,public_profile" }
     );
   };
+  */
 
 
 
@@ -169,6 +174,7 @@ const onMicrosoftLogin = async () => {
           </p>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
+          {enabledProviders.includes("Google") && (
           <GoogleLogin
             onSuccess={onGoogleSuccess}
             onError={() => console.error("Google login failed")}
@@ -181,6 +187,8 @@ const onMicrosoftLogin = async () => {
             logo_alignment="center"
             width="280"
           />
+          )}
+          {/*
           <button
             onClick={onFacebookLogin}
             className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
@@ -188,7 +196,8 @@ const onMicrosoftLogin = async () => {
             <FaFacebookF className="w-5 h-5" />
             Facebook
           </button>
-
+          */}
+          {enabledProviders.includes("Microsoft") && (
           <button
             onClick={onMicrosoftLogin}
             className="flex items-center justify-center gap-3 bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
@@ -196,6 +205,7 @@ const onMicrosoftLogin = async () => {
             <FaMicrosoft className="w-5 h-5" />
             Microsoft
           </button>
+          )}
           {/*
           <button
             onClick={onLinkedInLogin}
@@ -207,7 +217,7 @@ const onMicrosoftLogin = async () => {
           */}
 
           {isLoggingIn && <Status text="Google bejelentkezés folyamatban…" />}
-          {isLoggingInFacebook && <Status text="Facebook bejelentkezés folyamatban…" />}
+          {/*{isLoggingInFacebook && <Status text="Facebook bejelentkezés folyamatban…" />}*/}
           {isLoggingInMicrosoft && <Status text="Microsoft bejelentkezés folyamatban…" />}
           {isLoggingInLinkedIn && <Status text="LinkedIn bejelentkezés folyamatban…" />}
         </CardContent>

@@ -70,7 +70,10 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
             var template = metadata.QuestionTemplates;
 
             QuestionnaireTemplate tempForSave =
-                new QuestionnaireTemplate(metadata.Id.ToString(), metadata.Title, template);
+                new QuestionnaireTemplate(metadata.Id.ToString(), metadata.Title, template)
+                {
+                    RequireValidation = metadata.RequireValidation
+                };
 
             _context.Add(metadata);
             _context.Add(tempForSave);
@@ -246,6 +249,33 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
         public async Task<Questionnaire?> GetQuestionnaireByIdWithTrackingAsync(string id)
         {
             return await _context.Questionnaires.FirstOrDefaultAsync(q => q.Id == id);
+        }
+
+        /// <summary>
+        /// Retrieves all questionnaires sharing a given validation token, used to look up every submission
+        /// that a scanned validation QR code (containing this token) covers.
+        /// </summary>
+        /// <param name="validationToken">The shared token generated for the student's submitted questionnaires.</param>
+        /// <returns>The list of matching <see cref="Questionnaire"/> entities (may be empty).</returns>
+        public async Task<List<Questionnaire>> GetQuestionnairesByValidationTokenAsync(string validationToken)
+        {
+            return await _context.Questionnaires
+                    .Where(q => q.ValidationToken == validationToken)
+                    .ToListAsync();
+        }
+
+        /// <summary>
+        /// Retrieves all submitted (Status == true) questionnaires belonging to a given student for a given survey.
+        /// Used to determine which of the student's questionnaires should receive a shared validation token.
+        /// </summary>
+        /// <param name="surveyId">Survey identifier.</param>
+        /// <param name="studentEmail">The student's email.</param>
+        /// <returns>The list of matching, already-submitted <see cref="Questionnaire"/> entities.</returns>
+        public async Task<List<Questionnaire>> GetQuestionnairesForStudentAsync(Guid surveyId, string studentEmail)
+        {
+            return await _context.Questionnaires
+                .Where(q => q.SurveyId == surveyId.ToString() && q.StudentEmail == studentEmail && q.Status)
+                .ToListAsync();
         }
 
         /// <summary>

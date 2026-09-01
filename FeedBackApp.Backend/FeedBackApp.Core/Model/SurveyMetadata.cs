@@ -17,5 +17,7 @@
         public IList<MetaTeacher> Teachers { get; set; } = new List<MetaTeacher>();
 
         public IList<QuestionnaireCreationParam> CreationParams { get; set; } = new List<QuestionnaireCreationParam>();
+        
+        public bool RequireValidation { get; set; }
     }
 }

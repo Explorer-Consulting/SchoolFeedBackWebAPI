@@ -229,11 +229,10 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             ImmutableDictionary<Teacher, ImmutableArray<QuestionnaireSubmission>> rawData,
             ImmutableArray<QuestionTemplate> rawQuestions,
             string surveyId,
+            bool requireValidation,
             string institutionName)
         {
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
-
-            var notRequiredValidationQuestionIds = rawQuestions.Where(q => !q.RequiredValidation).Select(q => q.Id).ToImmutableHashSet();
 
             // 1) Teacher-specific PDFs
             foreach (var entry in rawData)
@@ -244,7 +243,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 // select only validated submissions
                 var validatedAnswers = answers
                     .SelectMany(submission => submission.QuestionnaireResults
-                        .Where(answer => submission.IsValidate || notRequiredValidationQuestionIds.Contains(answer.QuestionId)))
+                        .Where(answer => !requireValidation || submission.IsValidate))
                     .ToImmutableArray();
 
                 var idx = BuildAnswersIndex(validatedAnswers);
@@ -273,7 +272,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             {
                 var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
                     .SelectMany(s => s.QuestionnaireResults
-                        .Where(answer => s.IsValidate || notRequiredValidationQuestionIds.Contains(answer.QuestionId)))
+                        .Where(answer => !requireValidation || s.IsValidate))
                     .ToImmutableArray();
 
                 var globalIndex = BuildAnswersIndex(allData);
@@ -309,7 +308,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                 var adminExcel = new ExcelReportDocument(metadata);
                 var allData = rawData.Values.SelectMany(questionnaireSubmissions => questionnaireSubmissions)
                    .SelectMany(s => s.QuestionnaireResults
-                        .Where(answer => s.IsValidate || notRequiredValidationQuestionIds.Contains(answer.QuestionId)))
+                        .Where(answer => !requireValidation || s.IsValidate))
                    .ToImmutableArray();
                 ReportDocument compiledExcel;
                 Task<byte[]> renderTask;

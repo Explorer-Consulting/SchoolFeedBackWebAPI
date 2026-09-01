@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
 import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP,  EnableSelfOptIn, 
-    GenerateShareLink } from "@/api/ReviewApi"
+    GenerateShareLink, GenerateValidationToken } from "@/api/ReviewApi"
 import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import { Survey } from "@/models/StudentContext"
@@ -32,6 +32,10 @@ export const useReviews = (selectedSurveyId?: string) => {
         mutationFn: (accessToken: string) => LoginWithLinkedIn(accessToken)
     });
 
+    const { mutate: generateValidationToken, isPending: isGeneratingValidationToken } = useMutation({
+    mutationFn: ({ surveyId, studentEmail }: { surveyId: string; studentEmail: string }) =>
+        GenerateValidationToken(surveyId, studentEmail)
+    });
 
     const {
         data: questionnaires,
@@ -142,5 +146,6 @@ export const useReviews = (selectedSurveyId?: string) => {
         adminSurveys, isLoadingAdminSurveys, isErrorAdminSurveys, errorAdminSurveys, refetchAdminSurveys,
         enableSelfOptIn, isEnablingSelfOptIn,
         generateShareLink, isGeneratingShareLink,
+        generateValidationToken, isGeneratingValidationToken,
     }
 }

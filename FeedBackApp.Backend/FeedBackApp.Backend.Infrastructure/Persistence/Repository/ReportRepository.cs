@@ -55,17 +55,21 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     );
             
             ImmutableArray<QuestionTemplate> questions;
+            bool requireValidation;
             {
                 var template = await _context.QuestionnaireTemplates
                     .AsNoTracking()
                     .Where(x => x.Id == templateDocId)
                     .SingleOrDefaultAsync();
                 questions = [.. (template?.QuestionTemplates ?? [])];
+                requireValidation = template?.RequireValidation ?? false;
             }
+
             #endregion
             // 3) Generálás + feltöltés
+            
+            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId, requireValidation, _institutionOptions.Value.DisplayName))
 
-            await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId, _institutionOptions.Value.DisplayName))
             {
                 var fileName = $"{surveyId}_{document.Metadata.FileName}";
 

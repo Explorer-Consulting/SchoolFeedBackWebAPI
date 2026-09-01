@@ -27,6 +27,9 @@ public sealed class QuestionnaireTemplateConfiguration : IEntityTypeConfiguratio
             .ToJsonProperty("title")
             .IsRequired();
 
+        builder.Property(x => x.RequireValidation)
+            .ToJsonProperty("requireValidation");
+
         builder.OwnsMany(x => x.QuestionTemplates, qt =>
         {
             qt.ToJsonProperty("questionTemplates");
@@ -37,7 +40,6 @@ public sealed class QuestionnaireTemplateConfiguration : IEntityTypeConfiguratio
             qt.Property(p => p.Category).ToJsonProperty("category").IsRequired();
             qt.Property(p => p.Description).ToJsonProperty("description");
             qt.Property(p => p.AnswerOptions).ToJsonProperty("answerOptions");
-            qt.Property(p => p.RequiredValidation).ToJsonProperty("requiredValidation");
 
             qt.OwnsOne(p => p.Dependency, dep =>
             {

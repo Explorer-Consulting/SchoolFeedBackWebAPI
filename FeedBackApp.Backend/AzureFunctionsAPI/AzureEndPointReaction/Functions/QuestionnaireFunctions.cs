@@ -124,19 +124,19 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         /// Validates an existing questionnaire by its identifier.
         /// </summary>
         /// <param name="request"></param>
-        /// <param name="id"></param>
+        /// <param name="token">The validaton token generated for the questionnaire at submittion time</param>
         /// <returns> A HTTP response indicating the validation status. <see cref="ValidationResponseDTO"/> or an error status.</returns>
         [RequireAdmin]
         [Function("ValidateQuestionnaire")]
         [OpenApiOperation(operationId: "ValidateQuestionnaire", tags: new[] { "Questionnaires" })]
-        [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The ID of the questionnaire to validate.")]
+        [OpenApiParameter(name: "token", In = ParameterLocation.Path, Required = true, Type = typeof(string), Description = "The ID of the questionnaire to validate.")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(ValidationResponseDTO))]
         public async Task<HttpResponseData> ValidateQuestionnaire(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "questionnaires/{id}/validate")] HttpRequestData request, string id)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "questionnaires/{token}/validate")] HttpRequestData request, string token)
         {
             try
             {
-                var result = await _questionnaireService.ValidateQuestionnaireAsync(id);
+                var result = await _questionnaireService.ValidateQuestionnairesAsync(token);
                 if (!result.Success)
                 {
                     var error = request.CreateResponse(HttpStatusCode.BadRequest);
@@ -152,6 +152,57 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
                 _logger.LogError("Something unexpected happenned! {Message}", e.Message);
                 var response = request.CreateResponse(HttpStatusCode.InternalServerError);
                 await response.WriteAsJsonAsync(new ValidationResponseDTO(false, $"Error validating questionnaire: {e.Message}"));
+                return response;
+            }
+        }
+
+        /// <summary>
+        /// Generates a shared validation token for all of a student's already-submitted questionnaires for a survey.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Security</b>: Anonymous — intentionally no student/admin authentication is enforced here, because the
+        /// self-opt-in whitelist flow is currently unreliable; the caller supplies the student's email directly.
+        /// </para>
+        /// </remarks>
+        /// <param name="request">HTTP request with a JSON body containing the student's email.</param>
+        /// <param name="surveyId">Survey identifier.</param>
+        /// <returns>A HTTP response with the generated token, or an error status.</returns>
+        [Function("GenerateValidationToken")]
+        [OpenApiOperation(operationId: "GenerateValidationToken", tags: new[] { "Questionnaires" })]
+        [OpenApiParameter(name: "surveyId", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Description = "The survey identifier.")]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(GenerateValidationTokenRequestDTO), Required = true)]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(GenerateValidationTokenResponseDTO))]
+        public async Task<HttpResponseData> GenerateValidationToken(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "surveys/{surveyId}/validation-token")] HttpRequestData request, Guid surveyId)
+        {
+            try
+            {
+                var dto = await JsonUtil.ReadFromJsonAsync<GenerateValidationTokenRequestDTO>(request);
+                if (dto is null || string.IsNullOrWhiteSpace(dto.StudentEmail))
+                {
+                    var badResponse = request.CreateResponse(HttpStatusCode.BadRequest);
+                    await badResponse.WriteStringAsync("Invalid or empty JSON body: studentEmail is required.");
+                    return badResponse;
+                }
+
+                var result = await _questionnaireService.GenerateValidationTokenAsync(surveyId, dto.StudentEmail);
+                if (!result.Success)
+                {
+                    var error = request.CreateResponse(HttpStatusCode.BadRequest);
+                    await error.WriteAsJsonAsync(result);
+                    return error;
+                }
+
+                var ok = request.CreateResponse(HttpStatusCode.OK);
+                await ok.WriteAsJsonAsync(result);
+                return ok;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Something unexpected happenned! {Message}", e.Message);
+                var response = request.CreateResponse(HttpStatusCode.InternalServerError);
+                await response.WriteAsJsonAsync(new GenerateValidationTokenResponseDTO(false, $"Error generating validation token: {e.Message}"));
                 return response;
             }
         }

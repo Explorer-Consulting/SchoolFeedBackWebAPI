@@ -48,7 +48,8 @@ namespace Application.Extensions.QuestionnaireExtensions
                     .ToList() ?? new List<MetaTeacher>(),
                 CreationParams = dto.CreationParams
                     .Select(c => c.ToModel())
-                    .ToList() ?? new List<QuestionnaireCreationParam>()
+                    .ToList() ?? new List<QuestionnaireCreationParam>(),
+                RequireValidation = dto.RequireValidation
             };
 
         /// <summary>
@@ -73,7 +74,8 @@ namespace Application.Extensions.QuestionnaireExtensions
                     .ToList() ?? new List<MetaTeacherDTO>(),
                 CreationParams = model.CreationParams
                     .Select(c => c.ToDto())
-                    .ToList() ?? new List<QuestionnaireCreationParamDTO>()
+                    .ToList() ?? new List<QuestionnaireCreationParamDTO>(),
+                RequireValidation = model.RequireValidation
             };
 
         /// <summary>
@@ -221,7 +223,6 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Dependency = dto.Dependency?.ToModel(),
                 Category = dto.Category,
                 Description = dto.Description,
-                RequiredValidation = dto.RequiredValidation
             };
 
         /// <summary>

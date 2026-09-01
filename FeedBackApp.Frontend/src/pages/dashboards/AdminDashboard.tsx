@@ -49,6 +49,8 @@ export default function AdminDashboard() {
   const displayedQuestionnaires = adminSurveys;
   const [file, setFile] = useState<File | null>(null);
 
+  const requireValidation = import.meta.env.VITE_REQUIRE_VALIDATION === "true";
+
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -99,6 +101,7 @@ export default function AdminDashboard() {
     let payload;
     try {
       payload = await parseExcel(file, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0], title);
+      payload = { ...payload, requireValidation};
     } catch (err) {
       console.error("Failed to parse Excel:", err);
     }
