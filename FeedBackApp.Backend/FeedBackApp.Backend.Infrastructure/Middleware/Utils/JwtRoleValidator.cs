@@ -1,4 +1,6 @@
-﻿using Microsoft.Azure.Functions.Worker;
+﻿using FeedBackApp.Backend.Infrastructure.Configuration;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,11 +8,14 @@ using System.Text;
 
 namespace FeedBackApp.Backend.Infrastructure.Middleware.Utils
 {
-    public static class JwtRoleValidator
+    public class JwtRoleValidator
     {
-        private static ClaimsPrincipal? ValidateToken(string token)
+        private readonly IOptions<JwtOptions> _jwtOptions;
+
+        public JwtRoleValidator(IOptions<JwtOptions> jwtOptions) => _jwtOptions = jwtOptions;
+        private ClaimsPrincipal? ValidateToken(string token)
         {
-            var secretKey = Environment.GetEnvironmentVariable("Jwt:SecretKey");
+            var secretKey = _jwtOptions.Value.SecretKey;
             if (string.IsNullOrEmpty(secretKey))
                 return null;
 
@@ -23,8 +28,8 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware.Utils
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidIssuer = "SchoolFeedbackWebAPI",
-                    ValidAudience = "SchoolFeedbackWebAPI",
+                    ValidIssuer = _jwtOptions.Value.Issuer,
+                    ValidAudience = _jwtOptions.Value.Audience,
                     IssuerSigningKey = key,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
@@ -38,7 +43,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware.Utils
             }
         }
 
-        public static bool HasRole(string token, string role, FunctionContext? context = null)
+        public bool HasRole(string token, string role, FunctionContext? context = null)
         {
             var principal = ValidateToken(token);
             if (principal == null)
@@ -51,7 +56,7 @@ namespace FeedBackApp.Backend.Infrastructure.Middleware.Utils
             return roleClaim?.Value == role;
         }
 
-        public static bool IsAdmin(string token, FunctionContext? context = null) => HasRole(token, "Admin", context);
-        public static bool IsStudent(string token, FunctionContext? context = null) => HasRole(token, "Student", context);
+        public bool IsAdmin(string token, FunctionContext? context = null) => HasRole(token, "Admin", context);
+        public bool IsStudent(string token, FunctionContext? context = null) => HasRole(token, "Student", context);
     }
 }

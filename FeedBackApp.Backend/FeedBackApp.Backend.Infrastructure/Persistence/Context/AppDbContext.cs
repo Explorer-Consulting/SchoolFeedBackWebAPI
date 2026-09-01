@@ -1,10 +1,12 @@
-﻿using FeedBackApp.Backend.Infrastructure.Persistence.DocumentConfigurations;
+﻿using FeedBackApp.Backend.Infrastructure.Configuration;
+using FeedBackApp.Backend.Infrastructure.Persistence.DocumentConfigurations;
 using FeedBackApp.Core.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
 {
-    public class AppDBContext(DbContextOptions<AppDBContext> options) : DbContext(options)
+    public class AppDBContext(DbContextOptions<AppDBContext> options, IOptions<CosmosOptions> cosmosOptions) : DbContext(options)
     {
         public DbSet<SurveyMetadata> Surveys { get; set; }
         public DbSet<Questionnaire> Questionnaires { get; set; }
@@ -12,9 +14,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Context
         public DbSet<EmailsToSend> EmailsToSend { get; set; }
         public DbSet<StudentWhitelist> StudentWhitelist { get; set; }
 
-        private readonly string _containerName = Environment.GetEnvironmentVariable("Cosmos:ContainerName")
-                ?? throw new InvalidOperationException("Cosmos ContainerName not set in environment variables");
-
+        private readonly string _containerName = cosmosOptions.Value.ContainerName;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

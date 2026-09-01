@@ -4,16 +4,18 @@ using Application.Services;
 using Application.Services.Interfaces;
 using Application.Validation.CreateValidation;
 using ApplicationEventWorkers.SelfOptIn; 
-using FeedBackApp.Backend.Infrastructure.Email;
-using FeedBackApp.Core.Email;
 using Azure.Core.Serialization;
 using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
 using AzureFunctionsAPI.AzureEndPointReaction.Functions;
+using FeedBackApp.Backend.Infrastructure.Configuration;
+using FeedBackApp.Backend.Infrastructure.Email;
 using FeedBackApp.Backend.Infrastructure.Middleware;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
+using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using FeedBackApp.Backend.Infrastructure.Persistence.Repository;
-using FeedBackApp.Backend.Infrastructure.Persistence.BlobStorageInterface;
+using FeedBackApp.Core.Email;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
 using Microsoft.Azure.Functions.Worker;
@@ -23,9 +25,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QuestPDF.Infrastructure;
 using System.Text.Json;
-using Azure.Storage.Queues;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -35,7 +37,7 @@ SentrySdk.Init(options =>
     // A Sentry Data Source Name (DSN) is required.
     // See https://docs.sentry.io/product/sentry-basics/dsn-explainer/
     // You can set it in the SENTRY_DSN environment variable, or you can set it in code here.
-    options.Dsn = "https://e527f85474f0587735eddc9531cae1a5@o4508133068963840.ingest.de.sentry.io/4510549831778384";
+    options.Dsn = Environment.GetEnvironmentVariable("SENTRY_DSN");
 
     // When debug is enabled, the Sentry client will emit detailed debugging information to the console.
     // This might be helpful, or might interfere with the normal operation of your application.
@@ -76,21 +78,20 @@ builder.Services
 // ─────────────────────────────────────────────────────
 // 3) EF Core Cosmos – local.settings.json / Azure App Settings
 // ─────────────────────────────────────────────────────
-builder.Services.AddDbContext<AppDBContext>(options =>
+
+builder.Services.AddOptions<CosmosOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Cosmos").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.AccountEndpoint)
+                && !string.IsNullOrWhiteSpace(o.AccountKey)
+                && !string.IsNullOrWhiteSpace(o.DatabaseName)
+                && !string.IsNullOrWhiteSpace(o.ContainerName),
+        "Cosmos: AccountEndpoint, AccountKey, DatabaseName and ContainerName must all be set")
+    .ValidateOnStart();
+
+builder.Services.AddDbContext<AppDBContext>((sp, options) =>
 {
-    var endpoint = builder.Configuration["Cosmos:AccountEndpoint"];
-    var key = builder.Configuration["Cosmos:AccountKey"];
-    var db = builder.Configuration["Cosmos:DatabaseName"];
-
-    if (string.IsNullOrWhiteSpace(endpoint) ||
-        string.IsNullOrWhiteSpace(key) ||
-        string.IsNullOrWhiteSpace(db))
-    {
-        throw new InvalidOperationException(
-            "Missing Cosmos configuration: Cosmos:AccountEndpoint, Cosmos:AccountKey, Cosmos:DatabaseName");
-    }
-
-    options.UseCosmos(endpoint, key, db);
+    var cosmos = sp.GetRequiredService<IOptions<CosmosOptions>>().Value;
+    options.UseCosmos(cosmos.AccountEndpoint, cosmos.AccountKey, cosmos.DatabaseName);
 });
 
 // ─────────────────────────────────────────────────────
@@ -124,11 +125,8 @@ builder.Services.AddOptions<SelfOptInJwtOptions>()
     .Configure<IConfiguration>((opt, cfg) =>
     {
         // pulled from "SelfOptInJwtOptions"
-        opt.Enabled = true;
-        opt.Issuer = "feedback-app.optin";          // source
-        opt.Audience = "feedback-app.optin";        // destination
-        opt.SigningKey = cfg["Jwt:SecretKey"]!;     // reuse existing secret
-        opt.TokenTtlMinutes = 7 * 24 * 60;          // 7 days
+        cfg.GetSection("SelfOptInJwtOptions").Bind(opt); // enabled, issuer, audience and expiration in minutes
+        opt.SigningKey = cfg["Jwt:SecretKey"]!;    // using jwt secret key
     })
     .Validate(o => !string.IsNullOrWhiteSpace(o.SigningKey) && o.SigningKey.Length >= 32,
         "SelfOptInJwt: SigningKey must be >= 32 chars")
@@ -149,11 +147,18 @@ builder.Services.AddSingleton(sp =>
 // ─────────────────────────────────────────────────────
 // 5) Egyéb config ellenőrzés (JWT, Google, Email, AdminEmails)
 // ─────────────────────────────────────────────────────
-_ = builder.Configuration["Jwt:SecretKey"]
-    ?? throw new InvalidOperationException("Missing Jwt:SecretKey");
+builder.Services.AddOptions<JwtOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Jwt").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.SecretKey) && o.SecretKey.Length >= 32,
+        "Jwt: SecretKey must be >= 32 chars")
+    .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer) && !string.IsNullOrWhiteSpace(o.Audience),
+        "Jwt: Issuer and Audience must be set")
+    .ValidateOnStart();
 
-_ = builder.Configuration["Google:ClientId"]
-    ?? throw new InvalidOperationException("Missing Google:ClientId");
+builder.Services.AddOptions<GoogleAuthOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Google").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Google: ClientId must be set")
+    .ValidateOnStart();
 
 _ = builder.Configuration["Facebook:AppId"]
     ?? throw new InvalidOperationException("Missing Facebook:AppId");
@@ -161,15 +166,14 @@ _ = builder.Configuration["Facebook:AppId"]
 _ = builder.Configuration["Facebook:AppSecret"]
     ?? throw new InvalidOperationException("Missing Facebook:AppSecret");
 
-_ = builder.Configuration["Microsoft:ClientId"]
-    ?? throw new InvalidOperationException("Missing Microsoft:ClientId");
+builder.Services.AddOptions<MicrosoftAuthOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Microsoft").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Microsoft: ClientId must be set")
+    .ValidateOnStart();
 
-_ = builder.Configuration["Microsoft:TenantId"]
-    ?? "common";
-
-var rawAdminEmails = builder.Configuration["AdminEmails"] ?? string.Empty;
-var adminEmails = rawAdminEmails
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+builder.Services.AddOptions<AuthorizationOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Authorization").Bind(opt))
+    .ValidateOnStart();
 
 _ = builder.Configuration["Email:FromAddress"]
     ?? throw new InvalidOperationException("Missing Email:FromAddress");
@@ -179,6 +183,26 @@ _ = builder.Configuration["Email:FromName"]
 
 _ = builder.Configuration["Email:AppPassword"]
     ?? throw new InvalidOperationException("Missing Email:AppPassword");
+
+builder.Services.AddOptions<OtpOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Otp").Bind(opt))
+    .Validate(o => o.ExpirationMinutes > 0, "Otp: ExpirationMinutes must be positive")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<FrontendOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Frontend").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.Url), "Frontend: Url must be set")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<InstitutionOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Institution").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.DisplayName), "Institution: DisplayName must be set")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<CorsOptions>()
+    .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Cors").Bind(opt))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.AllowedOrigins), "Cors: AllowedOrigins must be set")
+    .ValidateOnStart();
 
 // Certificates – localon használod, Azure-on majd KeyVault lesz valószínűleg
 var certLoadPath = builder.Configuration["Certificates:LoadPath"];
@@ -244,6 +268,7 @@ builder.Services.AddScoped<IValidator<StudentSetDTO>, StudentSetValidator>();
 builder.Services.AddSingleton<AdminOnlyMiddleware>();
 builder.Services.AddSingleton<StudentOnlyMiddleware>();
 builder.Services.AddSingleton<MiddlewareSelector>();
+builder.Services.AddSingleton<JwtRoleValidator>();
 
 builder
     .UseMiddleware<MiddlewareSelector>();

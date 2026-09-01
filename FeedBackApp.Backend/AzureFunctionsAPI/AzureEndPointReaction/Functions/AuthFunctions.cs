@@ -1,5 +1,6 @@
 ﻿using Application.Email;
 using Application.Services.Interfaces;
+using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Core.Email;
 using FeedBackApp.Core.Repositories;
 using Google.Apis.Auth;
@@ -7,6 +8,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -29,19 +31,34 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         private readonly IOtpService _otpService;
         private readonly IEmailContentService _emailContentService;
         private readonly IEmailSender _emailSender;
+        private readonly IOptions<JwtOptions> _jwtOptions;
+        private readonly IOptions<GoogleAuthOptions> _googleAuthOptions;
+        private readonly IOptions<MicrosoftAuthOptions> _microsoftAuthOptions;
+        private readonly IOptions<AuthorizationOptions> _authorizationOptions;
+        private readonly IOptions<CorsOptions> _corsOptions;
 
         public AuthFunctions(
             ILogger<AuthFunctions> logger,
             IWhitelistRepository whitelistRepository,
             IOtpService otpService,
             IEmailContentService emailContentService,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IOptions<JwtOptions> jwtOptions,
+            IOptions<GoogleAuthOptions> googleAuthOptions,
+            IOptions<MicrosoftAuthOptions> microsoftAuthOptions,
+            IOptions<AuthorizationOptions> authorizationOptions,
+            IOptions<CorsOptions> corsOptions)
         {
             _logger = logger;
             _whitelistRepository = whitelistRepository;
             _otpService = otpService;
             _emailContentService = emailContentService;
             _emailSender = emailSender;
+            _jwtOptions = jwtOptions;
+            _googleAuthOptions = googleAuthOptions;
+            _microsoftAuthOptions = microsoftAuthOptions;
+            _authorizationOptions = authorizationOptions;
+            _corsOptions = corsOptions;
         }
 
         /// <summary>
@@ -81,12 +98,9 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             GoogleJsonWebSignature.Payload payload;
             try
             {
-                var googleClientId = Environment.GetEnvironmentVariable("GoogleClientId") 
-                                     ?? Environment.GetEnvironmentVariable("Google:ClientId"); // Fallback for diff naming conventions
-
                 payload = await GoogleJsonWebSignature.ValidateAsync(data.IdToken, new GoogleJsonWebSignature.ValidationSettings
                 {
-                        Audience = [Environment.GetEnvironmentVariable("Google:ClientId")]
+                    Audience = [_googleAuthOptions.Value.ClientId]
                 });
                 _logger.LogInformation("Google token validated. Email: {Email}", payload.Email);
             }
@@ -296,24 +310,13 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
     [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/microsoft")]
     HttpRequestData req)
         {
-            var origin = req.Headers.TryGetValues("Origin", out var origins)
-                ? origins.FirstOrDefault()
-                : null;
-
+            var origin = GetOrigin(req);
 
             // CORS preflight
 
             if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
             {
-                var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    preflight.Headers.Add("Access-Control-Allow-Origin", origin);
-                    preflight.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
-                    preflight.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-                    preflight.Headers.Add("Access-Control-Allow-Credentials", "true");
-                }
-                return preflight;
+                return CreatePreflightResponse(req, origin);
             }
 
 
@@ -324,9 +327,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (string.IsNullOrWhiteSpace(data?.IdToken))
             {
-                var bad = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
-                await bad.WriteStringAsync("IdToken is required");
-                return bad;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "IdTpken is required", origin);
             }
 
 
@@ -335,8 +336,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             ClaimsPrincipal principal;
             try
             {
-                var tenantId = Environment.GetEnvironmentVariable("Microsoft:TenantId") ?? "common";
-                var clientId = Environment.GetEnvironmentVariable("Microsoft:ClientId");
+                var tenantId = _microsoftAuthOptions.Value.TenantId;
+                var clientId = _microsoftAuthOptions.Value.ClientId;
 
                 var authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
                 var metadataAddress = $"{authority}/.well-known/openid-configuration";
@@ -368,10 +369,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Invalid Microsoft token");
-
-                var unauth = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
-                await unauth.WriteStringAsync("Invalid Microsoft token");
-                return unauth;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Unauthorized, "Invalid Microsoft token", origin);
             }
 
 
@@ -383,11 +381,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (string.IsNullOrWhiteSpace(email))
             {
-                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
-                await forbidden.WriteStringAsync("Email not available from Microsoft account");
-                return forbidden;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "Email not available from Microsoft account", origin); 
             }
-
 
             // Authorization (UGYANAZ, mint Google/Facebook)
 
@@ -398,9 +393,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             if (!IsAuthorizedEmail(email,students,isAdmin))
             {
-                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
-                await forbidden.WriteStringAsync("User not authorized");
-                return forbidden;
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not authorized", origin);
             }
 
             // JWT issuance (UGYANAZ)
@@ -408,12 +401,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             var token = GenerateJwtToken(email, isAdmin);
 
             var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-
-            if (!string.IsNullOrEmpty(origin))
-            {
-                response.Headers.Add("Access-Control-Allow-Origin", origin);
-                response.Headers.Add("Access-Control-Allow-Credentials", "true");
-            }
+            AddCorsHeaders(response, origin);
 
             response.Headers.Add(
                 "Set-Cookie",
@@ -491,8 +479,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private bool IsAdmin(string email)
         {
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
-            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var adminEmails = _authorizationOptions.Value.AdminEmails
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries); ;
             return adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -503,10 +491,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return students.Contains(email, StringComparer.OrdinalIgnoreCase);
         }
 
-        private bool IsWhitelistRequired(){
-            var requirement = Environment.GetEnvironmentVariable("RequireStudentWhitelist");
-            return !string.Equals(requirement, "false", StringComparison.OrdinalIgnoreCase);
-        }
+        private bool IsWhitelistRequired() => _authorizationOptions.Value.RequireStudentWhiteList;
 
         private bool IsValidEmailFormat(string email)
         {
@@ -523,9 +508,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private string GenerateJwtToken(string email, bool isAdmin)
         {
-            string secretKey = Environment.GetEnvironmentVariable("JwtSecretKey") 
-                               ?? Environment.GetEnvironmentVariable("Jwt:SecretKey")
-                               ?? throw new InvalidOperationException("JwtSecretKey environment variable not set.");
+            string secretKey = _jwtOptions.Value.SecretKey;
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -537,10 +520,10 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             };
 
             var token = new JwtSecurityToken(
-                issuer: "SchoolFeedbackWebAPI",
-                audience: "SchoolFeedbackWebAPI",
+                issuer: _jwtOptions.Value.Issuer,
+                audience: _jwtOptions.Value.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
+                expires: DateTime.UtcNow.AddMinutes(_jwtOptions.Value.TokenTtlMinutes),
                 signingCredentials: creds
             );
 
@@ -597,7 +580,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private void AddCorsHeaders(HttpResponseData resp, string? origin)
         {
-            if (!string.IsNullOrEmpty(origin))
+            if (!string.IsNullOrEmpty(origin) && !IsAllowedOrigin(origin))
             {
                 resp.Headers.Add("Access-Control-Allow-Origin", origin);
                 resp.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -606,6 +589,12 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             }
         }
 
+        private bool IsAllowedOrigin(string origin) 
+        {
+            var allowed = _corsOptions.Value.AllowedOrigins
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return allowed.Contains(origin, StringComparer.OrdinalIgnoreCase);
+        }
         #endregion
 
         #region DTOs

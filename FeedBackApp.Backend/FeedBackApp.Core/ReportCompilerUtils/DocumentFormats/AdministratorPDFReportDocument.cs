@@ -38,7 +38,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats
                 page.Header().Column(col =>
                 {
                     col.Spacing(4);
-                    col.Item().Text("Globális Felmérés")
+                    col.Item().Text($"Globális Felmérés - {Metadata.InstitutionName}")
                         .FontSize(14).Bold();
                     col.Item().Text("Aggregált statisztikai felmérés a tanárok között")
                         .FontSize(11).FontColor(Colors.Grey.Darken2);

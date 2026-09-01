@@ -229,7 +229,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             ImmutableDictionary<Teacher, ImmutableArray<QuestionnaireSubmission>> rawData,
             ImmutableArray<QuestionTemplate> rawQuestions,
             string surveyId,
-            bool requireValidation)
+            bool requireValidation,
+            string institutionName)
         {
             ArgumentException.ThrowIfNullOrEmpty(surveyId);
 
@@ -257,6 +258,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     MimeType = "application/pdf",
                     FileName = fileName,
                     Author = "Explorer Consulting",
+                    InstitutionName = institutionName,
                     BLOB_URI = string.Empty
                 };
 
@@ -281,6 +283,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     MimeType = "application/pdf",
                     FileName = fileName,
                     Author = "Explorer Consulting",
+                    InstitutionName = institutionName,
                     BLOB_URI = string.Empty
                 };
 
@@ -298,6 +301,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                     MimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     FileName = fileName,
                     Author = "Explorer Consulting",
+                    InstitutionName= institutionName,
                     BLOB_URI = string.Empty
                 };
 

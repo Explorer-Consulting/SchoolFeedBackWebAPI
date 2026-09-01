@@ -1,10 +1,12 @@
 using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
+using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
 using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 /*
  * A simple HTTP GET function to generate a shareable opt-in link for testing/admin usage.
  * Lets us verify end-to-end that token creation works
@@ -22,7 +24,15 @@ namespace ApplicationEventWorkers.AzureEndPointReaction.Functions;
 public class AdminShareLink
 {
     private readonly IOptInTokenService _tokens;
-    public AdminShareLink(IOptInTokenService tokens) => _tokens = tokens;
+    private readonly IOptions<SelfOptInJwtOptions> _options;
+    private readonly IOptions<FrontendOptions> _frontendOptions;
+    public AdminShareLink(IOptInTokenService tokens, IOptions<SelfOptInJwtOptions> options,
+        IOptions<FrontendOptions> frontendOptions)
+    {
+        _tokens = tokens; 
+        _options = options;
+        _frontendOptions = frontendOptions;
+    }
 
     [RequireAdmin]
     [Function("ShareOptInLink")]
@@ -30,7 +40,15 @@ public class AdminShareLink
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post",
             Route = "optin/share-link/{tid}")] HttpRequestData req, string tid)
     {
-        
+
+        // checking if self-opt in is enabled in configuration
+        if (!_options.Value.Enabled)
+        {
+            var forbidden = req.CreateResponse(HttpStatusCode.Forbidden);
+            await forbidden.WriteStringAsync("Self opt-in is not enabled on this deployment");
+            return forbidden;
+        }
+
         if (!Guid.TryParse(tid, out var templateId))
         {
             var bad = req.CreateResponse(HttpStatusCode.BadRequest);
@@ -44,7 +62,7 @@ public class AdminShareLink
         var exp = DateTimeOffset.UtcNow.AddMinutes(minutes);
 
         var token = _tokens.CreateToken(templateId, tag, exp);
-        var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl");
+        var frontendUrl = _frontendOptions.Value.Url;
         var url = $"{frontendUrl}/questionnairetemplate/{tid}/preview?optin={Uri.EscapeDataString(token)}";
         // templates/tid nem kell
         // endpoint
