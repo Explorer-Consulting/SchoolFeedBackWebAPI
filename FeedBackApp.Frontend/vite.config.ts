@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import mkcert from "vite-plugin-mkcert";
 import path from "path";
+import fs from "node:fs";
 
 export default defineConfig(({ mode }) => {
 
@@ -21,15 +22,19 @@ export default defineConfig(({ mode }) => {
   tenantDefines[`import.meta.env.VITE_DASHBOARD_IMAGE_PATH`] = JSON.stringify(`/resources/${resourceTenant}/Image.png`);
   tenantDefines[`import.meta.env.VITE_FAVICON_PATH`] = JSON.stringify(`/resources/${resourceTenant}/favicon.png`);
 
-  const INSTITUTION_NAMES: Record<string,string> = {
-    GIMI: "Tamási Áron Gimnázium",
-    UBB: "Babeș-Bolyai Tudományegyetem",
-    EXPLORER: "Explorer Consulting",
-  };
+  const tenantConfigPath = path.resolve(__dirname, "src/tenants", resourceTenant, "description.json");
+  if (!fs.existsSync(tenantConfigPath)) {
+    throw new Error(
+      `Ismeretlen TENANT: "${resourceTenant}". Hiányzik: src/tenants/${resourceTenant}/description.json`
+    );
+  }
 
-  const institutionName = INSTITUTION_NAMES[resourceTenant] || "Explorer Consulting";
+  const tenantDescription = JSON.parse(fs.readFileSync(tenantConfigPath, "utf-8"));
+  const institutionName: string = tenantDescription.institutionName;
+
   tenantDefines[`import.meta.env.VITE_INSTITUTION_NAME`] = JSON.stringify(institutionName);
-
+  tenantDefines[`import.meta.env.VITE_TENANT_DESCRIPTION`] = JSON.stringify(JSON.stringify(tenantDescription));
+ 
   return{
   plugins: [
     react(),
