@@ -99,7 +99,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             // 5. Authorize (Check Whitelist/Admin)
             bool isAdmin = IsAdmin(payload.Email);
 
-            if (!students.Contains(payload.Email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            if (!IsAuthorizedEmail(payload.Email,students,isAdmin))
             {
                 _logger.LogWarning("Unauthorized login attempt. Email: {Email}", payload.Email);
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
@@ -138,13 +138,18 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             var email = data.Email.Trim().ToLowerInvariant();
 
+            if(!IsValidEmailFormat(email)){
+                _logger.LogWarning("Invalid email format in OTP request: {Email}", email);
+                return CreateErrorResponse(req, System.Net.HttpStatusCode.BadRequest, "Invalid email format", origin);
+            }
+
             // 3. Check Authorization
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
             var students = whitelist?.StudentEmails ?? new List<string>();
             bool isAdmin = IsAdmin(email);
 
             // LOGIC FIX: Changed from (students.Contains && !isAdmin) to (!students.Contains && !isAdmin)
-            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            if (!IsAuthorizedEmail(email,students,isAdmin))
             {
                 _logger.LogWarning("Unauthorized OTP request. Email: {Email}", email);
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
@@ -242,15 +247,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
             //  Authorization (student/admin)
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-            var students = whitelist.StudentEmails;
+            var students = whitelist?.StudentEmails ?? new List<string>();
 
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
-            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            bool isAdmin = IsAdmin(email);
 
-            bool isAdmin = adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
-            bool isStudent = students.Contains(email, StringComparer.OrdinalIgnoreCase);
-
-            if (!isAdmin && !isStudent)
+            if (!IsAuthorizedEmail(email,students,isAdmin))
             {
                 var notFoundResp = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
                 if (!string.IsNullOrEmpty(origin))
@@ -391,16 +392,11 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             // Authorization (UGYANAZ, mint Google/Facebook)
 
             var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
-            var students = whitelist.StudentEmails;
+            var students = whitelist?.StudentEmails ?? new List<string>();
 
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
-            var adminEmails = adminEmailsEnv
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            bool isAdmin = IsAdmin(email);
 
-            bool isAdmin = adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
-            bool isStudent = students.Contains(email, StringComparer.OrdinalIgnoreCase);
-
-            if (!isAdmin && !isStudent)
+            if (!IsAuthorizedEmail(email,students,isAdmin))
             {
                 var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
                 await forbidden.WriteStringAsync("User not authorized");
@@ -478,7 +474,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             var students = whitelist?.StudentEmails ?? new List<string>();
             bool isAdmin = IsAdmin(email);
 
-            if (!students.Contains(email, StringComparer.OrdinalIgnoreCase) && !isAdmin)
+            if (!IsAuthorizedEmail(email,students,isAdmin))
             {
                 _logger.LogWarning("User not in whitelist after OTP validation. Email: {Email}", email);
                 return CreateErrorResponse(req, System.Net.HttpStatusCode.Forbidden, "User not found", origin);
@@ -498,6 +494,31 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
             var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private bool IsAuthorizedEmail(string email, IReadOnlyCollection<string> students, bool isAdmin)
+        {
+            if(isAdmin) return true;
+            if(!IsWhitelistRequired()) return true;
+            return students.Contains(email, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private bool IsWhitelistRequired(){
+            var requirement = Environment.GetEnvironmentVariable("RequireStudentWhitelist");
+            return !string.Equals(requirement, "false", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool IsValidEmailFormat(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch(FormatException)
+            {
+                return false;
+            }
         }
 
         private string GenerateJwtToken(string email, bool isAdmin)

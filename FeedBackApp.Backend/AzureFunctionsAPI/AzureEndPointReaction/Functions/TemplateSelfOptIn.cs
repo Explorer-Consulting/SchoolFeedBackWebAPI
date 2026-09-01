@@ -33,7 +33,6 @@ public class TemplateSelfOptIn
 
     private sealed class RequestDto { public string? OptInToken { get; set; } }
 
-    [RequireStudent]
     [Function("TemplateSelfOptIn")]
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post",

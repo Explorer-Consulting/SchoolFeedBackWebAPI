@@ -6,7 +6,7 @@ import { toStudentContext } from "@/utils/toStudentContext";
 import { Navigate } from "react-router-dom";
 import { FeedbackFormDynamic } from "@/components/feedback/FeedbackFormDynamic";
 import { getUnansweredCount } from "@/utils/utils.ts"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { celebrateConfettiRed } from "@/utils/celebrate";
 import QrCodeModal from "@/components/ui/qr-code-modal";
 import { toast } from "sonner";
@@ -46,13 +46,24 @@ export default function StudentDashboard() {
     refetchSurveys();
   }, [refetchSurveys]);
 
+  // stores the previous unanswered count, so we can detect the moment it drops from >0 to 0
+  const prevUnansweredRef = useRef<number | null>(null);
+  // stores the last survey we were looking at, so switching from an unfinished to an already-submitted one, doesn't trigger confetti
+  const prevSurveyIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!context) return;
 
     const unanswered = getUnansweredCount(context);
-    if (unanswered === 0) {
+    const prevUnanswered = prevUnansweredRef.current;
+    const sameSurvey = prevSurveyIdRef.current === selectedSurveyId;
+
+    if(sameSurvey && prevUnanswered !== null && prevUnanswered > 0 && unanswered === 0){
       celebrateConfettiRed();
     }
+    
+    prevUnansweredRef.current = unanswered;
+    prevSurveyIdRef.current = selectedSurveyId;
   }, [context]);
 
   if (!user) {
