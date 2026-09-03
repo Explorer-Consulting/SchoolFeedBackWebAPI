@@ -39,17 +39,17 @@ jobs:
           popd
       
       - name: Login to Azure
-        uses: azure/login@v3
+        uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_4196D8F916CB4BC38C386161B11DD75B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F8FE46E55AC945D7AF4F06637ABCF8A7 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_377F5DCA5B1548D2A9E22628B77D916E }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B918DA5A14E249D2A0D13351761A9FE5 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_5E26763E3818422F92884343CCDF7FCF }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_ED80330225314F8BAE236D538FA0519D }}
 
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
         with:
-          app-name: 'feedback'
+          app-name: 'feedback-api'
           slot-name: 'Production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
           
