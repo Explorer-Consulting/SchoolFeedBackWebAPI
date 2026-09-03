@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FeedBackApp.Backend.Infrastructure.Configuration
+﻿namespace FeedBackApp.Backend.Infrastructure.Configuration
 {
     public sealed class GoogleAuthOptions
     {

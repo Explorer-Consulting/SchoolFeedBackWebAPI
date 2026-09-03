@@ -2,10 +2,8 @@ using System.Net;
 using ApplicationEventWorkers.SelfOptIn;
 using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Backend.Infrastructure.Middleware.Utils;
-using FeedBackApp.Backend.Infrastructure.Persistence.Context;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 /*
  * A simple HTTP GET function to generate a shareable opt-in link for testing/admin usage.

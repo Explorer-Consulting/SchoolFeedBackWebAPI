@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace StudentFeedbackSurveyApplication.Domain.AggregateComponents
+﻿namespace StudentFeedbackSurveyApplication.Domain.AggregateComponents
 {
     /// <summary>
     /// Represents a component of a question template, including its order, statement, answer options, type, and

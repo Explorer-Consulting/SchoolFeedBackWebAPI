@@ -3,7 +3,6 @@ using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
-using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentFormatUtils;
 
 using System.Globalization;
 

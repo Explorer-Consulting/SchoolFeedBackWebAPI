@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace FeedBackApp.Core.Model;
+﻿namespace FeedBackApp.Core.Model;
 
 /// <summary>
 /// Represents the root document containing all pending emails to be sent.
