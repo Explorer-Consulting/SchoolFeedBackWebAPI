@@ -6,6 +6,8 @@ namespace ValidatorMobileApp.Config
     {
         public static readonly string BaseUrl;
 
+        public static readonly string ApiKey;
+
         static AppConfig()
         {
             using var stream = FileSystem.OpenAppPackageFileAsync($"appsettings.{EnvironmentHelper.EnvironmentName}.json")
@@ -17,6 +19,7 @@ namespace ValidatorMobileApp.Config
                 .Build();
 
             BaseUrl = config["BaseUrl"];
+            ApiKey = config["ApiKey"];
         }
     }
 }
