@@ -6,9 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, Mail } from 'lucide-react'
-import { User } from '@/models/User'
-import { FaFacebookF, FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
-//import { useFacebook } from "@/hooks/useFacebook";
+import { FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
 import { useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { PublicClientApplication } from "@azure/msal-browser";
@@ -23,11 +21,9 @@ export default function SocialAuthApp() {
     sendOTP,
     isSendingOTP,
     loginWithGoogle,
-    //loginWithFacebook,
     loginWithMicrosoft,
     loginWithLinkedIn,
     isLoggingIn,
-    //isLoggingInFacebook,
     isLoggingInMicrosoft,
     isLoggingInLinkedIn
   } = useReviews()
@@ -73,33 +69,6 @@ export default function SocialAuthApp() {
       onError: handleError,
     });
   };
-
-  /*const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
-  const fbLoaded = useFacebook(FACEBOOK_APP_ID);
-
-   const onFacebookLogin = () => {
-    if (!fbLoaded || !window.FB) {
-      alert("Facebook SDK nem töltődött be, ellenőrizd a böngésződ!");
-      return;
-    }
-
-    window.FB.login(
-      (response: any) => {
-        if (response.authResponse) {
-          loginWithFacebook(response.authResponse.accessToken, {
-            onSuccess: handleSuccess,
-            onError: handleError,
-          });
-        } else {
-          console.error("Facebook login cancelled");
-        }
-      },
-      { scope: "email,public_profile" }
-    );
-  };
-  */
-
-
 
 const onMicrosoftLogin = async () => {
   try {
@@ -196,15 +165,6 @@ const onMicrosoftLogin = async () => {
             width="280"
           />
           )}
-          {/*
-          <button
-            onClick={onFacebookLogin}
-            className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
-          >
-            <FaFacebookF className="w-5 h-5" />
-            Facebook
-          </button>
-          */}
           {enabledProviders.includes("Microsoft") && (
           <button
             onClick={onMicrosoftLogin}
@@ -225,7 +185,6 @@ const onMicrosoftLogin = async () => {
           */}
 
           {isLoggingIn && <Status text="Google bejelentkezés folyamatban…" />}
-          {/*{isLoggingInFacebook && <Status text="Facebook bejelentkezés folyamatban…" />}*/}
           {isLoggingInMicrosoft && <Status text="Microsoft bejelentkezés folyamatban…" />}
           {isLoggingInLinkedIn && <Status text="LinkedIn bejelentkezés folyamatban…" />}
         </CardContent>

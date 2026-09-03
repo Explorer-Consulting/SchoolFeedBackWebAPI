@@ -77,33 +77,11 @@ public class TemplatePreview
         if (template.OptInExpiresAt is not null && template.OptInExpiresAt <= DateTimeOffset.UtcNow)
             return await Text(req, HttpStatusCode.Gone, "Self opt-in window has closed.");
 
-        // int? capacityLeft = template.MaxParticipants;
-    
-        // make questions null-safe
-        // var questions = (template.QuestionTemplates ?? Enumerable.Empty<QuestionTemplate>())
-        //     .Select(q => new QuestionPreviewDto
-        //     {
-        //         Id = q?.Id ?? string.Empty,
-        //         Question = q?.Question ?? string.Empty,
-        //         Type = (q?.Type).ToString(), // string; safe even if q is null
-        //         AnswerOptions = (q?.AnswerOptions ?? Array.Empty<string>()).ToArray(),
-        //         Category = q?.Category ?? string.Empty,
-        //         Description = q?.Description ?? string.Empty
-        //     })
-        //     .ToArray();
-        
         var payload = new TemplatePreviewDto
         {
             Id = id,
             Title = template.Title ?? string.Empty,
             SelfEnrollmentAllowed = template.IsSelfOptInEnabled
-            // Questions = questions,
-            // OptIn = new TemplateOptInInfo
-            // {
-            //     Enabled = true,
-            //     ExpiresAt = v.ExpiresAtUtc,
-            //     CapacityLeft = template.MaxParticipants
-            // }
         };
 
 
@@ -124,27 +102,7 @@ public class TemplatePreview
         public string Id { get; set; } = default!;
         public string Title { get; set; } = default!;
         public bool SelfEnrollmentAllowed { get; set; }
-        //public QuestionPreviewDto[] Questions { get; set; } = Array.Empty<QuestionPreviewDto>();
-        // public TemplateOptInInfo OptIn { get; set; } = new();
-    }
-
-    // private sealed class QuestionPreviewDto
-    // {
-    //     public string Id { get; set; } = default!;
-    //     public string Question { get; set; } = default!;
-    //     public string Type { get; set; } = default!;
-    //     public string[] AnswerOptions { get; set; } = Array.Empty<string>();
-    //     public string Category { get; set; } = string.Empty;
-    //     public string Description { get; set; } = string.Empty;
-    // }
-    //
-    // private sealed class TemplateOptInInfo
-    // {
-    //     public bool Enabled { get; set; }
-    //     public DateTimeOffset? ExpiresAt { get; set; }
-    //     public int? CapacityLeft { get; set; }
-    // }
-    
+    }    
     
     // Admin functions, end user will not see these
     // 1.) to list all the templates and ids

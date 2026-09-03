@@ -160,12 +160,6 @@ builder.Services.AddOptions<GoogleAuthOptions>()
     .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Google: ClientId must be set")
     .ValidateOnStart();
 
-_ = builder.Configuration["Facebook:AppId"]
-    ?? throw new InvalidOperationException("Missing Facebook:AppId");
-
-_ = builder.Configuration["Facebook:AppSecret"]
-    ?? throw new InvalidOperationException("Missing Facebook:AppSecret");
-
 builder.Services.AddOptions<MicrosoftAuthOptions>()
     .Configure<IConfiguration>((opt, cfg) => cfg.GetSection("Microsoft").Bind(opt))
     .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Microsoft: ClientId must be set")
