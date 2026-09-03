@@ -1,4 +1,3 @@
-using FeedBackApp.Core.Model;
 public class OutboundEmail
 {
     public string Id { get; set; } = $"email_{Guid.NewGuid():D}";

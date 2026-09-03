@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
-import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithFacebook, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP,  EnableSelfOptIn, 
+import { CreateQuestionnaires, PerformSendReports, PerformGenerateReports, DeleteQuestionnaire, LoginWithGoogle, LoginWithMicrosoft, LoginWithLinkedIn, GetSurveysAdmin, PerformGetSurveys, GetQuestionnaires, PerformQuestionnaireUpdate, PerformQuestionnaireSubmit, SendOTP, VerifyOTP,  EnableSelfOptIn, 
     GenerateShareLink, GenerateValidationToken } from "@/api/ReviewApi"
-import { useParams } from "react-router-dom";
 import { BackendPayload } from "@/utils/toBackendPayload";
 import { Survey } from "@/models/StudentContext"
 
@@ -18,10 +17,6 @@ export const useReviews = (selectedSurveyId?: string) => {
 
     const { mutate: verifyOTP, isPending: isVerifyingOTP } = useMutation({
         mutationFn: ({ email, code }: { email: string; code: string }) => VerifyOTP(email, code) as Promise<any>
-    });
-
-    const { mutate: loginWithFacebook, isPending: isLoggingInFacebook } = useMutation({
-        mutationFn: (accessToken: string) => LoginWithFacebook(accessToken)
     });
 
     const { mutate: loginWithMicrosoft, isPending: isLoggingInMicrosoft } = useMutation({
@@ -138,7 +133,6 @@ export const useReviews = (selectedSurveyId?: string) => {
         performGenerateReports, isGeneratingReports,
         performSendReports, isSendingReports,
         loginWithGoogle, isLoggingIn,
-        loginWithFacebook, isLoggingInFacebook,
         loginWithMicrosoft, isLoggingInMicrosoft,
         sendOTP, isSendingOTP,
         verifyOTP, isVerifyingOTP,

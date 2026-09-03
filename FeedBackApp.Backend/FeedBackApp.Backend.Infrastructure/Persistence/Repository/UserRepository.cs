@@ -2,11 +2,6 @@
 using FeedBackApp.Core.Model.UserIdentityModels;
 using FeedBackApp.Core.Repositories;
 using NUlid;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {

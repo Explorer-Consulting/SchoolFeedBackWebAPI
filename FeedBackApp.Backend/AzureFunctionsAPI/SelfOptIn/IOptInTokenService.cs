@@ -1,5 +1,3 @@
-using System;
-
 namespace ApplicationEventWorkers.SelfOptIn;
 
 public interface IOptInTokenService

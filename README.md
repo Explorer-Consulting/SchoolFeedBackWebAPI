@@ -40,7 +40,7 @@ Delete questionnaires with associated responses and view submission statistics a
 - **User Experience** - Real-time validation with visual feedback and confetti celebration on submission
 
 ### Authentication
-- **Supported Methods** - Google OAuth 2.0, Facebook Login, Microsoft Authentication, Passwordless Email 
+- **Supported Methods** - Google OAuth 2.0,  Microsoft Authentication, Passwordless Email 
 - **Security** - Role-based access control (Admin/Teacher/Student) with email-based admin configuration
 
 ---
@@ -106,9 +106,6 @@ Navigate to `FeedBackApp.Backend/AzureFunctionsAPI/` and create a `local.setting
     "Jwt:Audience": "Your-Jwt-Audience",
 
     "Google:ClientId": "Your-Client-Id",
-
-    "Facebook:AppId": "Your-Facebook-Id",
-    "Facebook:AppSecret": "Your-Facebook-secret",
 
     "Microsoft:ClientId": "Your-Microsoft-Id",
     "Microsoft:TenantId": "Your-Microsoft-TenantId",
@@ -213,7 +210,6 @@ Navigate to `FeedBackApp.Frontend/` and create a `.env` file:
 ```env
 VITE_GOOGLE_CLIENT_ID=your-google-client-id
 VITE_API_BASE_URL=http://localhost:7277/api
-VITE_FACEBOOK_APP_ID=your-facebook-app-id
 VITE_MICROSOFT_CLIENT_ID=your-microsoft-client-id
 VITE_MICROSOFT_TENANT_ID=your-microsoft-tenant-id
 ```

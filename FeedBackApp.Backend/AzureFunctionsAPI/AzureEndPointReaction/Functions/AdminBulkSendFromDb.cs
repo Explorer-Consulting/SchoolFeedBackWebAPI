@@ -78,11 +78,6 @@ public sealed class AdminBulkSendFromDb
         if (wl is null)
             return await Fail(req, HttpStatusCode.NotFound, $"Whitelist '{wlId}' not found.");
 
-        // var recipients = (wl.StudentEmails ?? new List<string>())
-        //     .Select(e => (e ?? string.Empty).Trim())
-        //     .Where(e => e.Length > 0)
-        //     .Distinct(StringComparer.OrdinalIgnoreCase)
-        //     .ToList();
         var studentEmails = await _whitelistRepository.GetStudentWhitelistAsync();
         var recipients = studentEmails?.StudentEmails ?? new List<String>();
 

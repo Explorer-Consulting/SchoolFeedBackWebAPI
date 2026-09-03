@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace ValidatorMobileApp
+﻿namespace ValidatorMobileApp
 {
     public partial class App : Application
     {

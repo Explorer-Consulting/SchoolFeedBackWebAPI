@@ -15,11 +15,6 @@ export const LoginWithGoogle = async (idToken) => {
   const { data } = await apiClient.post("/auth/google", { IdToken: idToken });
   return data;
 };
-//LoginWithFacebook
-export const LoginWithFacebook = async (accessToken) => {
-    const { data } = await apiClient.post('/auth/facebook', { AccessToken: accessToken });
-    return data;
-};
 //LoginWithMicrosoft
 export const LoginWithMicrosoft = async (idToken) => {
     const { data } = await apiClient.post('/auth/microsoft', { IdToken: idToken });
