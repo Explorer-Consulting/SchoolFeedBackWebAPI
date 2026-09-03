@@ -11,6 +11,7 @@ import { celebrateConfettiRed } from "@/utils/celebrate";
 import QrCodeModal from "@/components/ui/qr-code-modal";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { tenant } from "@/tenant"
 
 export default function StudentDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -91,27 +92,12 @@ export default function StudentDashboard() {
       <section className="space-y-6">
         <Card>
           <CardContent className="space-y-3 text-muted-foreground py-6">
-            <p>
-              Kérünk, válaszolj néhány kérdésre a {import.meta.env.VITE_INSTITUTION_NAME} oktatási tevékenységére vonatkozóan.
-              A felmérés célja az oktatásra vonatkozó tapasztalatok felmérése, illetve ezekre alapozva a megfelelő
-              stratégiák kidolgozása.
-            </p>
-            <p>
-              Válaszaid nagyon fontosak számunkra, köszönjük, hogy kitöltöd az alábbi rövid kérdőívet!
-              Kérünk, hogy figyelmesen olvasd el a kérdéseket, mielőtt válaszolsz. Fontos, hogy a
-              visszajelzések objektívek legyenek, a nyelvezet tisztességes legyen, a kifejtett vélemények pedig
-              indokoltak legyenek.
-            </p>
-            <p>
-              Ez az űrlap névtelenül és elektronikusan tölthető ki. A válaszokat bizalmasan kezeljük.
-            </p>
-            <p>
-              További esetleges kérdésekkel bátran fordulj az osztályotok szülői bizottsági képviselőjéhez.
-            </p>
-            <p>
-              Jelen kérdőív a Hivatalos Közlöny 2024. augusztus 12-i, 795. számában megjelent, a 2024. augusztus 1-jei
-              5707. számú tanügyminiszteri rendelettel jóváhagyott Tanulók Statútumának 1. számú melléklete alapján készült.
-            </p>
+            {tenant.studentIntro.paragraphs.map((text, i) => (
+              <p key={i}>{text}</p>
+            ))}
+            {tenant.studentIntro.legalNotice && (
+              <p>{tenant.studentIntro.legalNotice}</p>
+            )}
           </CardContent>
         </Card>
 
