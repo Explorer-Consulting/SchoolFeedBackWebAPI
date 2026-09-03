@@ -618,7 +618,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private bool IsAdmin(string email)
         {
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("AdminEmails") ?? "";
+            var adminEmailsEnv = Environment.GetEnvironmentVariable("Authorization:AdminEmails") ?? "";
             var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
         }
@@ -631,7 +631,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         }
 
         private bool IsWhitelistRequired(){
-            var requirement = Environment.GetEnvironmentVariable("RequireStudentWhitelist");
+            var requirement = Environment.GetEnvironmentVariable("Authorization:RequireStudentWhiteList");
             return !string.Equals(requirement, "false", StringComparison.OrdinalIgnoreCase);
         }
 
