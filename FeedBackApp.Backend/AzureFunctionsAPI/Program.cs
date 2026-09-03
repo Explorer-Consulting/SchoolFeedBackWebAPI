@@ -171,6 +171,25 @@ builder.Services.AddOptions<AuthorizationOptions>()
         "Authorization: UseUniversalStudentGroup requires RequireStudentWhiteList to be false — otherwise no student could ever log in.")
     .ValidateOnStart();
 
+_ = builder.Configuration["Microsoft:ClientId"]
+    ?? throw new InvalidOperationException("Missing Microsoft:ClientId");
+
+_ = builder.Configuration["Microsoft:TenantId"]
+    ?? "common";
+
+_ = builder.Configuration["LinkedIn:ClientId"]
+    ?? throw new InvalidOperationException("Missing LinkedIn:ClientId");
+
+_ = builder.Configuration["LinkedIn:ClientSecret"]
+    ?? throw new InvalidOperationException("Missing LinkedIn:ClientSecret");
+    
+_ = builder.Configuration["LinkedIn:RedirectUri"]
+    ?? throw new InvalidOperationException("Missing LinkedIn:RedirectUri");
+
+var rawAdminEmails = builder.Configuration["Authorization:AdminEmails"] ?? string.Empty;
+var adminEmails = rawAdminEmails
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 _ = builder.Configuration["Email:FromAddress"]
     ?? throw new InvalidOperationException("Missing Email:FromAddress");
 

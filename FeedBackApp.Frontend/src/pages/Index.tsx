@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, Mail } from 'lucide-react'
 import { FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
+import { useLinkedIn } from 'react-linkedin-login-oauth2'
 import { useState } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { PublicClientApplication } from "@azure/msal-browser";
@@ -104,10 +105,17 @@ const onMicrosoftLogin = async () => {
 };
 
 
-  const onLinkedInLogin = () => {
-    const accessToken = "linkedin_access_token" // Replace with real token from LinkedIn OAuth
-    loginWithLinkedIn(accessToken, { onSuccess: handleSuccess, onError: handleError })
-  }
+  const { linkedInLogin }  = useLinkedIn({
+    clientId: import.meta.env.VITE_LINKEDIN_CLIENT_ID,
+    redirectUri: `${window.location.origin}/auth/linkedin/callback`,
+    scope: 'openid profile email',
+    onSuccess: (code) => {
+      loginWithLinkedIn(code, {onSuccess: handleSuccess, onError: handleError});
+    },
+    onError: (error) => {
+      console.error('LinkedIn login failed!',error);
+    },
+  });
 
   const handleEmailLogin = async () => {
     if (!email || !email.includes('@')) {
@@ -174,16 +182,15 @@ const onMicrosoftLogin = async () => {
             Microsoft
           </button>
           )}
-          {/*
+          {enabledProviders.includes("LinkedIn") && (
           <button
-            onClick={onLinkedInLogin}
+            onClick={linkedInLogin}
             className="flex items-center justify-center gap-3 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full shadow-md transition-all duration-300 w-full"
           >
             <FaLinkedinIn className="w-5 h-5" />
             LinkedIn
           </button>
-          */}
-
+          )}
           {isLoggingIn && <Status text="Google bejelentkezés folyamatban…" />}
           {isLoggingInMicrosoft && <Status text="Microsoft bejelentkezés folyamatban…" />}
           {isLoggingInLinkedIn && <Status text="LinkedIn bejelentkezés folyamatban…" />}

@@ -311,6 +311,133 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return response;
         }
 
+        [Function("LoginWithLinkedIn")]
+        public async Task<HttpResponseData> LoginWithLinkedIn(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "auth/linkedin")]
+    HttpRequestData req)
+        {
+            var origin = req.Headers.TryGetValues("Origin", out var origins) ? origins.FirstOrDefault() : null;
+
+            // CORS preflight
+            if (req.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                var preflight = req.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    preflight.Headers.Add("Access-Control-Allow-Origin", origin);
+                    preflight.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                    preflight.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                    preflight.Headers.Add("Access-Control-Allow-Credentials", "true");
+                }
+                return preflight;
+            }
+
+            var body = await new StreamReader(req.Body).ReadToEndAsync();
+            var data = JsonConvert.DeserializeObject<LinkedInLoginRequest>(body);
+
+            if (string.IsNullOrWhiteSpace(data?.AuthCode))
+            {
+                var bad = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
+                await bad.WriteStringAsync("AuthCode required");
+                return bad;
+            }
+
+            using var http = new HttpClient();
+            var clientId = Environment.GetEnvironmentVariable("LinkedIn:ClientId");
+            var clientSecret = Environment.GetEnvironmentVariable("LinkedIn:ClientSecret");
+            var redirectUri = Environment.GetEnvironmentVariable("LinkedIn:RedirectUri");
+
+            var tokenRequestParams = new Dictionary<string, string>
+            {
+                ["grant_type"] = "authorization_code",
+                ["code"] = data.AuthCode,
+                ["redirect_uri"] = redirectUri,
+                ["client_id"] = clientId,
+                ["client_secret"] = clientSecret
+            };
+
+            var tokenResponse = await http.PostAsync("https://www.linkedin.com/oauth/v2/accessToken",
+                                new FormUrlEncodedContent(tokenRequestParams));
+
+            if(!tokenResponse.IsSuccessStatusCode)
+            {
+                var unauth = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
+                await unauth.WriteStringAsync("Invalid LinkedIn authorization code");
+                return unauth;
+            }
+
+            var tokenBody = await tokenResponse.Content.ReadAsStringAsync();
+            dynamic? tokenData = JsonConvert.DeserializeObject(tokenBody);
+            string? accessToken = tokenData?.access_token;
+
+            if(string.IsNullOrWhiteSpace(accessToken))
+            {
+                var unauth = req.CreateResponse(System.Net.HttpStatusCode.Unauthorized);
+                await unauth.WriteStringAsync("Invalid LinkedIn authorization code");
+                return unauth;
+            }
+
+            // userInfo lekerese
+            var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.linkedin.com/v2/userinfo");
+            userInfoRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
+            var userInfoHttpResponse = await http.SendAsync(userInfoRequest);
+            var userInfoBody = await userInfoHttpResponse.Content.ReadAsStringAsync();
+            dynamic? userInfo = JsonConvert.DeserializeObject(userInfoBody);
+
+            string? email = userInfo?.email;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                // Felhasználó nem engedélyezte az email megosztást
+                var forbidden = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
+                await forbidden.WriteStringAsync("Email not available. Please allow email access in LinkedIn login.");
+                return forbidden;
+            }
+
+            //  Authorization (student/admin)
+            var whitelist = await _whitelistRepository.GetStudentWhitelistAsync();
+            var students = whitelist?.StudentEmails ?? new List<string>();
+
+            bool isAdmin = IsAdmin(email);
+
+            if (!IsAuthorizedEmail(email,students,isAdmin))
+            {
+                var notFoundResp = req.CreateResponse(System.Net.HttpStatusCode.Forbidden);
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    notFoundResp.Headers.Add("Access-Control-Allow-Origin", origin);
+                    notFoundResp.Headers.Add("Access-Control-Allow-Credentials", "true");
+                }
+                await notFoundResp.WriteStringAsync("User not authorized");
+                return notFoundResp;
+            }
+
+            //  JWT issuance
+            var token = GenerateJwtToken(email, isAdmin);
+
+            var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+
+            if (!string.IsNullOrEmpty(origin))
+            {
+                response.Headers.Add("Access-Control-Allow-Origin", origin);
+                response.Headers.Add("Access-Control-Allow-Credentials", "true");
+            }
+
+            response.Headers.Add(
+                "Set-Cookie",
+                $"token={token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=86400"
+            );
+
+            await response.WriteAsJsonAsync(new
+            {
+                email,
+                firstName = userInfo?.given_name,
+                lastName = userInfo?.family_name,
+                role = isAdmin ? "Admin" : "Student",
+                provider = "LinkedIn"
+            });
+
+            return response;
+        }
 
         /// <summary>
         /// Verifies the provided OTP code and issues a JWT if valid.
@@ -372,8 +499,8 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private bool IsAdmin(string email)
         {
-            var adminEmails = _authorizationOptions.Value.AdminEmails
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries); ;
+            var adminEmailsEnv = Environment.GetEnvironmentVariable("Authorization:AdminEmails") ?? "";
+            var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -384,7 +511,10 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             return students.Contains(email, StringComparer.OrdinalIgnoreCase);
         }
 
-        private bool IsWhitelistRequired() => _authorizationOptions.Value.RequireStudentWhiteList;
+        private bool IsWhitelistRequired(){
+            var requirement = Environment.GetEnvironmentVariable("Authorization:RequireStudentWhiteList");
+            return !string.Equals(requirement, "false", StringComparison.OrdinalIgnoreCase);
+        }
 
         private bool IsValidEmailFormat(string email)
         {
@@ -499,7 +629,10 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         {
             public required string IdToken { get; set; }
         }
-
+        public class LinkedInLoginRequest
+        {
+            public required string AuthCode { get; set; }
+        }
 
         public class SendOtpRequest
         {

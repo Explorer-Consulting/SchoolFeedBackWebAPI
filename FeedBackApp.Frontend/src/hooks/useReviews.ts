@@ -24,7 +24,7 @@ export const useReviews = (selectedSurveyId?: string) => {
     });
 
     const { mutate: loginWithLinkedIn, isPending: isLoggingInLinkedIn } = useMutation({
-        mutationFn: (accessToken: string) => LoginWithLinkedIn(accessToken)
+        mutationFn: (authCode: string) => LoginWithLinkedIn(authCode)
     });
 
     const { mutate: generateValidationToken, isPending: isGeneratingValidationToken } = useMutation({
