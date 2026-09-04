@@ -37,6 +37,18 @@ jobs:
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet publish ./AzureFunctionsAPI/ApplicationEventWorkers.csproj --configuration Release --output ./output
           popd
+          
+      - name: 'Debug - list output contents'
+        shell: bash
+        run: |
+          echo "--- output root ---"
+          ls -la ./FeedBackApp.Backend/output
+          echo "--- .azurefunctions folder ---"
+          ls -la ./FeedBackApp.Backend/output/.azurefunctions || echo "MISSING!"
+          echo "--- functions.metadata size ---"
+          wc -c ./FeedBackApp.Backend/output/functions.metadata || echo "MISSING!"
+          echo "--- dotnet sdk version used ---"
+          dotnet --version
       
       - name: Login to Azure
         uses: azure/login@v2
