@@ -238,8 +238,17 @@ builder.Services.AddScoped<IEmailRepository, EmailRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 // --- Email Services ---
 // Email configuration: Loaded from environment variables
-builder.Services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>(
-    _ => FeedBackApp.Core.Email.Configuration.EmailConfiguration.FromEnvironment());
+builder.Services.AddSingleton<FeedBackApp.Core.Email.Configuration.EmailConfiguration>( sp =>
+{
+    var cfg  = sp.GetRequiredService<IConfiguration>();
+    return new FeedBackApp.Core.Email.Configuration.EmailConfiguration
+    {
+        FromAddress = cfg["Email:FromAddress"]!,
+        FromName = cfg["Email:FromName"]!,
+        AppPassword = cfg["Email:AppPassword"]!,
+        LeaderEmails = cfg["Authorization:AdminEmails"] ?? string.Empty
+    };
+});
 
 // Email templates: Loaded at startup and cached in memory
 // Templates are loaded once and reused for all email rendering operations
