@@ -491,7 +491,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
             // 5. Cleanup & Token Generation
             _otpService.RemoveOtp(email);
             
-            // Note: OTP login doesn't provide names, so we leave them null or use placeholders
+            // Note: OTP login doesn't provide names, we leave them null or use placeholders
             return await CreateLoginResponse(req, email, null, null, isAdmin, origin);
         }
 
@@ -603,7 +603,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private void AddCorsHeaders(HttpResponseData resp, string? origin)
         {
-            if (!string.IsNullOrEmpty(origin) && !IsAllowedOrigin(origin))
+            if (!string.IsNullOrEmpty(origin) && IsAllowedOrigin(origin))
             {
                 resp.Headers.Add("Access-Control-Allow-Origin", origin);
                 resp.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
