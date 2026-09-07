@@ -499,7 +499,7 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
 
         private bool IsAdmin(string email)
         {
-            var adminEmailsEnv = Environment.GetEnvironmentVariable("Authorization:AdminEmails") ?? "";
+            var adminEmailsEnv = _authorizationOptions.Value.AdminEmails ?? "";
             var adminEmails = adminEmailsEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase);
         }
