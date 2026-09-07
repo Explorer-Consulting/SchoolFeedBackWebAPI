@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2, Mail } from 'lucide-react'
 import { FaMicrosoft, FaLinkedinIn } from "react-icons/fa";
 import { useLinkedIn } from 'react-linkedin-login-oauth2'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useToast } from '@/hooks/useToast'
 import { PublicClientApplication } from "@azure/msal-browser";
 
@@ -149,6 +149,21 @@ const onMicrosoftLogin = async () => {
     })
   }
 
+  const buttonAreaRef = useRef<HTMLDivElement>(null)
+  const [googleBtnWidth, setGoogleBtnWidth] = useState(280)
+
+  useEffect(() => {
+    const el = buttonAreaRef.current
+    if(!el) return
+    const observer = new ResizeObserver(entries => {
+      for(const entry of entries){
+        setGoogleBtnWidth(Math.floor(entry.contentRect.width))
+      }
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <main className="min-h-screen grid place-items-center px-4">
       <Card className="w-full max-w-sm">
@@ -158,7 +173,7 @@ const onMicrosoftLogin = async () => {
             Jelentkezz be egy közösségi fiókkal
           </p>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
+        <CardContent ref={buttonAreaRef} className="flex flex-col items-center gap-4">
           {enabledProviders.includes("Google") && (
           <GoogleLogin
             onSuccess={onGoogleSuccess}
@@ -170,7 +185,7 @@ const onMicrosoftLogin = async () => {
             shape="pill"
             text="continue_with"
             logo_alignment="center"
-            width="280"
+            width={String(googleBtnWidth)}
           />
           )}
           {enabledProviders.includes("Microsoft") && (
