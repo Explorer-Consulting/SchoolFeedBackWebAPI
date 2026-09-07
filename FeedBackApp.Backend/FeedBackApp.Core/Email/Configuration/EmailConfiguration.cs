@@ -1,5 +1,4 @@
 using FeedBackApp.Core.Email.Constants;
-using Microsoft.Extensions.Configuration;
 
 namespace FeedBackApp.Core.Email.Configuration;
 
