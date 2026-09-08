@@ -616,6 +616,10 @@ namespace AzureFunctionsAPI.AzureEndPointReaction.Functions
         {
             var allowed = _corsOptions.Value.AllowedOrigins
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            
+            _logger.LogInformation("CORS check — incoming origin: '{Origin}' (len={Len}), allowed list: [{Allowed}]",
+            origin, origin?.Length, string.Join(" | ", allowed.Select(a => $"'{a}' (len={a.Length})")));
+
             return allowed.Contains(origin, StringComparer.OrdinalIgnoreCase);
         }
         #endregion
