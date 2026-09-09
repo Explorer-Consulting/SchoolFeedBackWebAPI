@@ -31,6 +31,7 @@ jobs:
           VITE_MICROSOFT_TENANT_ID: ${{ secrets.VITE_MICROSOFT_TENANT_ID }}
           VITE_GIMI_ENABLED_LOGIN_PROVIDERS: ${{ secrets.VITE_GIMI_ENABLED_LOGIN_PROVIDERS }}
           VITE_LINKEDIN_CLIENT_ID: ${{ secrets.VITE_LINKEDIN_CLIENT_ID }}
+          VITE_REQUIRE_VALIDATION: ${{ secrets.VITE_REQUIRE_VALIDATION }}
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_TREE_0B1E28F03 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
