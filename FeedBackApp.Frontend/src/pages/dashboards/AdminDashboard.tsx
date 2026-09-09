@@ -315,7 +315,7 @@ export default function AdminDashboard() {
         >
           Kijelölt kérdőív törlése
         </Button>
-
+        {requireValidation && (
         <Button
           className="w-full sm:w-auto"
           onClick={handleGenerateQRCode}
@@ -328,17 +328,22 @@ export default function AdminDashboard() {
         >
           QR kód generálása
         </Button>
+        )}
       </div>
-      <QrCodeModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-        url={qrCodeUrl}
-        title={qrTitle}
-        expiresAt={qrExpiresAt}
-      />
-      <CardContent>
-        <SavedSelfSignInLinks />
-      </CardContent>
+      {requireValidation && (
+        <>
+          <QrCodeModal
+            isOpen={isQRModalOpen}
+            onClose={() => setIsQRModalOpen(false)}
+            url={qrCodeUrl}
+            title={qrTitle}
+            expiresAt={qrExpiresAt}
+          />
+          <CardContent>
+            <SavedSelfSignInLinks />
+          </CardContent>
+        </>
+      )}
     </main>
   );
 }

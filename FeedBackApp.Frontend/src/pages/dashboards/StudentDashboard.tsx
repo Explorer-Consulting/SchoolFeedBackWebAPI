@@ -36,6 +36,7 @@ export default function StudentDashboard() {
     isGeneratingValidationToken } = useReviews(selectedSurveyId ?? undefined);
   
   const [validationToken, setValidationToken] = useState<string | null>(null);
+  const requireValidation = import.meta.env.VITE_REQUIRE_VALIDATION === "true";
 
   useEffect(() => {
     if (!questionnaires) return;
@@ -176,7 +177,7 @@ export default function StudentDashboard() {
               <p>
               Ezt a kérdőívet már kitöltötted. Köszönjük a visszajelzést!
               </p>
-                {getUnansweredCount(context) === 0 && (
+                {requireValidation && getUnansweredCount(context) === 0 && (
                   <Button
                     disabled={isGeneratingValidationToken}
                     onClick={() => {
