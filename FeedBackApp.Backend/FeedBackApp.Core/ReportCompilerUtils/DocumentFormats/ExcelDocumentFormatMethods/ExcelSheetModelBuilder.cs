@@ -3,6 +3,7 @@ using FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.Model;
 using FeedBackApp.Core.ReportCompilerUtils.ReportComponentsModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels;
 using FeedBackApp.Core.ReportCompilerUtils.StatisticalEvaluationModels.StatisticalEvaluationUtilityModels;
+using FeedBackApp.Core.Model;
 
 using System.Globalization;
 
@@ -247,7 +248,29 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             }
                             AddBlock(o.QuestionId, QuestionType.OpenEnded, headerRows, answerRows);
                             break;
-                        }                   
+                        }
+
+                    case NumberEvaluationData n:
+                        {
+                            var headerRows = new List<List<string>> { new() { "Kérdés", n.QuestionStatement } };
+                            var answerRows = new List<List<string>> { new() { "Sorszám", "Érték" } };
+                            int i = 1;
+                            foreach (var v in n.Answers)
+                                answerRows.Add(new() { (i++).ToString(), v.ToString(CultureInfo.InvariantCulture) });
+                            AddBlock(n.QuestionId, QuestionType.Number, headerRows, answerRows);
+                            break;
+                        }
+
+                    case DateEvaluationData dt:
+                        {
+                            var headerRows = new List<List<string>> { new() { "Kérdés", dt.QuestionStatement } };
+                            var answerRows = new List<List<string>> { new() { "Sorszám", "Dátum" } };
+                            int i = 1;
+                            foreach (var v in dt.Answers)
+                                answerRows.Add(new() { (i++).ToString(), v.ToString(AnswerFormats.DateFormat, CultureInfo.InvariantCulture) });
+                            AddBlock(dt.QuestionId, QuestionType.Date, headerRows, answerRows);
+                            break;
+                        }
                 }
             }
 
