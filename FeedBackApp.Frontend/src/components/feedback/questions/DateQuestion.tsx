@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import QuestionWrapper from "@/components/feedback/questions/QuestionWrapper";
 
-export default function NumberQuestion({ q, index, value, onChange, isInvalid, description }: BaseQuestionProps) {
+export default function DateQuestion({ q, index, value, onChange, isInvalid, description }: BaseQuestionProps) {
     return (
         <QuestionWrapper isInvalid={isInvalid}>
             <div className="flex flex-col gap-1">
