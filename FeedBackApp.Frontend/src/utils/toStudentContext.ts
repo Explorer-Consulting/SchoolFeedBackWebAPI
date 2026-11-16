@@ -13,6 +13,8 @@ const type_map: Record<number, QuestionType> = {
     3: "MultinomialSingleChoiceOther",
     4: "MultipleChoice",
     5: "OpenEnded",
+    6: "Number",
+    7: "Date",
 };
 
 type RawDependency = {

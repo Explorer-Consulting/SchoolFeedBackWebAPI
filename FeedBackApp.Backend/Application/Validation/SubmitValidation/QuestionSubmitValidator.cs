@@ -72,6 +72,16 @@ namespace Application.Validation.SubmitValidation
                                 }
                             }
                             break;
+
+                        case QuestionType.Number:
+                            if (!AnswerFormats.TryParseNumber(answer, out _))
+                                context.AddFailure("Answer", $"Answer must be a valid number (e.g. 12 or 3.5) for '{template.Question}-{template.Id}'.");
+                            break;
+
+                        case QuestionType.Date:
+                            if (!AnswerFormats.TryParseDate(answer, out _))
+                                context.AddFailure("Answer", $"Answer must be a date in {AnswerFormats.DateFormat} format for '{template.Question}-{template.Id}'.");
+                            break;
                     }
                 });
         }

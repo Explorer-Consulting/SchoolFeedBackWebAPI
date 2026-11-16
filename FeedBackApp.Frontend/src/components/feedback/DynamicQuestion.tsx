@@ -4,6 +4,8 @@ import MultinomialSingleChoice from "@/components/feedback/questions/Multinomial
 import MultinomialSingleChoiceOther from "@/components/feedback/questions/MultinomialSingleChoiceOther"
 import MultipleChoice from "./questions/MultipleChoice";
 import OpenEnded from "./questions/OpenEnded";
+import NumberQuestion from "./questions/NumberQuestion";
+import DateQuestion from "./questions/DateQuestion";
 
 type Props = {
     q: Question;
@@ -75,7 +77,13 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid,d
                     description={description} />
             );
         }
+        case "Number":
+            return <NumberQuestion q={q} index={index} value={String(value ?? "")}
+                                onChange={(val) => onChange(val)} isInvalid={isInvalid} description={description} />;
 
+        case "Date":
+            return <DateQuestion q={q} index={index} value={String(value ?? "")}
+                                onChange={(val) => onChange(val)} isInvalid={isInvalid} description={description} />;
         default:
             return null;
     }

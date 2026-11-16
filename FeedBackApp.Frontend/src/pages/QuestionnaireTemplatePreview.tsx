@@ -53,6 +53,8 @@ function mapType(type: number | string | undefined): QuestionType {
       case 3: return "MultinomialSingleChoiceOther";
       case 4: return "MultipleChoice";
       case 5: return "OpenEnded";
+      case 6: return "Number";
+      case 7: return "Date";
       default: return "OpenEnded";
     }
   }

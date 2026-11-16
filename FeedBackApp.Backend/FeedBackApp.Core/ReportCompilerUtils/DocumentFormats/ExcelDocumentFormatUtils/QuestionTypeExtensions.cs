@@ -17,6 +17,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             QuestionType.MultiNomialSingleChoiceOther => "Egyválasztós + Nyílt végű kérdés",
             QuestionType.MultipleChoice => "Többválasztós",
             QuestionType.OpenEnded => "Nyílt végű",
+            QuestionType.Number => "Szám",
+            QuestionType.Date => "Dátum",
             _ => "Ismeretlen"
         };
 
@@ -30,6 +32,8 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             QuestionType.MultiNomialSingleChoiceOther => true,
             QuestionType.MultipleChoice => true,
             QuestionType.OpenEnded => false,
+            QuestionType.Number => true,
+            QuestionType.Date => false,
             _ => false
         };
     }

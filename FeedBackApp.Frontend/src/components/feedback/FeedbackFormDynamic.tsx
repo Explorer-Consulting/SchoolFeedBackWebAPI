@@ -85,7 +85,11 @@ export function FeedbackFormDynamic({
             } else if (q.type === "OpenEnded") {
                 const text = String(val ?? "").trim();
                 isInvalid = text.length < 20;
-            } else {
+            } else if (q.type === "Number") {
+                const text = String(val ?? "").trim();
+                isInvalid = text === "" || !Number.isFinite(Number(text));
+            } 
+            else {
                 const text = String(val ?? "").trim();
                 isInvalid = text === "";
             }

@@ -8,6 +8,8 @@ namespace FeedBackApp.Core.Model.Enum
         MultinomialSingleChoice,
         MultiNomialSingleChoiceOther,
         MultipleChoice,
-        OpenEnded
+        OpenEnded,
+        Number,
+        Date
     }
 }

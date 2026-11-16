@@ -3,7 +3,9 @@ export type QuestionType =
   | "MultinomialSingleChoice"       
   | "MultinomialSingleChoiceOther"  
   | "MultipleChoice"                
-  | "OpenEnded";
+  | "OpenEnded"
+  | "Number"
+  | "Date";
 
 export type QuestionID = `q${number}`;
 

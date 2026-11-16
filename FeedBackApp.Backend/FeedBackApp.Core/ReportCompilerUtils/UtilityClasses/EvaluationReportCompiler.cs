@@ -144,6 +144,26 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             return [.. builder];
         }
 
+        private static ImmutableArray<double> CollectNumberData(
+        string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty) return [];
+            var b = ImmutableArray.CreateBuilder<double>();
+            foreach (var a in list)
+                if (AnswerFormats.TryParseNumber(a.Answer, out var v)) b.Add(v);
+            return b.ToImmutable();
+        }
+
+        private static ImmutableArray<DateOnly> CollectDateData(
+            string id, IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var list) || list.IsDefaultOrEmpty) return [];
+            var b = ImmutableArray.CreateBuilder<DateOnly>();
+            foreach (var a in list)
+                if (AnswerFormats.TryParseDate(a.Answer, out var v)) b.Add(v);
+            return b.ToImmutable();
+        }
+
         /// <summary>
         /// Compiles components for questions and optionally evaluates statistics.
         /// </summary>
@@ -204,6 +224,24 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                         {
                             var data = CollectOpenEndedData(q.Id, index);
                             var ed = new OpenEndedEvaluationData(q.Id, q.Question, data);
+                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
+                            break;
+                        }
+
+                    case QuestionType.Number:
+                        {
+                            var data = CollectNumberData(q.Id, index);
+                            var ed = new NumberEvaluationData(q.Id, q.Question, data);
+                            var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
+                            document.ReportComponents.Add(src.CompileComponent());
+                            break;
+                        }
+
+                    case QuestionType.Date:
+                        {
+                            var data = CollectDateData(q.Id, index);
+                            var ed = new DateEvaluationData(q.Id, q.Question, data);
                             var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
                             document.ReportComponents.Add(src.CompileComponent());
                             break;
