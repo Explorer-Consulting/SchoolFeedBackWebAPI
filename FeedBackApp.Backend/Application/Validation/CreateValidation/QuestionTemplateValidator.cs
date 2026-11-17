@@ -24,6 +24,31 @@ namespace Application.Validation.CreateValidation
                              .Must(options => options!.All(o => !string.IsNullOrWhiteSpace(o)))
                                  .WithMessage("Answer options cannot contain empty values for single- or multiple-choice questions");
                      });
+            When(dto => dto.Type == QuestionType.DropDown, () =>
+            {
+                RuleFor(dto => dto.DropDownItems)
+                    .Cascade(CascadeMode.Stop)
+
+                    .NotEmpty()
+                    .WithMessage("Dropdown items are required.")
+
+                    .Must(items => items.All(item => item != null))
+                    .WithMessage("Dropdown items cannot contain null elements.")
+
+                    .Must(items => items.All(item =>
+                        !string.IsNullOrWhiteSpace(item.Id)))
+                    .WithMessage("Dropdown item IDs cannot be empty.")
+
+                    .Must(items => items.All(item =>
+                        !string.IsNullOrWhiteSpace(item.Label)))
+                    .WithMessage("Dropdown item labels cannot be empty.")
+
+                    .Must(items =>
+                        items.Select(item => item.Id)
+                            .Distinct(StringComparer.Ordinal)
+                            .Count() == items.Count)
+                    .WithMessage("Dropdown item IDs must be unique.");
+            });
         }
     }
 }

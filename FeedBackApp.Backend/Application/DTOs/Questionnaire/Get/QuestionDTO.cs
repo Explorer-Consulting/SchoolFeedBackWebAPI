@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.Questionnaire.Post;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 
 namespace Application.DTOs.Questionnaire
@@ -18,6 +19,7 @@ namespace Application.DTOs.Questionnaire
         public string Description { get; set; } = string.Empty;
 
         public IList<string> AnswerOptions { get; set; } = new List<string>();
+        public IList<DropDownItem> DropDownItems { get; set; } = new List<DropDownItem>();
 
         public string Answer { get; set; } = string.Empty;
     }

@@ -1,4 +1,5 @@
 ﻿using Application.DTOs.Questionnaire.Post;
+using FeedBackApp.Core.Model;
 using FeedBackApp.Core.Model.Enum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -16,6 +17,8 @@ namespace Application.DTOs.Questionnaire
 
         [JsonProperty("answerOptions")]
         public List<string> AnswerOptions { get; set; } = new();
+        [JsonProperty("dropDownItems")]
+        public List<DropDownItem> DropDownItems { get; set; } = new();
 
         [JsonProperty("dependency")]
         public DependencyDTO? Dependency { get; set; }

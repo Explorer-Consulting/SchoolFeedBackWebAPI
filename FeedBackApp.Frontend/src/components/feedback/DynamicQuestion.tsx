@@ -4,8 +4,9 @@ import MultinomialSingleChoice from "@/components/feedback/questions/Multinomial
 import MultinomialSingleChoiceOther from "@/components/feedback/questions/MultinomialSingleChoiceOther"
 import MultipleChoice from "./questions/MultipleChoice";
 import OpenEnded from "./questions/OpenEnded";
-import NumberQuestion from "./questions/NumberQuestion";
-import DateQuestion from "./questions/DateQuestion";
+import NumberQuestion from "./questions/Number";
+import DateQuestion from "./questions/Date";
+import DropDownQuestion from "./questions/DropDown";
 
 type Props = {
     q: Question;
@@ -14,9 +15,10 @@ type Props = {
     onChange: (val: string | string[]) => void;
     isInvalid?: boolean;
     description?: string;
+    readOnly?: boolean;
 };
 
-export default function DynamicQuestion({ q, index, value, onChange, isInvalid,description }: Props) {
+export default function DynamicQuestion({ q, index, value, onChange, isInvalid, description, readOnly }: Props) {
 
    switch (q.type) {
         case "LikertScaleOneToFive": {
@@ -84,6 +86,19 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid,d
         case "Date":
             return <DateQuestion q={q} index={index} value={String(value ?? "")}
                                 onChange={(val) => onChange(val)} isInvalid={isInvalid} description={description} />;
+
+        case "DropDown":
+            return (
+                <DropDownQuestion
+                q={q}
+                index={index}
+                value={typeof value === "string" ? value : ""}
+                onChange={(val) => onChange(val)}
+                isInvalid={isInvalid}
+                description={description}
+                readOnly={readOnly}
+                />
+            );              
         default:
             return null;
     }

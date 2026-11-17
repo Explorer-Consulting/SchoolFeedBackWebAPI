@@ -12,14 +12,14 @@ using System.Collections.Immutable;
 namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 {
     public sealed class ReportRepository(
-        AppDBContext context, 
+        AppDBContext context,
         IBlobContext blob,
         IOptions<InstitutionOptions> institutionOptions) : IReportRepository
     {
         private readonly AppDBContext _context = context;
         private readonly IBlobContext _blob = blob;
 
-        private readonly IOptions<InstitutionOptions> _institutionOptions =  institutionOptions;
+        private readonly IOptions<InstitutionOptions> _institutionOptions = institutionOptions;
 
         public async Task CompileAndStoreEvaluationReports(string fullTemplateId)
         {
@@ -53,7 +53,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                             QuestionnaireResults = q.QuestionnaireResults.ToList(),
                         }).ToImmutableArray()
                     );
-            
+
             ImmutableArray<QuestionTemplate> questions;
             bool requireValidation;
             {
@@ -67,7 +67,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
 
             #endregion
             // 3) Generálás + feltöltés
-            
+
             await foreach (var document in EvaluationReportCompiler.CompileReports(answerCollection, questions, surveyId, requireValidation, _institutionOptions.Value.DisplayName))
 
             {
@@ -82,7 +82,7 @@ namespace FeedBackApp.Backend.Infrastructure.Persistence.Repository
                     await _blob.UploadTeacherAsync(document.Recipient.EmailAddress, fileName, document.Data, document.Metadata.MimeType);
                 }
             }
-            
+
         }
     }
 }

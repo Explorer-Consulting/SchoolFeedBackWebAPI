@@ -5,7 +5,8 @@ export type QuestionType =
   | "MultipleChoice"                
   | "OpenEnded"
   | "Number"
-  | "Date";
+  | "Date"
+  | "DropDown";
 
 export type QuestionID = `q${number}`;
 
@@ -14,12 +15,18 @@ export type QuestionDependency = {
   answerConditions: string[];
 }
 
+export type DropDownItem = {
+  id: string;
+  label: string;
+};
+
 export type Question = {
   id: QuestionID;          
   text: string;        
   type: QuestionType;
   dependency?:QuestionDependency
   options?: string[];
+  dropDownItems?: DropDownItem[];
   category:string;
   description?:string;
 };
