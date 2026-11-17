@@ -9,6 +9,7 @@ import { Navigate } from "react-router-dom";
 import SavedSelfSignInLinks from "@/components/ui/saved-self-sign-in-links";
 import { selfSignInLinkStorage } from "@/utils/selfSignInLinkStorage";
 import QrCodeModal from "@/components/ui/qr-code-modal";
+import { isDateValid } from "@/utils/utils";
 
 export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -246,11 +247,7 @@ export default function AdminDashboard() {
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
-          value={
-            startDate && !isNaN(startDate)
-              ? startDate.toISOString().split("T")[0]
-              : ""
-          }
+          value={isDateValid(startDate) ? startDate.toISOString().split("T")[0] : ""}
           onChange={(e) => setStartDate(new Date(e.target.value))}
         />
 
@@ -258,11 +255,7 @@ export default function AdminDashboard() {
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
-          value={
-            endDate && !isNaN(endDate)
-              ? endDate.toISOString().split("T")[0]
-              : ""
-          }
+          value={isDateValid(endDate) ? endDate.toISOString().split("T")[0] : ""}
           onChange={(e) => setEndDate(new Date(e.target.value))}
         />
 
