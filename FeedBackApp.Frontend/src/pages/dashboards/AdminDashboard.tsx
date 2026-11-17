@@ -6,7 +6,7 @@ import { useReviews } from "@/hooks/useReviews";
 import { parseExcel } from "@/utils/parseExcel";
 import { useAuthStore } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import SavedSelfSignInLinks from "@/components/ui/saved-self-sign-in-links"
+import SavedSelfSignInLinks from "@/components/ui/saved-self-sign-in-links";
 import { selfSignInLinkStorage } from "@/utils/selfSignInLinkStorage";
 import QrCodeModal from "@/components/ui/qr-code-modal";
 
@@ -14,7 +14,9 @@ export default function AdminDashboard() {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const user = useAuthStore((s) => s.user);
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | undefined>();
+  const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<
+    string | undefined
+  >();
   const [title, setTitle] = useState<string>("");
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
@@ -36,10 +38,10 @@ export default function AdminDashboard() {
     isLoadingAdminSurveys,
     isErrorAdminSurveys,
     refetchAdminSurveys,
-    enableSelfOptIn,          
-    isEnablingSelfOptIn,        
-    generateShareLink,          
-    isGeneratingShareLink,  
+    enableSelfOptIn,
+    isEnablingSelfOptIn,
+    generateShareLink,
+    isGeneratingShareLink,
   } = useReviews();
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
   if (!user) {
     return <Navigate to="/" replace />;
   }
-  
+
   if (user.role !== "Admin") {
     return <Navigate to="/no-access" replace />;
   }
@@ -64,7 +66,9 @@ export default function AdminDashboard() {
     if (!file) return;
 
     if (!/\.(xlsx|xls|xlsm)$/i.test(file.name)) {
-      toast.warning("Kérlek, tölts fel egy érvényes Excel fájlt (.xlsx vagy .xls).");
+      toast.warning(
+        "Kérlek, tölts fel egy érvényes Excel fájlt (.xlsx vagy .xls).",
+      );
       return;
     }
     setFile(file);
@@ -77,7 +81,9 @@ export default function AdminDashboard() {
     }
 
     if (startDate >= endDate) {
-      toast.warning("A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.");
+      toast.warning(
+        "A kezdő dátumnak korábbinak kell lennie, mint a záró dátum.",
+      );
       return;
     }
 
@@ -100,8 +106,13 @@ export default function AdminDashboard() {
 
     let payload;
     try {
-      payload = await parseExcel(file, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0], title);
-      payload = { ...payload, requireValidation};
+      payload = await parseExcel(
+        file,
+        startDate.toISOString().split("T")[0],
+        endDate.toISOString().split("T")[0],
+        title,
+      );
+      payload = { ...payload, requireValidation };
     } catch (err) {
       console.error("Failed to parse Excel:", err);
     }
@@ -131,7 +142,7 @@ export default function AdminDashboard() {
       },
       onError: () => {
         toast.error("A kérdőív törlése sikertelen.");
-      }
+      },
     });
   };
 
@@ -146,10 +157,11 @@ export default function AdminDashboard() {
         toast.success("Az összefoglalók sikeresen generálva lettek!");
         setSelectedQuestionnaireId("");
       },
-      onError: () => toast.error("Az összefoglalókat nem sikerült kigenerálni!")
+      onError: () =>
+        toast.error("Az összefoglalókat nem sikerült kigenerálni!"),
     });
   };
-  
+
   const handleSendReports = () => {
     if (!selectedQuestionnaireId) {
       toast.warning("Először válassz ki egy kérdőívet!");
@@ -161,7 +173,7 @@ export default function AdminDashboard() {
         toast.success("Az összefoglalók küldése sikeres!");
         setSelectedQuestionnaireId("");
       },
-      onError: () => toast.error("Az összefoglaló küldése sikertelen.")
+      onError: () => toast.error("Az összefoglaló küldése sikertelen."),
     });
   };
 
@@ -170,7 +182,7 @@ export default function AdminDashboard() {
       toast.warning("Először válassz ki egy kérdőívet!");
       return;
     }
-    
+
     // Enable self optin link generation
     enableSelfOptIn(selectedQuestionnaireId, {
       onSuccess: () => {
@@ -182,11 +194,11 @@ export default function AdminDashboard() {
             onSuccess: (data: any) => {
               setQrCodeUrl(data.url);
               setQrExpiresAt(data.expiresAt);
-              
+
               // find survey title for the modal
-             const survey = (adminSurveys as Array<{ id: string; title: string }> | undefined)?.find(
-                (s) => s.id === selectedQuestionnaireId
-              );
+              const survey = (
+                adminSurveys as Array<{ id: string; title: string }> | undefined
+              )?.find((s) => s.id === selectedQuestionnaireId);
 
               const surveyTitle = survey?.title || selectedQuestionnaireId;
               setQrTitle(surveyTitle);
@@ -208,20 +220,22 @@ export default function AdminDashboard() {
             },
             onError: () => {
               toast.error("QR kód generálása sikertelen!");
-            }
-          }
+            },
+          },
         );
       },
       onError: () => {
         toast.error("Self opt-in engedélyezése sikertelen!");
-      }
+      },
     });
   };
 
   return (
     <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10">
       <header className="mb-6 sm:mb-8 text-center sm:text-left">
-        <h1 className="text-2xl sm:text-3xl font-bold">Adminisztrációs irányítófelület</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Adminisztrációs irányítófelület
+        </h1>
         <p className="text-sm sm:text-base text-muted-foreground">
           Kezeld a visszajelzési időablakokat, a hozzáférést és az exportálást.
         </p>
@@ -232,7 +246,11 @@ export default function AdminDashboard() {
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
-          value={startDate ? startDate.toISOString().split("T")[0] : ""}
+          value={
+            startDate && !isNaN(startDate)
+              ? startDate.toISOString().split("T")[0]
+              : ""
+          }
           onChange={(e) => setStartDate(new Date(e.target.value))}
         />
 
@@ -240,7 +258,11 @@ export default function AdminDashboard() {
         <input
           type="date"
           className="border rounded p-2 w-full mb-4"
-          value={endDate ? endDate.toISOString().split("T")[0] : ""}
+          value={
+            endDate && !isNaN(endDate)
+              ? endDate.toISOString().split("T")[0]
+              : ""
+          }
           onChange={(e) => setEndDate(new Date(e.target.value))}
         />
 
@@ -266,7 +288,9 @@ export default function AdminDashboard() {
         <Button
           className="w-full sm:w-auto"
           onClick={sendQuestionnaires}
-          disabled={isCreatingQuestionnaire || !endDate || !startDate || !file || !title}
+          disabled={
+            isCreatingQuestionnaire || !endDate || !startDate || !file || !title
+          }
         >
           Kérdőívek létrehozása
         </Button>
@@ -295,7 +319,11 @@ export default function AdminDashboard() {
         <Button
           className="w-full sm:w-auto"
           onClick={handleGenerateReports}
-          disabled={!selectedQuestionnaireId || isGeneratingReports || isLoadingAdminSurveys}
+          disabled={
+            !selectedQuestionnaireId ||
+            isGeneratingReports ||
+            isLoadingAdminSurveys
+          }
         >
           Összefoglalók kigenerálása
         </Button>
@@ -303,7 +331,11 @@ export default function AdminDashboard() {
         <Button
           className="w-full sm:w-auto"
           onClick={handleSendReports}
-          disabled={!selectedQuestionnaireId || isSendingReports || isLoadingAdminSurveys}
+          disabled={
+            !selectedQuestionnaireId ||
+            isSendingReports ||
+            isLoadingAdminSurveys
+          }
         >
           Összefoglalók kiküldése
         </Button>
@@ -311,23 +343,27 @@ export default function AdminDashboard() {
         <Button
           className="w-full sm:w-auto"
           onClick={deleteSelectedQuestionnaire}
-          disabled={!selectedQuestionnaireId || isDeletingQuestionnaire || isLoadingAdminSurveys}
+          disabled={
+            !selectedQuestionnaireId ||
+            isDeletingQuestionnaire ||
+            isLoadingAdminSurveys
+          }
         >
           Kijelölt kérdőív törlése
         </Button>
         {requireValidation && (
-        <Button
-          className="w-full sm:w-auto"
-          onClick={handleGenerateQRCode}
-          disabled={
-            !selectedQuestionnaireId || 
-            isEnablingSelfOptIn || 
-            isGeneratingShareLink || 
-            isLoadingAdminSurveys
-          }
-        >
-          QR kód generálása
-        </Button>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={handleGenerateQRCode}
+            disabled={
+              !selectedQuestionnaireId ||
+              isEnablingSelfOptIn ||
+              isGeneratingShareLink ||
+              isLoadingAdminSurveys
+            }
+          >
+            QR kód generálása
+          </Button>
         )}
       </div>
       {requireValidation && (
