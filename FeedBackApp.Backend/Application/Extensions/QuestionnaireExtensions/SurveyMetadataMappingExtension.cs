@@ -220,6 +220,7 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Question = dto.Question,
                 Type = dto.Type,
                 AnswerOptions = dto.AnswerOptions,
+                DropDownItems = dto.DropDownItems,
                 Dependency = dto.Dependency?.ToModel(),
                 Category = dto.Category,
                 Description = dto.Description,
@@ -236,6 +237,7 @@ namespace Application.Extensions.QuestionnaireExtensions
                 Question = model.Question,
                 Type = model.Type,
                 AnswerOptions = [.. model.AnswerOptions],
+                DropDownItems = [.. model.DropDownItems],
                 Dependency = model.Dependency?.ToDto(),
                 Category = model.Category,
                 Description = model.Description

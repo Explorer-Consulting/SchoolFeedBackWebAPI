@@ -40,6 +40,16 @@ public sealed class QuestionnaireTemplateConfiguration : IEntityTypeConfiguratio
             qt.Property(p => p.Category).ToJsonProperty("category").IsRequired();
             qt.Property(p => p.Description).ToJsonProperty("description");
             qt.Property(p => p.AnswerOptions).ToJsonProperty("answerOptions");
+            qt.OwnsMany(p => p.DropDownItems, item =>
+            {
+                item.ToJsonProperty("dropDownItems");
+                item.Property(p => p.Id)
+                    .ToJsonProperty("id")
+                    .IsRequired();
+                item.Property(p => p.Label)
+                    .ToJsonProperty("label")
+                    .IsRequired();
+            });
 
             qt.OwnsOne(p => p.Dependency, dep =>
             {

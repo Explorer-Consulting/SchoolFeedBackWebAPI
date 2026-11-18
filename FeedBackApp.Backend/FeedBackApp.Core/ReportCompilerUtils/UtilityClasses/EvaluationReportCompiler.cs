@@ -164,6 +164,29 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
             return b.ToImmutable();
         }
 
+        private static ImmutableArray<string> CollectDropDownData(
+            string id,
+            IReadOnlyDictionary<string, ImmutableArray<QuestionAnswer>> index)
+        {
+            if (!index.TryGetValue(id, out var answers)
+                || answers.IsDefaultOrEmpty)
+            {
+                return [];
+            }
+
+            var builder = ImmutableArray.CreateBuilder<string>();
+
+            foreach (var answer in answers)
+            {
+                if (!string.IsNullOrWhiteSpace(answer.Answer))
+                {
+                    builder.Add(answer.Answer);
+                }
+            }
+
+            return builder.ToImmutable();
+        }
+
         /// <summary>
         /// Compiles components for questions and optionally evaluates statistics.
         /// </summary>
@@ -244,6 +267,24 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                             var ed = new DateEvaluationData(q.Id, q.Question, data);
                             var src = (evaluate && HasData(data)) ? ed.EvaluateData() : ed;
                             document.ReportComponents.Add(src.CompileComponent());
+                            break;
+                        }
+
+                    case QuestionType.DropDown:
+                        {
+                            var data = CollectDropDownData(q.Id, index);
+
+                            var evaluation = new DropDownEvaluationData(
+                                q.Id,
+                                q.Question,
+                                [.. q.DropDownItems],
+                                data);
+
+                            var source = evaluate
+                                ? evaluation.EvaluateData()
+                                : evaluation;
+
+                            document.ReportComponents.Add(source.CompileComponent());
                             break;
                         }
 

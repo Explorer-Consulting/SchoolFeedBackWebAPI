@@ -271,6 +271,66 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
                             AddBlock(dt.QuestionId, QuestionType.Date, headerRows, answerRows);
                             break;
                         }
+
+                    case DropDownEvaluationData dropdown:
+                        {
+                            var headerRows = new List<List<string>>
+                            {
+                                new() { "Kérdés", dropdown.QuestionStatement }
+                            };
+
+                            var optionRows = new List<List<string>>
+                            {
+                                new() { "Lehetőségek", "Azonosító", "Felirat" }
+                            };
+
+                            foreach (var item in dropdown.Items)
+                            {
+                                optionRows.Add(new List<string>
+                                {
+                                    string.Empty,
+                                    item.Id,
+                                    item.Label
+                                });
+                            }
+
+                            var labelsById = dropdown.Items.ToDictionary(
+                                item => item.Id,
+                                item => item.Label,
+                                StringComparer.Ordinal);
+
+                            var answerRows = new List<List<string>>
+                            {
+                                new() { "Sorszám", "Választott azonosító", "Választott lehetőség" }
+                            };
+
+                            int rowNumber = 1;
+
+                            foreach (var answer in dropdown.Answers)
+                            {
+                                string label = labelsById.TryGetValue(answer, out var matchingLabel)
+                                    ? matchingLabel
+                                    : "Ismeretlen lehetőség";
+
+                                answerRows.Add(new List<string>
+                                {
+                                    rowNumber.ToString(CultureInfo.InvariantCulture),
+                                    answer,
+                                    label
+                                });
+
+                                rowNumber++;
+                            }
+
+                            AddBlock(
+                                dropdown.QuestionId,
+                                QuestionType.DropDown,
+                                headerRows,
+                                answerRows,
+                                optionRows);
+
+                            break;
+                        }
                 }
             }
 

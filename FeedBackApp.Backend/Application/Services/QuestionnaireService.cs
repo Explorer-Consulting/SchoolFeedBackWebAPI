@@ -303,6 +303,7 @@ namespace Application.Services
                                 Question = template.Question,
                                 Type = template.Type,
                                 AnswerOptions = template.AnswerOptions,
+                                DropDownItems = template.DropDownItems,
                                 Answer = answer,
                                 Dependency = template.Dependency?.ToDto(),
                                 Description = template.Description,
