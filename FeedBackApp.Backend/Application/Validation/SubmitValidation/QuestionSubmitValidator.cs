@@ -31,8 +31,12 @@ namespace Application.Validation.SubmitValidation
                     switch (template.Type)
                     {
                         case QuestionType.OpenEnded:
-                            if (string.IsNullOrWhiteSpace(answer) || answer.Length < 20 || answer.Length > 300)
+                            if (string.IsNullOrWhiteSpace(answer))
                                 context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
+                            else if (answer.Length < 20)
+                                context.AddFailure("Answer", $"Answer cannot be less than 20 characters for '{template.Question}-{template.Id}'.");
+                            else if (answer.Length > 300)
+                                context.AddFailure("Answer", $"Answer cannot be longer than 300 characters for '{template.Question}-{template.Id}'.");
                             break;
 
                         case QuestionType.MultinomialSingleChoice:
