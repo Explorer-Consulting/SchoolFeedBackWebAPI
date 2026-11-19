@@ -24,7 +24,7 @@ namespace Application.Validation.CreateValidation
                              .Must(options => options!.All(o => !string.IsNullOrWhiteSpace(o)))
                                  .WithMessage("Answer options cannot contain empty values for single- or multiple-choice questions");
                      });
-            When(dto => dto.Type == QuestionType.DropDown, () =>
+            When(dto => dto.Type is QuestionType.DropDown or QuestionType.FilteredDropDown, () =>
             {
                 RuleFor(dto => dto.DropDownItems)
                     .Cascade(CascadeMode.Stop)
@@ -48,6 +48,15 @@ namespace Application.Validation.CreateValidation
                             .Distinct(StringComparer.Ordinal)
                             .Count() == items.Count)
                     .WithMessage("Dropdown item IDs must be unique.");
+            });
+
+            When(dto => dto.Type is QuestionType.FilteredDropDown, () => {
+                RuleFor(dto => dto.ParentQuestionId)
+                    .NotEmpty().WithMessage("Filtered dropdown requires a parent question.");
+
+                RuleFor(dto => dto.DropDownItems)
+                    .Must(items => items.All(item => !string.IsNullOrWhiteSpace(item.ParentId)))
+                    .WithMessage("Every filtered dropdown item must have a parent item ID.");
             });
         }
     }

@@ -1,4 +1,4 @@
-import { EvaluationResponses, Question } from "@/models/StudentContext"
+import { EvaluationResponses, Question, QuestionID } from "@/models/StudentContext"
 
 export const isMulti = (q: Question) => q.type === "MultipleChoice";
 
@@ -47,4 +47,54 @@ export function isNewCategory(list: Question[], idx: number) {
     if (idx === 0) return true;
     const prev = list[idx - 1];
     return prev?.category !== curr.category;
+}
+
+export function clearFilteredChildren(
+  questions: Question[],
+  changedId: QuestionID,
+  answers: EvaluationResponses
+): EvaluationResponses {
+  const out = { ...answers };
+  const queue: QuestionID[] = [changedId];
+
+  while (queue.length > 0) {
+    const parentId = queue.shift()!;
+    for (const q of questions) {
+      if (q.type === "FilteredDropDown" && q.parentQuestionId === parentId) {
+        out[q.id] = "";
+        queue.push(q.id);
+      }
+    }
+  }
+  return out;
+}
+
+export function getVisibleQuestions(
+  questions: Question[],
+  answers: EvaluationResponses
+): Question[] {
+  const byId = new Map(questions.map((q) => [q.id, q] as const));
+  const memo = new Map<QuestionID, boolean>();
+
+  const isVisible = (id: QuestionID): boolean => {
+    const cached = memo.get(id);
+    if (cached !== undefined) return cached;
+
+    const q = byId.get(id);
+    let visible = !!q; // ismeretlen id → nem látszik
+
+    if (q?.dependency) {
+      // csak akkor látszik, ha a forráskérdés is látszik ÉS a feltétel teljesül
+      visible = isVisible(q.dependency.id) && shouldShowQuestion(q, answers);
+    }
+    if (visible && q?.parentQuestionId) {
+      // szűrt dropdown: ha a szülő rejtett, a gyerek is az
+      visible = isVisible(q.parentQuestionId);
+    }
+
+    memo.set(id, visible);
+    return visible;
+  };
+
+  return questions.filter((q) => isVisible(q.id));
 }

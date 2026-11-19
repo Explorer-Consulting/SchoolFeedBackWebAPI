@@ -66,6 +66,7 @@ function mapType(type: number | string | undefined): QuestionType {
       case 6: return "Number";
       case 7: return "Date";
       case 8: return "DropDown";
+      case 9: return "FilteredDropDown";
       default: return "OpenEnded";
     }
   }
@@ -79,7 +80,8 @@ function mapType(type: number | string | undefined): QuestionType {
     t === "OpenEnded" ||
     t === "Number" ||
     t === "Date" ||
-    t === "DropDown"
+    t === "DropDown" ||
+    t === "FilteredDropDown"
   ) {
     return t as QuestionType;
   }
