@@ -87,6 +87,7 @@ namespace Application.Validation.UpdateValidation
                             if (!AnswerFormats.TryParseDate(answer, out _))
                                 context.AddFailure("Answer", $"Answer must be a date in {AnswerFormats.DateFormat} format for '{template.Question}-{template.Id}'.");
                             break;
+                        case QuestionType.FilteredDropDown:
                         case QuestionType.DropDown:
                             if (!template.DropDownItems.Any(item =>
                                 string.Equals(item.Id, answer, StringComparison.Ordinal)))

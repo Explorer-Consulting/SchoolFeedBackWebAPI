@@ -18,7 +18,8 @@ export default function DropDownQuestion({
   isInvalid,
   description,
   readOnly,
-}: BaseQuestionProps) {
+  emptyPlaceholder = "Nincsenek választható lehetőségek"
+}: BaseQuestionProps & { emptyPlaceholder?: string }) {
   const inputId = useId();
   const descriptionId = `${inputId}-description`;
 
@@ -56,7 +57,7 @@ export default function DropDownQuestion({
           <SelectValue
             placeholder={
               items.length === 0
-                ? "Nincsenek választható lehetőségek"
+                ? emptyPlaceholder
                 : "Válassz egy lehetőséget..."
             }
           />

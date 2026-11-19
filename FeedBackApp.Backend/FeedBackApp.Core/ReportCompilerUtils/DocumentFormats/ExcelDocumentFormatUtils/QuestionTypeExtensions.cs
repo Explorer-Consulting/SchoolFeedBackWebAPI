@@ -20,6 +20,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             QuestionType.Number => "Szám",
             QuestionType.Date => "Dátum",
             QuestionType.DropDown => "Legördülő lista",
+            QuestionType.FilteredDropDown => "Szűrt legördülő lista",  
             _ => "Ismeretlen"
         };
 
@@ -36,6 +37,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.DocumentFormats.ExcelDocumentForm
             QuestionType.Number => true,
             QuestionType.Date => false,
             QuestionType.DropDown => false,
+            QuestionType.FilteredDropDown => false,                    
             _ => false
         };
     }

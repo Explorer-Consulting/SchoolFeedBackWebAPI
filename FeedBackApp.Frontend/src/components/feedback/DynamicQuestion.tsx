@@ -16,9 +16,10 @@ type Props = {
     isInvalid?: boolean;
     description?: string;
     readOnly?: boolean;
+    parentValue?: string;
 };
 
-export default function DynamicQuestion({ q, index, value, onChange, isInvalid, description, readOnly }: Props) {
+export default function DynamicQuestion({ q, index, value, onChange, isInvalid, description, readOnly, parentValue }: Props) {
 
    switch (q.type) {
         case "LikertScaleOneToFive": {
@@ -98,7 +99,26 @@ export default function DynamicQuestion({ q, index, value, onChange, isInvalid, 
                 description={description}
                 readOnly={readOnly}
                 />
-            );              
+            );  
+                
+        case "FilteredDropDown": {
+            const visibleItems = parentValue
+                ? (q.dropDownItems ?? []).filter((item) => item.parentId === parentValue)
+                : [];
+
+            return (
+                <DropDownQuestion
+                    q={{ ...q, dropDownItems: visibleItems }}
+                    index={index}
+                    value={typeof value === "string" ? value : ""}
+                    onChange={(val) => onChange(val)}
+                    isInvalid={isInvalid}
+                    description={description}
+                    readOnly={readOnly}
+                    emptyPlaceholder={parentValue ? "Nincs választható lehetőség" : "Előbb válaszolj az előző kérdésre"}
+                />
+            );
+        }
         default:
             return null;
     }

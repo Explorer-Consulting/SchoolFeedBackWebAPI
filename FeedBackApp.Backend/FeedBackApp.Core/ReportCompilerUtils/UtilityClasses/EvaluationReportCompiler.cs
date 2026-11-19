@@ -269,7 +269,7 @@ namespace FeedBackApp.Core.ReportCompilerUtils.UtilityClasses
                             document.ReportComponents.Add(src.CompileComponent());
                             break;
                         }
-
+                    case QuestionType.FilteredDropDown:
                     case QuestionType.DropDown:
                         {
                             var data = CollectDropDownData(q.Id, index);

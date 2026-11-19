@@ -29,5 +29,8 @@ namespace Application.DTOs.Questionnaire
         [JsonProperty("description")]
         public string Description { get; set; } = string.Empty;
 
+        [JsonProperty("parentQuestionId")]
+        public string? ParentQuestionId { get; set; }
+
     }
 }
