@@ -333,6 +333,7 @@ namespace Application.Services
                                 Question = template.Question,
                                 Type = template.Type,
                                 AnswerOptions = template.AnswerOptions,
+                                MaxSelections = template.MaxSelections,
                                 DropDownItems = template.DropDownItems,
                                 ParentQuestionId = template.ParentQuestionId,
                                 Answer = answer,

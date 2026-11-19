@@ -24,6 +24,15 @@ namespace Application.Validation.CreateValidation
                              .Must(options => options!.All(o => !string.IsNullOrWhiteSpace(o)))
                                  .WithMessage("Answer options cannot contain empty values for single- or multiple-choice questions");
                      });
+            RuleFor(dto => dto.MaxSelections)
+                .Must((dto, max) =>
+                    max is null ||
+                    (dto.Type == QuestionType.MultipleChoice &&
+                    max.Value >= 1 &&
+                    max.Value <= (dto.AnswerOptions?.Count ?? 0)))
+                .WithMessage(
+                    "MaxSelections is only allowed for multiple-choice questions " +
+                    "and must be between 1 and the number of answer options.");
             When(dto => dto.Type is QuestionType.DropDown or QuestionType.FilteredDropDown, () =>
             {
                 RuleFor(dto => dto.DropDownItems)

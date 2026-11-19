@@ -32,6 +32,9 @@ type BackendQuestionTemplate = {
   AnswerOptions?: string[];
   answerOptions?: string[];
 
+  MaxSelections?: number | null;
+  maxSelections?: number | null;
+
   DropDownItems?: BackendDropDownItem[];
   dropDownItems?: BackendDropDownItem[];
 
@@ -190,6 +193,7 @@ export default function QuestionnaireTemplatePreview() {
         text: q.Question ?? q.question ?? "",
         type: mapType(q.Type ?? q.type),
         options: q.AnswerOptions ?? q.answerOptions ?? [],
+        maxSelections: q.MaxSelections ?? q.maxSelections ?? undefined,
         dropDownItems: (q.DropDownItems ?? q.dropDownItems ?? []).map(
           (item) => ({
             id: item.Id ?? item.id ?? "",

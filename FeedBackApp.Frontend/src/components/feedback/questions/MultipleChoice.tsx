@@ -4,9 +4,21 @@ import QuestionWrapper from "@/components/feedback/questions/QuestionWrapper";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function MultipleChoice({ q, index, value, onChange, isInvalid, description }: BaseQuestionProps) {
-    const arr = Array.isArray(value) ? (value as string[]) : [];
-    const toggle = (id: string) =>
-        onChange(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+    const selected = Array.isArray(value) ? value : [];
+    const maxSelections = q.maxSelections;
+    const limitReached =
+        maxSelections != null && selected.length >= maxSelections;
+
+    const toggle = (id: string) => {
+        if (selected.includes(id)) {
+            onChange(selected.filter((selectedId) => selectedId !== id));
+            return;
+        }
+
+        if (!limitReached) {
+            onChange([...selected, id]);
+        }
+    };
 
     return (
         <QuestionWrapper isInvalid={isInvalid}>
@@ -19,15 +31,24 @@ export default function MultipleChoice({ q, index, value, onChange, isInvalid, d
                         {description}
                     </span>
                 )}
+                {maxSelections != null && (
+                    <p className="text-sm text-muted-foreground" aria-live="polite">
+                        Legfeljebb {maxSelections} válasz jelölhető.
+                        Kiválasztva: {selected.length}.
+                    </p>
+                )}
             </div>
             <div className="space-y-2">
                 {(q.options ?? []).map((opt, idx) => {
                     const id = String(idx + 1);
+                    const checked = selected.includes(id);
+
                     return (
                         <div key={id} className="flex items-center gap-2">
                             <Checkbox
                                 id={`${q.id}-${id}`}
-                                checked={arr.includes(id)}
+                                checked={checked}
+                                disabled={limitReached && !checked}
                                 onCheckedChange={() => toggle(id)}
                             />
                             <Label htmlFor={`${q.id}-${id}`}>{opt}</Label>
