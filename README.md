@@ -21,6 +21,21 @@ A school feedback system built with .NET Azure Functions backend and React TypeS
 ### Questionnaire Creation via Excel Upload
 Upload structured Excel files containing questions with types, categories, answer options, conditional dependencies, student groups, teacher assignments, and survey dates.
 
+
+#### Optional selection limit for multiple-choice questions
+
+On the `questionnaireTemplate` worksheet, use the optional `maxSelections`
+column to limit how many answers a student can select for a `MultipleChoice`
+question. The value must be a whole number from 1 to the number of available
+answer options. Leave the cell blank or omit the column to allow any number
+of selections up to the number of available options.
+
+| question | type | category | answerOptions | maxSelections |
+| Which study tools do you use? | `MultipleChoice` | Study habits | `Notes;Videos;Books` | `2` |
+
+In this example, a student can select up to two of the three options.
+
+
 ### Questionnaire Management
 Delete questionnaires with associated responses and view submission statistics and completion rates.
 

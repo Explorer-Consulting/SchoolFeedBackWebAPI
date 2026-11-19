@@ -44,6 +44,13 @@ namespace Application.Validation.UpdateValidation
 
                         case QuestionType.MultipleChoice:
                             var parts = answer.Split('-', StringSplitOptions.RemoveEmptyEntries);
+                            if (template.MaxSelections is int max && parts.Length > max)
+                            {
+                                context.AddFailure(
+                                    "Answer",
+                                    $"At most {max} options may be selected for '{template.Question}-{template.Id}'.");
+                                break;
+                            }
                             foreach (var part in parts)
                             {
                                 if (!int.TryParse(part, out int choice) || choice < 1 || choice > template.AnswerOptions.Count)

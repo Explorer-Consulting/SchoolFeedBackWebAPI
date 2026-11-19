@@ -96,6 +96,21 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             ? row.answerOptions.split(";").map((o: string) => o.trim())
             : undefined;
 
+          const rawMaxSelections = String(row.maxSelections ?? "").trim();
+          const maxSelections = rawMaxSelections === "" ? undefined : Number(rawMaxSelections);
+
+          if (maxSelections !== undefined &&
+            (row.type !== "MultipleChoice" ||
+              !Number.isInteger(maxSelections) ||
+              maxSelections < 1 ||
+              maxSelections > (answerOptions?.length ?? 0))
+          ) {
+            throw new Error(
+              `A(z) „${row.question}” kérdésnél a maxSelections csak MultipleChoice típushoz adható meg, ` +
+                `és 1 és a válaszlehetőségek száma közötti egész számnak kell lennie.`
+            );
+          }
+
           // dropDownItems
           const dropDownItems = isDropDown || isFilteredDropDown
             ? parseDropDownItems(
@@ -131,6 +146,7 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             category: row.category ? String(row.category) : "",  
             ...(row.description ? { description: String(row.description) } : {}),
             ...(answerOptions ? { answerOptions } : {}),
+            ...(maxSelections === undefined ? {} : {maxSelections}),
             ...(dropDownItems ? { dropDownItems } : {}),
             ...(dependency ? { dependency } : {}),
             ...(parentQuestionId ? { parentQuestionId } : {}),
