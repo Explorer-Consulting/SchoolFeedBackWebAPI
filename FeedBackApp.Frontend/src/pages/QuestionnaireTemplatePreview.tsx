@@ -12,6 +12,13 @@ import { GetQuestionnaireTemplatePreview, SelfOptIn } from "@/api/ReviewApi";
 import { toast } from "sonner"; 
 import { useAuthStore } from "@/hooks/useAuth";  
 
+type BackendDropDownItem = {
+  Id?: string;
+  id?: string;
+  Label?: string;
+  label?: string;
+}
+
 type BackendQuestionTemplate = {
   Id?: string;
   id?: string;
@@ -24,6 +31,9 @@ type BackendQuestionTemplate = {
 
   AnswerOptions?: string[];
   answerOptions?: string[];
+
+  DropDownItems?: BackendDropDownItem[];
+  dropDownItems?: BackendDropDownItem[];
 
   Category?: string;
   category?: string;
@@ -55,6 +65,8 @@ function mapType(type: number | string | undefined): QuestionType {
       case 5: return "OpenEnded";
       case 6: return "Number";
       case 7: return "Date";
+      case 8: return "DropDown";
+      case 9: return "FilteredDropDown";
       default: return "OpenEnded";
     }
   }
@@ -65,7 +77,11 @@ function mapType(type: number | string | undefined): QuestionType {
     t === "MultinomialSingleChoice" ||
     t === "MultinomialSingleChoiceOther" ||
     t === "MultipleChoice" ||
-    t === "OpenEnded"
+    t === "OpenEnded" ||
+    t === "Number" ||
+    t === "Date" ||
+    t === "DropDown" ||
+    t === "FilteredDropDown"
   ) {
     return t as QuestionType;
   }
@@ -160,7 +176,10 @@ export default function QuestionnaireTemplatePreview() {
 
 
   const title = data?.title ?? data?.Title ?? "Kérdőív sablon – előnézet";
-  const raw = data?.questionTemplates ?? data?.QuestionTemplates ?? [];
+  const raw = useMemo(
+    () => data?.questionTemplates ?? data?.QuestionTemplates ?? [],
+    [data]
+  );
   const selfEnrollmentAllowed =
     data?.selfEnrollmentAllowed ?? data?.SelfEnrollmentAllowed ?? false;
 
@@ -171,6 +190,12 @@ export default function QuestionnaireTemplatePreview() {
         text: q.Question ?? q.question ?? "",
         type: mapType(q.Type ?? q.type),
         options: q.AnswerOptions ?? q.answerOptions ?? [],
+        dropDownItems: (q.DropDownItems ?? q.dropDownItems ?? []).map(
+          (item) => ({
+            id: item.Id ?? item.id ?? "",
+            label: item.Label ?? item.label ?? "",
+          })
+        ),
         category: q.Category ?? q.category ?? "",
         description: (q.Description ?? q.description)?.trim() || undefined,
       })),
@@ -207,6 +232,7 @@ export default function QuestionnaireTemplatePreview() {
                     value={isMulti(q) ? [] : ""}
                     onChange={() => {}}
                     description={q.description}
+                    readOnly
                   />
                 </ReadonlyBlock>
               </div>

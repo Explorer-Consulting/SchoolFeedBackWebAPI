@@ -31,8 +31,12 @@ namespace Application.Validation.SubmitValidation
                     switch (template.Type)
                     {
                         case QuestionType.OpenEnded:
-                            if (string.IsNullOrWhiteSpace(answer) || answer.Length < 20 || answer.Length > 300)
+                            if (string.IsNullOrWhiteSpace(answer))
                                 context.AddFailure("Answer", $"Answer cannot be empty for '{template.Question}-{template.Id}'.");
+                            else if (answer.Length < 20)
+                                context.AddFailure("Answer", $"Answer cannot be less than 20 characters for '{template.Question}-{template.Id}'.");
+                            else if (answer.Length > 300)
+                                context.AddFailure("Answer", $"Answer cannot be longer than 300 characters for '{template.Question}-{template.Id}'.");
                             break;
 
                         case QuestionType.MultinomialSingleChoice:
@@ -81,6 +85,17 @@ namespace Application.Validation.SubmitValidation
                         case QuestionType.Date:
                             if (!AnswerFormats.TryParseDate(answer, out _))
                                 context.AddFailure("Answer", $"Answer must be a date in {AnswerFormats.DateFormat} format for '{template.Question}-{template.Id}'.");
+                            break;
+                        case QuestionType.FilteredDropDown:
+                        case QuestionType.DropDown:
+                            if (!template.DropDownItems.Any(item =>
+                                string.Equals(item.Id, answer, StringComparison.Ordinal)))
+                            {
+                                context.AddFailure(
+                                    "Answer",
+                                    $"Answer must match an existing dropdown item ID " +
+                                    $"for '{template.Question}-{template.Id}'.");
+                            }
                             break;
                     }
                 });

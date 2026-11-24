@@ -5,6 +5,7 @@ import type {
     Question,
     QuestionID,
     QuestionType,
+    DropDownItem
 } from "@/models/StudentContext";
 
 const type_map: Record<number, QuestionType> = {
@@ -15,6 +16,8 @@ const type_map: Record<number, QuestionType> = {
     5: "OpenEnded",
     6: "Number",
     7: "Date",
+    8: "DropDown",
+    9: "FilteredDropDown"
 };
 
 type RawDependency = {
@@ -27,10 +30,12 @@ type RawQuestion = {
     question: string;
     type: number;
     answerOptions: string[];
+    dropDownItems?: DropDownItem[],
     dependency?: RawDependency;
     answer: string;
     category: string;
     description?: string;
+    parentQuestionId?: QuestionID;
 };
 
 type RawTeacher = {
@@ -100,6 +105,11 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                             tpe === "MultipleChoice"
                             ? (Array.isArray(rq?.answerOptions) ? rq.answerOptions : [])
                             : undefined,
+                    dropDownItems:
+                        tpe === "DropDown" || tpe === "FilteredDropDown"
+                         ? (Array.isArray(rq.dropDownItems) ? rq.dropDownItems : [])
+                         : undefined,
+                    parentQuestionId: tpe === "FilteredDropDown" ? rq.parentQuestionId : undefined,
                     dependency,
                     category,
                     description

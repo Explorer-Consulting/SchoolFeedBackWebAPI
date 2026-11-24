@@ -12,6 +12,7 @@ A school feedback system built with .NET Azure Functions backend and React TypeS
   - [Backend Setup](#backend-setup)
   - [Frontend Setup](#frontend-setup)
 - [How to run the application](#how-to-run-the-application)
+  -  [Running on macOS](#running-on-macos)
 - [API Documentation](#api-documentation)
 ---
 
@@ -255,6 +256,80 @@ npm run dev
 - Frontend: http://localhost:8080
 - Backend API: http://localhost:7277
 - Swagger UI: http://localhost:7277/api/swagger/ui
+---
+## Running on macOS
+
+Running the project on macOS (especially on Apple Silicon / ARM64) requires a few platform-specific adjustments compared to Windows/Visual Studio.
+
+### 1. macOS Prerequisites
+
+In addition to **Node.js** and the **.NET SDK**, install the following tools via Homebrew and npm:
+
+- **Azure Functions Core Tools (v4)** — required to run the isolated .NET worker locally:
+  ```bash
+  brew tap azure/functions
+  brew install azure-functions-core-tools@4
+  ```
+- **Azurite** — local Azure Storage emulator (Visual Studio starts this automatically on Windows, whereas on macOS it must be installed and started manually):
+  ```bash
+  npm install -g azurite
+  ```
+
+---
+
+### 2. Cosmos DB Setup (Cloud Connection)
+
+The official Azure Cosmos DB Emulator is Windows-only, and its Docker preview is unstable on Apple Silicon (ARM64). On macOS, connect the local backend directly to the deployed Azure Cosmos DB instance (`https://studentfeedback-db.documents.azure.com:443/`):
+
+- **Use `ConnectionMode.Gateway` (HTTPS / Port 443)** — by default, the .NET Cosmos SDK uses `ConnectionMode.Direct` (TCP ports `10000–20000`), which is frequently blocked by macOS firewall rules or local/university networks and causes a 60-second `dotnet-isolated` worker startup timeout. Ensure `UseCosmos` in `FeedBackApp.Backend/AzureFunctionsAPI/Program.cs` is configured to use `Gateway` mode:
+
+  ```csharp
+  options.UseCosmos(
+      cosmos.AccountEndpoint,
+      cosmos.AccountKey,
+      cosmos.DatabaseName,
+      cosmosOptions =>
+      {
+          cosmosOptions.ConnectionMode(Microsoft.Azure.Cosmos.ConnectionMode.Gateway);
+      });
+  ```
+
+- **Azure Firewall Access** — verify in the Azure Portal under your Cosmos DB resource's **Settings → Networking** that either *All networks* is enabled or your current public IP address is added to the firewall allowlist.
+
+---
+
+### 3. `local.settings.json` Adjustments for macOS
+
+When setting up `FeedBackApp.Backend/AzureFunctionsAPI/local.settings.json` (see [Backend Setup](#backend-setup)), keep the following macOS details in mind:
+
+- **Worker initialization timeout** — add `"FUNCTIONS_WORKER_INITIALIZATION_TIMEOUT": "00:03:00"` under `"Values"` so the Functions host does not time out while establishing the initial cloud database connection.
+- **Base-64 key formatting** — ensure `Cosmos:AccountKey` has no leading/trailing spaces or line breaks, otherwise startup will fail with a `System.FormatException`.
+- **Port alignment** — `func start` defaults to port `7071` on macOS (`http://localhost:7071`). Update `VITE_API_BASE_URL` in `FeedBackApp.Frontend/.env` (e.g., `http://localhost:7071/api`) and `Cors:AllowedOrigins` / `Frontend:Url` (e.g., `http://localhost:5173` or `https://localhost:5173`) to match your local ports.
+
+---
+
+### 4. Starting the Application (3 Terminals)
+
+Run each service in a separate terminal window in the following order:
+
+```bash
+# Terminal 1 - Start Azurite (must be running before the backend starts)
+azurite
+
+# Terminal 2 - Build and run the Backend
+cd FeedBackApp.Backend/AzureFunctionsAPI
+dotnet clean && dotnet build
+func start
+
+# Terminal 3 - Run the Frontend
+cd FeedBackApp.Frontend
+npm install
+npm run dev
+```
+
+**Access the application:**
+- Check the `Local:` URL printed in Terminal 3 for the frontend (typically `http://localhost:5173` or `https://localhost:5173`).
+- Backend API: `http://localhost:7071`
 ---
 
 ##  API Documentation

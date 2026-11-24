@@ -116,6 +116,7 @@ export default function AdminDashboard() {
       payload = { ...payload, requireValidation };
     } catch (err) {
       console.error("Failed to parse Excel:", err);
+      return;
     }
 
     createQuestionnaires(payload, {
@@ -336,6 +337,13 @@ export default function AdminDashboard() {
         <Button
           className="w-full sm:w-auto"
           onClick={deleteSelectedQuestionnaire}
+          disabled={!selectedQuestionnaireId || isDeletingQuestionnaire || isLoadingAdminSurveys}
+        >
+          Kijelölt kérdőív törlése
+        </Button>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={handleGenerateQRCode}
           disabled={
             !selectedQuestionnaireId ||
             isDeletingQuestionnaire ||
@@ -344,22 +352,7 @@ export default function AdminDashboard() {
         >
           Kijelölt kérdőív törlése
         </Button>
-        {requireValidation && (
-          <Button
-            className="w-full sm:w-auto"
-            onClick={handleGenerateQRCode}
-            disabled={
-              !selectedQuestionnaireId ||
-              isEnablingSelfOptIn ||
-              isGeneratingShareLink ||
-              isLoadingAdminSurveys
-            }
-          >
-            QR kód generálása
-          </Button>
-        )}
       </div>
-      {requireValidation && (
         <>
           <QrCodeModal
             isOpen={isQRModalOpen}
@@ -372,7 +365,6 @@ export default function AdminDashboard() {
             <SavedSelfSignInLinks />
           </CardContent>
         </>
-      )}
     </main>
   );
 }
