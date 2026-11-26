@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function getUnansweredCount(context): number {
@@ -11,5 +11,9 @@ export function getUnansweredCount(context): number {
     const teachers = context.teachersBySubject[subject] ?? [];
     return sum + teachers.length;
   }, 0);
-  return total ;
+  return total;
+}
+
+export function isDateValid(date: Date | undefined): boolean {
+  return date && !isNaN(date);
 }
