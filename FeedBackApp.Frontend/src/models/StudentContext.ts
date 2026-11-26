@@ -28,6 +28,7 @@ export type Question = {
   type: QuestionType;
   dependency?:QuestionDependency
   options?: string[];
+  maxSelections?: number;
   dropDownItems?: DropDownItem[];
   category:string;
   description?:string;

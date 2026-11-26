@@ -116,6 +116,9 @@ export default function AdminDashboard() {
       payload = { ...payload, requireValidation };
     } catch (err) {
       console.error("Failed to parse Excel:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Az Excel-fájl feldolgozása sikertelen."
+      );
       return;
     }
 

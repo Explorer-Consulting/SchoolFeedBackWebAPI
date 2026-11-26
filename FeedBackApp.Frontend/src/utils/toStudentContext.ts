@@ -30,6 +30,7 @@ type RawQuestion = {
     question: string;
     type: number;
     answerOptions: string[];
+    maxSelections?: number | null;
     dropDownItems?: DropDownItem[],
     dependency?: RawDependency;
     answer: string;
@@ -99,6 +100,7 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                     id,
                     text,
                     type: tpe,
+                    maxSelections: rq.maxSelections ?? undefined,
                     options:
                         tpe === "MultinomialSingleChoice" ||
                             tpe === "MultinomialSingleChoiceOther" ||
