@@ -11,6 +11,7 @@ namespace FeedBackApp.Core.Model.Enum
         OpenEnded,
         Number,
         Date,
-        DropDown
+        DropDown,
+        FilteredDropDown
     }
 }

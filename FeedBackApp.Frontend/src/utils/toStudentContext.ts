@@ -17,6 +17,7 @@ const type_map: Record<number, QuestionType> = {
     6: "Number",
     7: "Date",
     8: "DropDown",
+    9: "FilteredDropDown"
 };
 
 type RawDependency = {
@@ -29,11 +30,13 @@ type RawQuestion = {
     question: string;
     type: number;
     answerOptions: string[];
+    maxSelections?: number | null;
     dropDownItems?: DropDownItem[],
     dependency?: RawDependency;
     answer: string;
     category: string;
     description?: string;
+    parentQuestionId?: QuestionID;
 };
 
 type RawTeacher = {
@@ -97,6 +100,7 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                     id,
                     text,
                     type: tpe,
+                    maxSelections: rq.maxSelections ?? undefined,
                     options:
                         tpe === "MultinomialSingleChoice" ||
                             tpe === "MultinomialSingleChoiceOther" ||
@@ -104,9 +108,10 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                             ? (Array.isArray(rq?.answerOptions) ? rq.answerOptions : [])
                             : undefined,
                     dropDownItems:
-                        tpe === "DropDown"
+                        tpe === "DropDown" || tpe === "FilteredDropDown"
                          ? (Array.isArray(rq.dropDownItems) ? rq.dropDownItems : [])
                          : undefined,
+                    parentQuestionId: tpe === "FilteredDropDown" ? rq.parentQuestionId : undefined,
                     dependency,
                     category,
                     description

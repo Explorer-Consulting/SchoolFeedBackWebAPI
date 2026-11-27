@@ -17,6 +17,10 @@ namespace Application.DTOs.Questionnaire
 
         [JsonProperty("answerOptions")]
         public List<string> AnswerOptions { get; set; } = new();
+
+        [JsonProperty("maxSelections")]
+        public int? MaxSelections { get; set; }
+
         [JsonProperty("dropDownItems")]
         public List<DropDownItem> DropDownItems { get; set; } = new();
 
@@ -28,6 +32,9 @@ namespace Application.DTOs.Questionnaire
 
         [JsonProperty("description")]
         public string Description { get; set; } = string.Empty;
+
+        [JsonProperty("parentQuestionId")]
+        public string? ParentQuestionId { get; set; }
 
     }
 }

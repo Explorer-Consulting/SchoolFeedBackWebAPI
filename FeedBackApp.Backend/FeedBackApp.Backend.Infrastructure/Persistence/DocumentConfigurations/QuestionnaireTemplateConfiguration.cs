@@ -40,6 +40,8 @@ public sealed class QuestionnaireTemplateConfiguration : IEntityTypeConfiguratio
             qt.Property(p => p.Category).ToJsonProperty("category").IsRequired();
             qt.Property(p => p.Description).ToJsonProperty("description");
             qt.Property(p => p.AnswerOptions).ToJsonProperty("answerOptions");
+            qt.Property(p => p.MaxSelections).ToJsonProperty("maxSelections");
+            qt.Property(p => p.ParentQuestionId).ToJsonProperty("parentQuestionId");
             qt.OwnsMany(p => p.DropDownItems, item =>
             {
                 item.ToJsonProperty("dropDownItems");
@@ -49,6 +51,8 @@ public sealed class QuestionnaireTemplateConfiguration : IEntityTypeConfiguratio
                 item.Property(p => p.Label)
                     .ToJsonProperty("label")
                     .IsRequired();
+                item.Property(p => p.ParentId)
+                    .ToJsonProperty("parentId");
             });
 
             qt.OwnsOne(p => p.Dependency, dep =>

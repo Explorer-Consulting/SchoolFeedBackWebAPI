@@ -3,7 +3,8 @@ import type { DropDownItem } from "@/models/StudentContext";
 
 function parseDropDownItems(
   cell: unknown,
-  question: string
+  question: string,
+  requireParent = false
 ): DropDownItem[] {
   const text = String(cell ?? "").trim();
 
@@ -14,7 +15,22 @@ function parseDropDownItems(
   }
 
   const items = text.split(";").map((entry): DropDownItem => {
-    const separatorIndex = entry.indexOf("=");
+    let rest = entry;
+    let parentId: string | undefined;
+
+    if (requireParent) {
+      const colonIndex = entry.indexOf(":");
+      if (colonIndex === -1) {
+        throw new Error(
+          `Hibás szűrt dropdown elem: "${entry}" a(z) "${question}" kérdésnél. ` +
+          `Elvárt formátum: szülőAzonosító:azonosító=felirat.`
+        );
+      }
+      parentId = entry.slice(0, colonIndex).trim();
+      rest = entry.slice(colonIndex + 1);
+    }
+
+    const separatorIndex = rest.indexOf("=");
 
     if (separatorIndex === -1) {
       throw new Error(
@@ -23,8 +39,8 @@ function parseDropDownItems(
       );
     }
 
-    const id = entry.slice(0, separatorIndex).trim();
-    const label = entry.slice(separatorIndex + 1).trim();
+    const id = rest.slice(0, separatorIndex).trim();
+    const label = rest.slice(separatorIndex + 1).trim();
 
     if (!id || !label) {
       throw new Error(
@@ -32,7 +48,7 @@ function parseDropDownItems(
       );
     }
 
-    return { id, label };
+    return parentId ? { id, label, parentId } : { id, label };
   });
 
   const uniqueIds = new Set(items.map((item) => item.id));
@@ -73,19 +89,44 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
 
         const questionnaireTemplate = rawTemplate.map((row) => {
           const isDropDown = row.type === "DropDown";
-
+          const isFilteredDropDown = row.type === "FilteredDropDown";
+          
           // answerOptions
-          const answerOptions = !isDropDown && row.answerOptions
+          const answerOptions = !isDropDown && !isFilteredDropDown && row.answerOptions
             ? row.answerOptions.split(";").map((o: string) => o.trim())
             : undefined;
 
+          const rawMaxSelections = String(row.maxSelections ?? "").trim();
+          const maxSelections = rawMaxSelections === "" ? undefined : Number(rawMaxSelections);
+
+          if (maxSelections !== undefined &&
+            (row.type !== "MultipleChoice" ||
+              !Number.isInteger(maxSelections) ||
+              maxSelections < 1 ||
+              maxSelections > (answerOptions?.length ?? 0))
+          ) {
+            throw new Error(
+              `A(z) „${row.question}” kérdésnél a maxSelections csak MultipleChoice típushoz adható meg, ` +
+                `és 1 és a válaszlehetőségek száma közötti egész számnak kell lennie.`
+            );
+          }
+
           // dropDownItems
-          const dropDownItems = isDropDown
+          const dropDownItems = isDropDown || isFilteredDropDown
             ? parseDropDownItems(
                 row.answerOptions,
-                String(row.question ?? "")
+                String(row.question ?? ""),
+                isFilteredDropDown
               )
             : undefined;
+
+          const parentQuestionId = isFilteredDropDown && row.parentQuestion
+            ? `q${Number(row.parentQuestion) - 1}`
+            : undefined;
+          
+          if (isFilteredDropDown && !parentQuestionId) {
+             throw new Error(`A szűrt dropdown kérdésnél kötelező a parentQuestion oszlop: "${row.question}".`);
+          }
 
           // dependency "19={1,2}"
           let dependency;
@@ -105,8 +146,10 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             category: row.category ? String(row.category) : "",  
             ...(row.description ? { description: String(row.description) } : {}),
             ...(answerOptions ? { answerOptions } : {}),
+            ...(maxSelections === undefined ? {} : {maxSelections}),
             ...(dropDownItems ? { dropDownItems } : {}),
             ...(dependency ? { dependency } : {}),
+            ...(parentQuestionId ? { parentQuestionId } : {}),
           };
         });
 

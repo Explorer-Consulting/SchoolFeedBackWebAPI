@@ -32,6 +32,9 @@ type BackendQuestionTemplate = {
   AnswerOptions?: string[];
   answerOptions?: string[];
 
+  MaxSelections?: number | null;
+  maxSelections?: number | null;
+
   DropDownItems?: BackendDropDownItem[];
   dropDownItems?: BackendDropDownItem[];
 
@@ -66,6 +69,7 @@ function mapType(type: number | string | undefined): QuestionType {
       case 6: return "Number";
       case 7: return "Date";
       case 8: return "DropDown";
+      case 9: return "FilteredDropDown";
       default: return "OpenEnded";
     }
   }
@@ -79,7 +83,8 @@ function mapType(type: number | string | undefined): QuestionType {
     t === "OpenEnded" ||
     t === "Number" ||
     t === "Date" ||
-    t === "DropDown"
+    t === "DropDown" ||
+    t === "FilteredDropDown"
   ) {
     return t as QuestionType;
   }
@@ -188,6 +193,7 @@ export default function QuestionnaireTemplatePreview() {
         text: q.Question ?? q.question ?? "",
         type: mapType(q.Type ?? q.type),
         options: q.AnswerOptions ?? q.answerOptions ?? [],
+        maxSelections: q.MaxSelections ?? q.maxSelections ?? undefined,
         dropDownItems: (q.DropDownItems ?? q.dropDownItems ?? []).map(
           (item) => ({
             id: item.Id ?? item.id ?? "",

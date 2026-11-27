@@ -6,7 +6,8 @@ export type QuestionType =
   | "OpenEnded"
   | "Number"
   | "Date"
-  | "DropDown";
+  | "DropDown"
+  | "FilteredDropDown";
 
 export type QuestionID = `q${number}`;
 
@@ -18,6 +19,7 @@ export type QuestionDependency = {
 export type DropDownItem = {
   id: string;
   label: string;
+  parentId?: string;
 };
 
 export type Question = {
@@ -26,9 +28,11 @@ export type Question = {
   type: QuestionType;
   dependency?:QuestionDependency
   options?: string[];
+  maxSelections?: number;
   dropDownItems?: DropDownItem[];
   category:string;
   description?:string;
+  parentQuestionId?: QuestionID;
 };
 
 export type Survey = {

@@ -7,6 +7,7 @@ using FeedBackApp.Backend.Infrastructure.Configuration;
 using FeedBackApp.Core.Repositories;
 using FluentValidation;
 using Microsoft.Extensions.Options;
+using FeedBackApp.Core.Model.Enum;
 
 namespace Application.Services
 {
@@ -147,6 +148,35 @@ namespace Application.Services
 
                 if (depIndex >= i)
                     return new CreationResponseDTO(false, $"Dependency {current.Dependency.Id} must refer to an earlier question than {current.Id}.");
+            }
+
+            for (int i = 0; i < metadata.QuestionTemplates.Count; i++)
+            {
+                var current = metadata.QuestionTemplates[i];
+                if (current.Type != QuestionType.FilteredDropDown)
+                    continue;
+
+                int parentIndex = -1;
+                for (int j = 0; j < i; j++)
+                {
+                    if ($"q{j}" == current.ParentQuestionId)
+                    {
+                        parentIndex = j;
+                        break;
+                    }
+                }
+
+                if (parentIndex == -1)
+                    return new CreationResponseDTO(false, $"Parent question {current.ParentQuestionId} of q{i} must be an earlier question.");
+
+                var parent = metadata.QuestionTemplates[parentIndex];
+                if (parent.Type is not (QuestionType.DropDown or QuestionType.FilteredDropDown))
+                    return new CreationResponseDTO(false, $"Parent question {current.ParentQuestionId} of q{i} must be a dropdown.");
+
+                var parentItemIds = parent.DropDownItems.Select(it => it.Id).ToHashSet(StringComparer.Ordinal);
+                var orphan = current.DropDownItems.FirstOrDefault(it => !parentItemIds.Contains(it.ParentId ?? ""));
+                if (orphan != null)
+                    return new CreationResponseDTO(false, $"Item '{orphan.Id}' of q{i} refers to unknown parent item '{orphan.ParentId}'.");
             }
 
             try
@@ -303,7 +333,9 @@ namespace Application.Services
                                 Question = template.Question,
                                 Type = template.Type,
                                 AnswerOptions = template.AnswerOptions,
+                                MaxSelections = template.MaxSelections,
                                 DropDownItems = template.DropDownItems,
+                                ParentQuestionId = template.ParentQuestionId,
                                 Answer = answer,
                                 Dependency = template.Dependency?.ToDto(),
                                 Description = template.Description,

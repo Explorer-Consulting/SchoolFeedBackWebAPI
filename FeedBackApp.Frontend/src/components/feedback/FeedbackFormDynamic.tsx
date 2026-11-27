@@ -9,7 +9,7 @@ import { toBackendPayload } from "@/utils/toBackendPayload";
 import { useReviews } from "@/hooks/useReviews";
 import { useStudentContextStore } from "@/hooks/useStudentContext";
 import DynamicQuestion from "@/components/feedback/DynamicQuestion"
-import { isNewCategory, ensureInitialAnswers, deleteHiddenAnswers, shouldShowQuestion, isMulti } from "@/utils/feedBackFormHelper"
+import { isNewCategory, ensureInitialAnswers, deleteHiddenAnswers, getVisibleQuestions, isMulti, clearFilteredChildren } from "@/utils/feedBackFormHelper"
 
 type FeedbackFormDynamicProps = {
     subjects: string[];
@@ -60,10 +60,7 @@ export function FeedbackFormDynamic({
     );
 
     const visibleQuestions = useMemo(
-        () =>
-            currentEvaluation
-                ? currentEvaluation.questions.filter(q => shouldShowQuestion(q, answers))
-                : [],
+        () => currentEvaluation ? getVisibleQuestions(currentEvaluation.questions, answers) : [],
         [currentEvaluation, answers]
     );
 
@@ -278,8 +275,13 @@ export function FeedbackFormDynamic({
                                                     index={idx + 1}
                                                     value={answers[q.id] ?? (isMulti(q) ? [] : "")}
                                                     isInvalid={invalidIds.has(q.id)}
+                                                    parentValue={q.parentQuestionId ? String(answers[q.parentQuestionId] ?? "") : undefined}
                                                     onChange={(val) => {
-                                                        setAnswers((prev) => ({ ...prev, [q.id as QuestionID]: val }));
+                                                        setAnswers((prev) => (clearFilteredChildren(
+                                                            currentEvaluation?.questions ?? [],
+                                                            q.id as QuestionID,
+                                                            { ...prev, [q.id as QuestionID]: val }
+                                                            )));
                                                         setInvalidIds((prev) => {
                                                             if (!prev.size || !prev.has(q.id)) return prev;
                                                             const next = new Set(prev);
@@ -287,7 +289,7 @@ export function FeedbackFormDynamic({
                                                             return next;
                                                         });
                                                     }}
-                                                        description={showDescription ? desc : undefined}
+                                                    description={showDescription ? desc : undefined}
                                                 />
                                             </div>
                                         );

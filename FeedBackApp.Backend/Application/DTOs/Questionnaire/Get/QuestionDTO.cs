@@ -19,7 +19,11 @@ namespace Application.DTOs.Questionnaire
         public string Description { get; set; } = string.Empty;
 
         public IList<string> AnswerOptions { get; set; } = new List<string>();
+
+        public int? MaxSelections { get; set; }
+
         public IList<DropDownItem> DropDownItems { get; set; } = new List<DropDownItem>();
+        public string? ParentQuestionId { get; set; }
 
         public string Answer { get; set; } = string.Empty;
     }

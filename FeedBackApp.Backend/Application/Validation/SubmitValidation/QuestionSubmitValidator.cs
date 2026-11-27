@@ -46,6 +46,13 @@ namespace Application.Validation.SubmitValidation
 
                         case QuestionType.MultipleChoice:
                             var parts = answer.Split('-', StringSplitOptions.RemoveEmptyEntries);
+                            if (template.MaxSelections is int max && parts.Length > max)
+                            {
+                                context.AddFailure(
+                                    "Answer",
+                                    $"At most {max} options may be selected for '{template.Question}-{template.Id}'.");
+                                break;
+                            }
                             foreach (var part in parts)
                             {
                                 if (!int.TryParse(part, out int choice) || choice < 1 || choice > template.AnswerOptions.Count)
@@ -86,6 +93,7 @@ namespace Application.Validation.SubmitValidation
                             if (!AnswerFormats.TryParseDate(answer, out _))
                                 context.AddFailure("Answer", $"Answer must be a date in {AnswerFormats.DateFormat} format for '{template.Question}-{template.Id}'.");
                             break;
+                        case QuestionType.FilteredDropDown:
                         case QuestionType.DropDown:
                             if (!template.DropDownItems.Any(item =>
                                 string.Equals(item.Id, answer, StringComparison.Ordinal)))
