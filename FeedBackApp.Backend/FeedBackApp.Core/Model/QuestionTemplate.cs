@@ -15,5 +15,6 @@ namespace FeedBackApp.Core.Model
         public required string Category { get; set; }
         public string Description { get; set; } = string.Empty;
         public string? ParentQuestionId { get; set; }
+        public bool AllowOther { get; set; }
     }
 }

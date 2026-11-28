@@ -30,6 +30,8 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.13.1" />
     <PackageReference Include="NCrontab.Signed" Version="3.3.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NUlid" Version="1.7.3" />
   </ItemGroup>
 
   <ItemGroup>

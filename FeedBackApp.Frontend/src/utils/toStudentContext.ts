@@ -32,6 +32,7 @@ type RawQuestion = {
     answerOptions: string[];
     maxSelections?: number | null;
     dropDownItems?: DropDownItem[],
+    allowOther?: boolean;
     dependency?: RawDependency;
     answer: string;
     category: string;
@@ -111,6 +112,10 @@ export function toStudentContext(raw: RawPayload): StudentContext {
                         tpe === "DropDown" || tpe === "FilteredDropDown"
                          ? (Array.isArray(rq.dropDownItems) ? rq.dropDownItems : [])
                          : undefined,
+                    allowOther:
+                        tpe === "DropDown" || tpe === "FilteredDropDown"
+                            ? Boolean(rq.allowOther)
+                            : undefined,
                     parentQuestionId: tpe === "FilteredDropDown" ? rq.parentQuestionId : undefined,
                     dependency,
                     category,
