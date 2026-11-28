@@ -36,5 +36,8 @@ namespace Application.DTOs.Questionnaire
         [JsonProperty("parentQuestionId")]
         public string? ParentQuestionId { get; set; }
 
+        [JsonProperty("allowOther")]
+        public bool AllowOther { get; set; }
+
     }
 }

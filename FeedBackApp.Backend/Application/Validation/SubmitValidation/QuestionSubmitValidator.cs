@@ -94,16 +94,23 @@ namespace Application.Validation.SubmitValidation
                                 context.AddFailure("Answer", $"Answer must be a date in {AnswerFormats.DateFormat} format for '{template.Question}-{template.Id}'.");
                             break;
                         case QuestionType.FilteredDropDown:
-                        case QuestionType.DropDown:
-                            if (!template.DropDownItems.Any(item =>
-                                string.Equals(item.Id, answer, StringComparison.Ordinal)))
+                    case QuestionType.DropDown:
+                        {
+                            var matchesItem = template.DropDownItems.Any(item =>
+                                string.Equals(item.Id, answer, StringComparison.Ordinal));
+
+                            if (!matchesItem)
                             {
-                                context.AddFailure(
-                                    "Answer",
-                                    $"Answer must match an existing dropdown item ID " +
-                                    $"for '{template.Question}-{template.Id}'.");
+                                if (!template.AllowOther || string.IsNullOrWhiteSpace(answer))
+                                {
+                                    context.AddFailure(
+                                        "Answer",
+                                        $"Answer must match an existing dropdown item ID " +
+                                        $"for '{template.Question}-{template.Id}'.");
+                                }
                             }
                             break;
+                        }
                     }
                 });
         }

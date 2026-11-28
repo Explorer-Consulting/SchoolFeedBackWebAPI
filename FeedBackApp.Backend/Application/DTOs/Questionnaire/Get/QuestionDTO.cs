@@ -26,5 +26,7 @@ namespace Application.DTOs.Questionnaire
         public string? ParentQuestionId { get; set; }
 
         public string Answer { get; set; } = string.Empty;
+
+        public bool AllowOther { get; set; }
     }
 }

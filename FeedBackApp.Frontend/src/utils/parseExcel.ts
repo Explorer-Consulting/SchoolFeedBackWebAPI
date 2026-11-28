@@ -128,7 +128,16 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
              throw new Error(`A szűrt dropdown kérdésnél kötelező a parentQuestion oszlop: "${row.question}".`);
           }
 
-          // dependency "19={1,2}"
+          const rawAllowOther = String(row.allowOther ?? row.AllowOther ?? "").trim().toLowerCase();
+          const allowOther = rawAllowOther === "true" || rawAllowOther === "1";
+
+          if (allowOther && !isDropDown && !isFilteredDropDown) {
+            throw new Error(
+              `A(z) „${row.question}” kérdésnél az allowOther csak DropDown vagy FilteredDropDown típushoz adható meg.`
+            );
+          }
+
+          // dependency
           let dependency;
           if (row.dependency) {
             const match = row.dependency.match(/^(\d+)=\{(.*)\}$/);
@@ -148,6 +157,7 @@ export function parseExcel(file: File, startDate: string, endDate: string, title
             ...(answerOptions ? { answerOptions } : {}),
             ...(maxSelections === undefined ? {} : {maxSelections}),
             ...(dropDownItems ? { dropDownItems } : {}),
+            ...(allowOther ? { allowOther } : {}),
             ...(dependency ? { dependency } : {}),
             ...(parentQuestionId ? { parentQuestionId } : {}),
           };

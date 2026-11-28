@@ -30,6 +30,7 @@ export type Question = {
   options?: string[];
   maxSelections?: number;
   dropDownItems?: DropDownItem[];
+  allowOther?: boolean;
   category:string;
   description?:string;
   parentQuestionId?: QuestionID;

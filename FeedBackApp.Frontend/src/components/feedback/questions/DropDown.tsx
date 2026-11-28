@@ -1,7 +1,8 @@
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import type { BaseQuestionProps } from "./types";
 import QuestionWrapper from "./QuestionWrapper";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -9,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const OTHER_VALUE = "__other__";
 
 export default function DropDownQuestion({
   q,
@@ -21,10 +24,43 @@ export default function DropDownQuestion({
   emptyPlaceholder = "Nincsenek választható lehetőségek"
 }: BaseQuestionProps & { emptyPlaceholder?: string }) {
   const inputId = useId();
+  const otherInputId = `${inputId}-other`;
   const descriptionId = `${inputId}-description`;
 
   const items = q.dropDownItems ?? [];
-  const selectedId = typeof value === "string" ? value : "";
+  const allowOther = Boolean(q.allowOther);
+  const currentValue = typeof value === "string" ? value : "";
+  const matchesKnownItem = items.some((item) => item.id === currentValue);
+
+  const [isOtherSelected, setIsOtherSelected] = useState<boolean>(
+    allowOther && currentValue !== "" && !matchesKnownItem
+  );
+
+  useEffect(() => {
+    if (!allowOther) {
+      setIsOtherSelected(false);
+      return;
+    }
+    if (currentValue !== "" && !matchesKnownItem) {
+      setIsOtherSelected(true);
+    } else if (matchesKnownItem) {
+      setIsOtherSelected(false);
+    }
+  }, [allowOther, currentValue, matchesKnownItem]);
+
+  const selectValue = isOtherSelected ? OTHER_VALUE : (matchesKnownItem ? currentValue : "");
+  const hasOptions = items.length > 0 || allowOther;
+
+  const handleSelectChange = (selected: string) => {
+    if (selected === OTHER_VALUE) {
+      setIsOtherSelected(true);
+      onChange("");
+      return;
+    }
+
+    setIsOtherSelected(false);
+    onChange(selected);
+  };
 
   return (
     <QuestionWrapper isInvalid={isInvalid}>
@@ -44,9 +80,9 @@ export default function DropDownQuestion({
       </div>
 
       <Select
-        value={selectedId}
-        onValueChange={(itemId) => onChange(itemId)}
-        disabled={readOnly || items.length === 0}
+        value={selectValue}
+        onValueChange={handleSelectChange}
+        disabled={readOnly || !hasOptions}
       >
         <SelectTrigger
           id={inputId}
@@ -56,7 +92,7 @@ export default function DropDownQuestion({
         >
           <SelectValue
             placeholder={
-              items.length === 0
+              !hasOptions
                 ? emptyPlaceholder
                 : "Válassz egy lehetőséget..."
             }
@@ -69,8 +105,29 @@ export default function DropDownQuestion({
               {item.label}
             </SelectItem>
           ))}
+          {allowOther && (
+            <SelectItem value={OTHER_VALUE}>
+              Egyéb...
+            </SelectItem>
+          )}
         </SelectContent>
       </Select>
+
+      {allowOther && isOtherSelected && (
+        <div className="flex flex-col gap-1 max-w-md">
+          <Label htmlFor={otherInputId} className="text-sm">
+            Egyéb válasz megadása
+          </Label>
+          <Input
+            id={otherInputId}
+            type="text"
+            value={matchesKnownItem ? "" : currentValue}
+            disabled={readOnly}
+            placeholder="Írd be a választ..."
+            onChange={(e) => onChange(e.target.value)}
+          />
+        </div>
+      )}
     </QuestionWrapper>
   );
 }

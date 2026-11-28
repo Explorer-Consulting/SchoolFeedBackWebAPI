@@ -339,7 +339,8 @@ namespace Application.Services
                                 Answer = answer,
                                 Dependency = template.Dependency?.ToDto(),
                                 Description = template.Description,
-                                Category = template.Category
+                                Category = template.Category,
+                                AllowOther = template.AllowOther
                             });
                         }
 
